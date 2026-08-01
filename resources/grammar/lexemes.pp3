@@ -1,0 +1,11 @@
+//
+// Lexemes of C23, see ISO/IEC 9899:2024, 6.4.
+//
+
+// Comments are stripped by the preprocessor, but a header may still be
+// written by hand, so both forms are skipped.
+%skip T_COMMENT_LINE    //[^\n]*+
+%skip T_COMMENT_BLOCK   /\*.*?\*/
+%skip T_WHITESPACE      [\x20\t\r\n\f\v]++
+
+%token T_SEMICOLON      ;
