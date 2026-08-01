@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace FFI\Parser\Node\Literal\StringLiteral\StringParser;
+
+use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
+
+/**
+ * Parts of a character constant or a string literal parsed out of its
+ * source text.
+ *
+ * @internal this is an internal library class, please do not use it in your code
+ * @psalm-internal FFI\Parser\Node\Literal
+ */
+final class StringParserResult
+{
+    public function __construct(
+        public readonly string $value,
+        public readonly ?StringTypePrefix $prefix,
+    ) {}
+}

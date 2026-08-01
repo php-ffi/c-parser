@@ -7,7 +7,7 @@ namespace FFI\Parser;
 use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\ParserException;
 use FFI\Parser\Exception\SyntaxException;
-use FFI\Parser\Node\TranslationUnit;
+use FFI\Parser\Node\Node;
 use FFI\Parser\Parser\ParserExecutor;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
@@ -30,25 +30,15 @@ final class Parser
 
     private readonly SourceFactoryInterface $sources;
 
-    public function __construct(
-        ?SourceFactoryInterface $sources = null,
-    ) {
-        $this->parser = self::createExecutor();
-        $this->sources = self::createSourceFactory($sources);
-    }
-
-    private static function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
+    /**
+     * @param SourceFactoryInterface|null $sources creates the sources out of
+     *        the values given to {@see parse()} and {@see validate()}, the
+     *        default one accepts strings, files and streams
+     */
+    public function __construct(?SourceFactoryInterface $sources = null)
     {
-        if ($sources === null) {
-            return SourceFactory::createDefault();
-        }
-
-        return $sources;
-    }
-
-    private static function createExecutor(): ParserExecutor
-    {
-        return new ParserExecutor();
+        $this->parser = new ParserExecutor();
+        $this->sources = $sources ?? SourceFactory::createDefault();
     }
 
     /**
@@ -56,10 +46,12 @@ final class Parser
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
+     * @return list<Node> external declarations in the order they are
+     *         written, empty declarations (a lone `;`) are not listed
      * @throws ParserException in case of the header cannot be read or is not
      *         syntactically valid
      */
-    public function parse(mixed $source): TranslationUnit
+    public function parse(mixed $source): array
     {
         $source = $this->createSource($source);
 

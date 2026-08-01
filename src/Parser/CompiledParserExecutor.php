@@ -32,20 +32,305 @@ namespace FFI\Parser\Parser;
 abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\ParserInterface
 {
     /** @var int */
-    public const T_COMMENT_LINE = 0;
+    public const T_DIRECTIVE = 0;
     /** @var int */
-    public const T_COMMENT_BLOCK = 1;
+    public const T_COMMENT_LINE = 1;
     /** @var int */
-    public const T_WHITESPACE = 2;
+    public const T_COMMENT_BLOCK = 2;
     /** @var int */
-    public const T_SEMICOLON = 3;
+    public const T_NEWLINE = 3;
+    /** @var int */
+    public const T_WHITESPACE = 4;
+    /** @var int */
+    public const T_FLOAT_LITERAL = 5;
+    /** @var int */
+    public const T_INT_LITERAL = 6;
+    /** @var int */
+    public const T_CHAR_LITERAL = 7;
+    /** @var int */
+    public const T_STRING_LITERAL = 8;
+    /** @var int */
+    public const T_ALIGNAS = 9;
+    /** @var int */
+    public const T_ALIGNOF = 10;
+    /** @var int */
+    public const T_AUTO = 11;
+    /** @var int */
+    public const T_BOOL = 12;
+    /** @var int */
+    public const T_CHAR = 13;
+    /** @var int */
+    public const T_CONST = 14;
+    /** @var int */
+    public const T_CONSTEXPR = 15;
+    /** @var int */
+    public const T_DOUBLE = 16;
+    /** @var int */
+    public const T_ENUM = 17;
+    /** @var int */
+    public const T_EXTERN = 18;
+    /** @var int */
+    public const T_FALSE = 19;
+    /** @var int */
+    public const T_FLOAT = 20;
+    /** @var int */
+    public const T_INLINE = 21;
+    /** @var int */
+    public const T_INT = 22;
+    /** @var int */
+    public const T_LONG = 23;
+    /** @var int */
+    public const T_NULLPTR = 24;
+    /** @var int */
+    public const T_REGISTER = 25;
+    /** @var int */
+    public const T_RESTRICT = 26;
+    /** @var int */
+    public const T_SHORT = 27;
+    /** @var int */
+    public const T_SIGNED = 28;
+    /** @var int */
+    public const T_SIZEOF = 29;
+    /** @var int */
+    public const T_STATIC_ASSERT = 30;
+    /** @var int */
+    public const T_STATIC = 31;
+    /** @var int */
+    public const T_STRUCT = 32;
+    /** @var int */
+    public const T_THREAD_LOCAL = 33;
+    /** @var int */
+    public const T_TRUE = 34;
+    /** @var int */
+    public const T_TYPEDEF = 35;
+    /** @var int */
+    public const T_TYPEOF_UNQUAL = 36;
+    /** @var int */
+    public const T_TYPEOF = 37;
+    /** @var int */
+    public const T_UNION = 38;
+    /** @var int */
+    public const T_UNSIGNED = 39;
+    /** @var int */
+    public const T_VOID = 40;
+    /** @var int */
+    public const T_VOLATILE = 41;
+    /** @var int */
+    public const T_ATOMIC = 42;
+    /** @var int */
+    public const T_BITINT = 43;
+    /** @var int */
+    public const T_COMPLEX = 44;
+    /** @var int */
+    public const T_DECIMAL128 = 45;
+    /** @var int */
+    public const T_DECIMAL32 = 46;
+    /** @var int */
+    public const T_DECIMAL64 = 47;
+    /** @var int */
+    public const T_IMAGINARY = 48;
+    /** @var int */
+    public const T_NORETURN = 49;
+    /** @var int */
+    public const T_RESERVED_KEYWORD = 50;
+    /** @var int */
+    public const T_IDENTIFIER = 51;
+    /** @var int */
+    public const T_ELLIPSIS = 52;
+    /** @var int */
+    public const T_ARROW = 53;
+    /** @var int */
+    public const T_INCREMENT = 54;
+    /** @var int */
+    public const T_DECREMENT = 55;
+    /** @var int */
+    public const T_SHL_ASSIGN = 56;
+    /** @var int */
+    public const T_SHR_ASSIGN = 57;
+    /** @var int */
+    public const T_LBRACKET = 58;
+    /** @var int */
+    public const T_RBRACKET = 59;
+    /** @var int */
+    public const T_LBRACE = 60;
+    /** @var int */
+    public const T_RBRACE = 61;
+    /** @var int */
+    public const T_SHL = 62;
+    /** @var int */
+    public const T_SHR = 63;
+    /** @var int */
+    public const T_LESS_EQUAL = 64;
+    /** @var int */
+    public const T_GREATER_EQUAL = 65;
+    /** @var int */
+    public const T_EQUAL = 66;
+    /** @var int */
+    public const T_NOT_EQUAL = 67;
+    /** @var int */
+    public const T_LOGICAL_AND = 68;
+    /** @var int */
+    public const T_LOGICAL_OR = 69;
+    /** @var int */
+    public const T_MUL_ASSIGN = 70;
+    /** @var int */
+    public const T_DIV_ASSIGN = 71;
+    /** @var int */
+    public const T_MOD_ASSIGN = 72;
+    /** @var int */
+    public const T_ADD_ASSIGN = 73;
+    /** @var int */
+    public const T_SUB_ASSIGN = 74;
+    /** @var int */
+    public const T_AND_ASSIGN = 75;
+    /** @var int */
+    public const T_XOR_ASSIGN = 76;
+    /** @var int */
+    public const T_OR_ASSIGN = 77;
+    /** @var int */
+    public const T_DOUBLE_COLON = 78;
+    /** @var int */
+    public const T_LPAREN = 79;
+    /** @var int */
+    public const T_RPAREN = 80;
+    /** @var int */
+    public const T_DOT = 81;
+    /** @var int */
+    public const T_AMPERSAND = 82;
+    /** @var int */
+    public const T_ASTERISK = 83;
+    /** @var int */
+    public const T_PLUS = 84;
+    /** @var int */
+    public const T_MINUS = 85;
+    /** @var int */
+    public const T_TILDE = 86;
+    /** @var int */
+    public const T_EXCLAMATION = 87;
+    /** @var int */
+    public const T_SLASH = 88;
+    /** @var int */
+    public const T_PERCENT = 89;
+    /** @var int */
+    public const T_LESS = 90;
+    /** @var int */
+    public const T_GREATER = 91;
+    /** @var int */
+    public const T_CARET = 92;
+    /** @var int */
+    public const T_PIPE = 93;
+    /** @var int */
+    public const T_QUESTION = 94;
+    /** @var int */
+    public const T_COLON = 95;
+    /** @var int */
+    public const T_SEMICOLON = 96;
+    /** @var int */
+    public const T_ASSIGN = 97;
+    /** @var int */
+    public const T_COMMA = 98;
 
     /** @var array<int, non-empty-string> */
     private const PARSER_EXPECTATIONS = [
+        'T_DIRECTIVE',
         'T_COMMENT_LINE',
         'T_COMMENT_BLOCK',
+        'T_NEWLINE',
         'T_WHITESPACE',
+        'T_FLOAT_LITERAL',
+        'T_INT_LITERAL',
+        'T_CHAR_LITERAL',
+        'T_STRING_LITERAL',
+        'T_ALIGNAS',
+        'T_ALIGNOF',
+        'T_AUTO',
+        'T_BOOL',
+        'T_CHAR',
+        'T_CONST',
+        'T_CONSTEXPR',
+        'T_DOUBLE',
+        'T_ENUM',
+        'T_EXTERN',
+        'T_FALSE',
+        'T_FLOAT',
+        'T_INLINE',
+        'T_INT',
+        'T_LONG',
+        'T_NULLPTR',
+        'T_REGISTER',
+        'T_RESTRICT',
+        'T_SHORT',
+        'T_SIGNED',
+        'T_SIZEOF',
+        'T_STATIC_ASSERT',
+        'T_STATIC',
+        'T_STRUCT',
+        'T_THREAD_LOCAL',
+        'T_TRUE',
+        'T_TYPEDEF',
+        'T_TYPEOF_UNQUAL',
+        'T_TYPEOF',
+        'T_UNION',
+        'T_UNSIGNED',
+        'T_VOID',
+        'T_VOLATILE',
+        'T_ATOMIC',
+        'T_BITINT',
+        'T_COMPLEX',
+        'T_DECIMAL128',
+        'T_DECIMAL32',
+        'T_DECIMAL64',
+        'T_IMAGINARY',
+        'T_NORETURN',
+        'T_RESERVED_KEYWORD',
+        'T_IDENTIFIER',
+        'T_ELLIPSIS',
+        'T_ARROW',
+        'T_INCREMENT',
+        'T_DECREMENT',
+        'T_SHL_ASSIGN',
+        'T_SHR_ASSIGN',
+        'T_LBRACKET',
+        'T_RBRACKET',
+        'T_LBRACE',
+        'T_RBRACE',
+        'T_SHL',
+        'T_SHR',
+        'T_LESS_EQUAL',
+        'T_GREATER_EQUAL',
+        'T_EQUAL',
+        'T_NOT_EQUAL',
+        'T_LOGICAL_AND',
+        'T_LOGICAL_OR',
+        'T_MUL_ASSIGN',
+        'T_DIV_ASSIGN',
+        'T_MOD_ASSIGN',
+        'T_ADD_ASSIGN',
+        'T_SUB_ASSIGN',
+        'T_AND_ASSIGN',
+        'T_XOR_ASSIGN',
+        'T_OR_ASSIGN',
+        'T_DOUBLE_COLON',
+        'T_LPAREN',
+        'T_RPAREN',
+        'T_DOT',
+        'T_AMPERSAND',
+        'T_ASTERISK',
+        'T_PLUS',
+        'T_MINUS',
+        'T_TILDE',
+        'T_EXCLAMATION',
+        'T_SLASH',
+        'T_PERCENT',
+        'T_LESS',
+        'T_GREATER',
+        'T_CARET',
+        'T_PIPE',
+        'T_QUESTION',
+        'T_COLON',
         'T_SEMICOLON',
+        'T_ASSIGN',
+        'T_COMMA',
         '/[^\\s]++/',
     ];
 
@@ -59,7 +344,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     private const PARSER_START_PREDICTION_TABLE = [
         null,
         [
-            3 => true,
+            96 => true,
         ],
     ];
 
@@ -73,18 +358,115 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     public function __construct()
     {
         $this->lexer = new \Phplrt\Lexer\Lexer(
-            pattern: '/\\G(?|(?:(?:\\/\\/[^\\n]*+)(*MARK:0))|(?:(?:\\/\\*.*?\\*\\/)(*MARK:1))|(?:(?:[\\x20\\t\\r\\n\\f\\v]++)(*MARK:2))|(?:(?:;)(*MARK:3))|(?:(?:[^\\s]++)(*MARK:4)))/Ssm',
+            pattern: '/\\G(?|(?:(?:^[\\x20\\t]*+\\x23(?:[^\\\\\\n]++|\\\\.)*+)(*MARK:0))|(?:(?:\\/\\/[^\\n]*+)(*MARK:1))|(?:(?:\\/\\*.*?\\*\\/)(*MARK:2))|(?:(?:\\n++)(*MARK:3))|(?:(?:[\\x20\\t\\r\\f\\v]++)(*MARK:4))|(?:(?:(?:0[xX](?:(?:(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+))?\\.(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)\\.?)[pP][+-]?(?:[0-9](?:\'?[0-9])*+)|(?:(?:(?:[0-9](?:\'?[0-9])*+))?\\.(?:[0-9](?:\'?[0-9])*+)|(?:[0-9](?:\'?[0-9])*+)\\.)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))?|(?:[0-9](?:\'?[0-9])*+)[eE][+-]?(?:[0-9](?:\'?[0-9])*+))(?:[fF](?:128x?|64x?|32x?|16)|[dD](?:128|64x?|32)|df|DF|dd|DD|dl|DL|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:5))|(?:(?:(?:0[xX](?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|0[bB][01](?:\'?[01])*+|0(?:\'?[0-7])*+|[1-9](?:\'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:6))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|(?:\\\\(?:[\'"?\\\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})))++\')(*MARK:7))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|(?:\\\\(?:[\'"?\\\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})))*+")(*MARK:8))|(?:(?:(?:alignas|_Alignas)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:9))|(?:(?:(?:alignof|_Alignof)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:10))|(?:(?:auto(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:11))|(?:(?:(?:bool|_Bool)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:12))|(?:(?:char(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:13))|(?:(?:const(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:14))|(?:(?:constexpr(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:15))|(?:(?:double(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:16))|(?:(?:enum(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:17))|(?:(?:extern(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:18))|(?:(?:false(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:19))|(?:(?:float(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:20))|(?:(?:inline(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:21))|(?:(?:int(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:22))|(?:(?:long(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:23))|(?:(?:nullptr(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:24))|(?:(?:register(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:25))|(?:(?:restrict(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:26))|(?:(?:short(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:27))|(?:(?:signed(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:28))|(?:(?:sizeof(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:29))|(?:(?:(?:static_assert|_Static_assert)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:30))|(?:(?:static(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:31))|(?:(?:struct(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:32))|(?:(?:(?:thread_local|_Thread_local)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:33))|(?:(?:true(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:34))|(?:(?:typedef(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:35))|(?:(?:typeof_unqual(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:36))|(?:(?:typeof(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:37))|(?:(?:union(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:38))|(?:(?:unsigned(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:39))|(?:(?:void(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:40))|(?:(?:volatile(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:41))|(?:(?:_Atomic(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:42))|(?:(?:_BitInt(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:43))|(?:(?:_Complex(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:44))|(?:(?:_Decimal128(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:45))|(?:(?:_Decimal32(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:46))|(?:(?:_Decimal64(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:47))|(?:(?:_Imaginary(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:48))|(?:(?:_Noreturn(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:49))|(?:(?:(?:break|case|continue|default|do|else|for|goto|if|return|switch|while|_Generic)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:50))|(?:(?:(?:(?:[A-Za-z_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))(?:(?:[A-Za-z0-9_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))*+)(*MARK:51))|(?:(?:\\.\\.\\.)(*MARK:52))|(?:(?:->)(*MARK:53))|(?:(?:\\+\\+)(*MARK:54))|(?:(?:--)(*MARK:55))|(?:(?:<<=)(*MARK:56))|(?:(?:>>=)(*MARK:57))|(?:(?:\\[|<:)(*MARK:58))|(?:(?:\\]|:>)(*MARK:59))|(?:(?:\\{|<%)(*MARK:60))|(?:(?:\\}|%>)(*MARK:61))|(?:(?:<<)(*MARK:62))|(?:(?:>>)(*MARK:63))|(?:(?:<=)(*MARK:64))|(?:(?:>=)(*MARK:65))|(?:(?:==)(*MARK:66))|(?:(?:!=)(*MARK:67))|(?:(?:&&)(*MARK:68))|(?:(?:\\|\\|)(*MARK:69))|(?:(?:\\*=)(*MARK:70))|(?:(?:\\/=)(*MARK:71))|(?:(?:%=)(*MARK:72))|(?:(?:\\+=)(*MARK:73))|(?:(?:-=)(*MARK:74))|(?:(?:&=)(*MARK:75))|(?:(?:\\^=)(*MARK:76))|(?:(?:\\|=)(*MARK:77))|(?:(?:::)(*MARK:78))|(?:(?:\\()(*MARK:79))|(?:(?:\\))(*MARK:80))|(?:(?:\\.)(*MARK:81))|(?:(?:&)(*MARK:82))|(?:(?:\\*)(*MARK:83))|(?:(?:\\+)(*MARK:84))|(?:(?:-)(*MARK:85))|(?:(?:~)(*MARK:86))|(?:(?:!)(*MARK:87))|(?:(?:\\/)(*MARK:88))|(?:(?:%)(*MARK:89))|(?:(?:<)(*MARK:90))|(?:(?:>)(*MARK:91))|(?:(?:\\^)(*MARK:92))|(?:(?:\\|)(*MARK:93))|(?:(?:\\?)(*MARK:94))|(?:(?::)(*MARK:95))|(?:(?:;)(*MARK:96))|(?:(?:=)(*MARK:97))|(?:(?:,)(*MARK:98))|(?:(?:[^\\s]++)(*MARK:99)))/Ssm',
             channels: [
+                'Directive',
                 'Hidden',
                 'Hidden',
                 'Hidden',
-                4 => 'Unknown',
+                'Hidden',
+                99 => 'Unknown',
             ],
             names: [
+                'T_DIRECTIVE',
                 'T_COMMENT_LINE',
                 'T_COMMENT_BLOCK',
+                'T_NEWLINE',
                 'T_WHITESPACE',
+                'T_FLOAT_LITERAL',
+                'T_INT_LITERAL',
+                'T_CHAR_LITERAL',
+                'T_STRING_LITERAL',
+                'T_ALIGNAS',
+                'T_ALIGNOF',
+                'T_AUTO',
+                'T_BOOL',
+                'T_CHAR',
+                'T_CONST',
+                'T_CONSTEXPR',
+                'T_DOUBLE',
+                'T_ENUM',
+                'T_EXTERN',
+                'T_FALSE',
+                'T_FLOAT',
+                'T_INLINE',
+                'T_INT',
+                'T_LONG',
+                'T_NULLPTR',
+                'T_REGISTER',
+                'T_RESTRICT',
+                'T_SHORT',
+                'T_SIGNED',
+                'T_SIZEOF',
+                'T_STATIC_ASSERT',
+                'T_STATIC',
+                'T_STRUCT',
+                'T_THREAD_LOCAL',
+                'T_TRUE',
+                'T_TYPEDEF',
+                'T_TYPEOF_UNQUAL',
+                'T_TYPEOF',
+                'T_UNION',
+                'T_UNSIGNED',
+                'T_VOID',
+                'T_VOLATILE',
+                'T_ATOMIC',
+                'T_BITINT',
+                'T_COMPLEX',
+                'T_DECIMAL128',
+                'T_DECIMAL32',
+                'T_DECIMAL64',
+                'T_IMAGINARY',
+                'T_NORETURN',
+                'T_RESERVED_KEYWORD',
+                'T_IDENTIFIER',
+                'T_ELLIPSIS',
+                'T_ARROW',
+                'T_INCREMENT',
+                'T_DECREMENT',
+                'T_SHL_ASSIGN',
+                'T_SHR_ASSIGN',
+                'T_LBRACKET',
+                'T_RBRACKET',
+                'T_LBRACE',
+                'T_RBRACE',
+                'T_SHL',
+                'T_SHR',
+                'T_LESS_EQUAL',
+                'T_GREATER_EQUAL',
+                'T_EQUAL',
+                'T_NOT_EQUAL',
+                'T_LOGICAL_AND',
+                'T_LOGICAL_OR',
+                'T_MUL_ASSIGN',
+                'T_DIV_ASSIGN',
+                'T_MOD_ASSIGN',
+                'T_ADD_ASSIGN',
+                'T_SUB_ASSIGN',
+                'T_AND_ASSIGN',
+                'T_XOR_ASSIGN',
+                'T_OR_ASSIGN',
+                'T_DOUBLE_COLON',
+                'T_LPAREN',
+                'T_RPAREN',
+                'T_DOT',
+                'T_AMPERSAND',
+                'T_ASTERISK',
+                'T_PLUS',
+                'T_MINUS',
+                'T_TILDE',
+                'T_EXCLAMATION',
+                'T_SLASH',
+                'T_PERCENT',
+                'T_LESS',
+                'T_GREATER',
+                'T_CARET',
+                'T_PIPE',
+                'T_QUESTION',
+                'T_COLON',
                 'T_SEMICOLON',
+                'T_ASSIGN',
+                'T_COMMA',
             ],
         );
 
@@ -111,6 +493,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
     private static function reduceTranslationUnit(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        return new \FFI\Parser\Node\TranslationUnit([], 0);
+        return [];
     }
 }

@@ -38,4 +38,18 @@ final class LibraryArchitectureTest
             ->classes(Selector::inNamespace('FFI\Parser\Parser'))
             ->because('the generated parser is an implementation detail of the public parser');
     }
+
+    public function testLiteralInternalsAreUsedByTheLiteralsOnly(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::all())
+            ->excluding(Selector::inNamespace('FFI\Parser\Node\Literal'))
+            ->shouldNot()
+            ->dependOn()
+            ->classes(
+                Selector::classname('/^FFI\\\\Parser\\\\Node\\\\Literal\\\\IntLiteral\\\\\w*BaseConverter/', true),
+                Selector::classname('/^FFI\\\\Parser\\\\Node\\\\Literal\\\\\w+\\\\\w+Parser(\\\\|$)/', true),
+            )
+            ->because('the parsers and the base converters only compute values of literals');
+    }
 }

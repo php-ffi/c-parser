@@ -9,11 +9,12 @@ namespace FFI\Parser\Node;
  */
 abstract class Node
 {
-    /**
-     * @param int<0, max> $offset offset of the first byte of the node in
-     *        the source
-     */
     public function __construct(
-        public readonly int $offset,
+        /**
+         * Offset of the first byte of the node in the source
+         *
+         * @var int<0, max>
+         */
+        public readonly int $offset = 0,
     ) {}
 }

@@ -24,10 +24,7 @@ final class ParserTest extends TestCase
     #[DataProvider('validHeadersDataProvider')]
     public function testValidHeaderIsParsed(string $code): void
     {
-        $unit = (new Parser())->parse($code);
-
-        self::assertSame([], $unit->declarations);
-        self::assertSame(0, $unit->offset);
+        self::assertSame([], (new Parser())->parse($code));
     }
 
     #[DataProvider('validHeadersDataProvider')]
@@ -50,7 +47,7 @@ final class ParserTest extends TestCase
     #[DataProvider('sourcesDataProvider')]
     public function testSourceOfEveryKindIsParsed(mixed $source): void
     {
-        self::assertSame([], (new Parser())->parse($source)->declarations);
+        self::assertSame([], (new Parser())->parse($source));
     }
 
     public function testUnsupportedSourceIsReported(): void

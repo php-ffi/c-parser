@@ -13,6 +13,6 @@
 
 // A sequence of external declarations. Empty declarations (a lone ";") are
 // valid C and produce nothing.
-TranslationUnit -> { return new \FFI\Parser\Node\TranslationUnit([], 0); }
+TranslationUnit -> { return []; }
   : ::T_SEMICOLON::*
   ;

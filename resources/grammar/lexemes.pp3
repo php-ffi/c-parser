@@ -1,11 +1,175 @@
 //
 // Lexemes of C23, see ISO/IEC 9899:2024, 6.4.
 //
+// The lexer works with bytes (see the root grammar), so a non-ASCII
+// character of an identifier is a sequence of bytes in \x80-\xFF and
+// keywords are guarded by a lookahead rather than by \b, which does not
+// consider such bytes to be word characters.
+//
 
-// Comments are stripped by the preprocessor, but a header may still be
-// written by hand, so both forms are skipped.
-%skip T_COMMENT_LINE    //[^\n]*+
-%skip T_COMMENT_BLOCK   /\*.*?\*/
-%skip T_WHITESPACE      [\x20\t\r\n\f\v]++
+//
+// Fragments
+//
 
-%token T_SEMICOLON      ;
+// A universal character name, 6.4.3
+%fragment UCN               \\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}
+%fragment ID_START          [A-Za-z_\x80-\xFF]|(?&UCN)
+%fragment ID_CONTINUE       [A-Za-z0-9_\x80-\xFF]|(?&UCN)
+// What may not directly follow a keyword or a number
+%fragment WORD_END          (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU])
+
+// Digit sequences with optional digit separators, 6.4.4.2
+%fragment DEC_DIGITS        [0-9](?:'?[0-9])*+
+%fragment HEX_DIGITS        [0-9A-Fa-f](?:'?[0-9A-Fa-f])*+
+
+// Escape sequences, 6.4.4.5
+%fragment ESCAPE            \\(?:['"?\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})
+
+//
+// Preprocessing leftovers
+//
+
+// A line starting with "#": line markers of "gcc -E" (# 1 "file.h" 3),
+// #pragma, #define of "gcc -dD". It is declared before the whitespace,
+// which would otherwise consume the indentation of the line, and the
+// newline is a separate token, so "^" (multiline mode) still holds at the
+// beginning of the next line. A backslash continues the directive onto the
+// next line.
+%token T_DIRECTIVE          ^[\x20\t]*+\x23(?:[^\\\n]++|\\.)*+ -> channel(Directive)
+
+//
+// Whitespace and comments
+//
+
+%skip T_COMMENT_LINE        //[^\n]*+
+%skip T_COMMENT_BLOCK       /\*.*?\*/
+%skip T_NEWLINE             \n++
+%skip T_WHITESPACE          [\x20\t\r\f\v]++
+
+//
+// Literals, 6.4.4 and 6.4.5
+//
+// Declared before keywords and identifiers, since an encoding prefix
+// (u8"...") looks like an identifier, and before punctuators, since a
+// floating constant may start with a dot (.5).
+//
+
+%token T_FLOAT_LITERAL      (?:0[xX](?:(?:(?&HEX_DIGITS))?\.(?&HEX_DIGITS)|(?&HEX_DIGITS)\.?)[pP][+-]?(?&DEC_DIGITS)|(?:(?:(?&DEC_DIGITS))?\.(?&DEC_DIGITS)|(?&DEC_DIGITS)\.)(?:[eE][+-]?(?&DEC_DIGITS))?|(?&DEC_DIGITS)[eE][+-]?(?&DEC_DIGITS))(?:[fF](?:128x?|64x?|32x?|16)|[dD](?:128|64x?|32)|df|DF|dd|DD|dl|DL|[fFlL])?(?&WORD_END)
+%token T_INT_LITERAL        (?:0[xX](?&HEX_DIGITS)|0[bB][01](?:'?[01])*+|0(?:'?[0-7])*+|[1-9](?:'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?&WORD_END)
+%token T_CHAR_LITERAL       (?:u8|[uUL])?'(?:[^'\\\n]|(?&ESCAPE))++'
+%token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
+
+//
+// Keywords, 6.4.1
+//
+// Alternative spellings of the same keyword (bool and _Bool) share a
+// token, the exact spelling is kept by the value of the token.
+//
+
+%token T_ALIGNAS            (?:alignas|_Alignas)(?&WORD_END)
+%token T_ALIGNOF            (?:alignof|_Alignof)(?&WORD_END)
+%token T_AUTO               auto(?&WORD_END)
+%token T_BOOL               (?:bool|_Bool)(?&WORD_END)
+%token T_CHAR               char(?&WORD_END)
+%token T_CONST              const(?&WORD_END)
+%token T_CONSTEXPR          constexpr(?&WORD_END)
+%token T_DOUBLE             double(?&WORD_END)
+%token T_ENUM               enum(?&WORD_END)
+%token T_EXTERN             extern(?&WORD_END)
+%token T_FALSE              false(?&WORD_END)
+%token T_FLOAT              float(?&WORD_END)
+%token T_INLINE             inline(?&WORD_END)
+%token T_INT                int(?&WORD_END)
+%token T_LONG               long(?&WORD_END)
+%token T_NULLPTR            nullptr(?&WORD_END)
+%token T_REGISTER           register(?&WORD_END)
+%token T_RESTRICT           restrict(?&WORD_END)
+%token T_SHORT              short(?&WORD_END)
+%token T_SIGNED             signed(?&WORD_END)
+%token T_SIZEOF             sizeof(?&WORD_END)
+%token T_STATIC_ASSERT      (?:static_assert|_Static_assert)(?&WORD_END)
+%token T_STATIC             static(?&WORD_END)
+%token T_STRUCT             struct(?&WORD_END)
+%token T_THREAD_LOCAL       (?:thread_local|_Thread_local)(?&WORD_END)
+%token T_TRUE               true(?&WORD_END)
+%token T_TYPEDEF            typedef(?&WORD_END)
+%token T_TYPEOF_UNQUAL      typeof_unqual(?&WORD_END)
+%token T_TYPEOF             typeof(?&WORD_END)
+%token T_UNION              union(?&WORD_END)
+%token T_UNSIGNED           unsigned(?&WORD_END)
+%token T_VOID               void(?&WORD_END)
+%token T_VOLATILE           volatile(?&WORD_END)
+%token T_ATOMIC             _Atomic(?&WORD_END)
+%token T_BITINT             _BitInt(?&WORD_END)
+%token T_COMPLEX            _Complex(?&WORD_END)
+%token T_DECIMAL128         _Decimal128(?&WORD_END)
+%token T_DECIMAL32          _Decimal32(?&WORD_END)
+%token T_DECIMAL64          _Decimal64(?&WORD_END)
+%token T_IMAGINARY          _Imaginary(?&WORD_END)
+%token T_NORETURN           _Noreturn(?&WORD_END)
+
+// Keywords of statements and of _Generic. A header has neither, but they
+// are still reserved and may not be used as identifiers.
+%token T_RESERVED_KEYWORD   (?:break|case|continue|default|do|else|for|goto|if|return|switch|while|_Generic)(?&WORD_END)
+
+//
+// Identifiers, 6.4.2
+//
+
+%token T_IDENTIFIER         (?:(?&ID_START))(?:(?&ID_CONTINUE))*+
+
+//
+// Punctuators, 6.4.6
+//
+// Longer punctuators go first. Digraphs (<: :> <% %>) are spellings of the
+// brackets and braces and share their tokens. The "#" and "##" punctuators
+// only exist in the preprocessor and are not recognized.
+//
+
+%token T_ELLIPSIS           \.\.\.
+%token T_ARROW              ->
+%token T_INCREMENT          \+\+
+%token T_DECREMENT          --
+%token T_SHL_ASSIGN         <<=
+%token T_SHR_ASSIGN         >>=
+%token T_LBRACKET           \[|<:
+%token T_RBRACKET           \]|:>
+%token T_LBRACE             \{|<%
+%token T_RBRACE             \}|%>
+%token T_SHL                <<
+%token T_SHR                >>
+%token T_LESS_EQUAL         <=
+%token T_GREATER_EQUAL      >=
+%token T_EQUAL              ==
+%token T_NOT_EQUAL          !=
+%token T_LOGICAL_AND        &&
+%token T_LOGICAL_OR         \|\|
+%token T_MUL_ASSIGN         \*=
+%token T_DIV_ASSIGN         /=
+%token T_MOD_ASSIGN         %=
+%token T_ADD_ASSIGN         \+=
+%token T_SUB_ASSIGN         -=
+%token T_AND_ASSIGN         &=
+%token T_XOR_ASSIGN         \^=
+%token T_OR_ASSIGN          \|=
+%token T_DOUBLE_COLON       ::
+%token T_LPAREN             \(
+%token T_RPAREN             \)
+%token T_DOT                \.
+%token T_AMPERSAND          &
+%token T_ASTERISK           \*
+%token T_PLUS               \+
+%token T_MINUS              -
+%token T_TILDE              ~
+%token T_EXCLAMATION        !
+%token T_SLASH              /
+%token T_PERCENT            %
+%token T_LESS               <
+%token T_GREATER            >
+%token T_CARET              \^
+%token T_PIPE               \|
+%token T_QUESTION           \?
+%token T_COLON              :
+%token T_SEMICOLON          ;
+%token T_ASSIGN             =
+%token T_COMMA              ,

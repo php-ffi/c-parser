@@ -33,6 +33,12 @@
             "FFI\\Parser\\": "src"
         }
     },
+    "suggest": {
+        "ext-gmp": "Speeds up parsing of integer constants that do not fit in a PHP integer",
+        "ext-bcmath": "Speeds up parsing of integer constants that do not fit in a PHP integer",
+        "brick/math": "Speeds up parsing of integer constants that do not fit in a PHP integer (^0.13|^1.0)",
+        "ext-mbstring": "Speeds up decoding of universal character names in string literals"
+    },
     "require-dev": {
         "brick/math": "^0.13|^1.0",
         "friendsofphp/php-cs-fixer": "^3.95",

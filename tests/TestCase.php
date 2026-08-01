@@ -29,6 +29,14 @@ abstract class TestCase extends BaseTestCase
         yield 'comments between declarations' => ["; /* a */ ; // b\n ;"];
         yield 'CRLF line endings' => ["// comment\r\n;\r\n"];
         yield 'invalid UTF-8 in comment' => ["/* \xFF\xFE\xC3 */ ;"];
+
+        yield 'line marker' => ["# 1 \"x.h\" 3\n;"];
+        yield 'pragma' => ["#pragma pack(1)\n;"];
+        yield 'define' => ["#define FFI_SCOPE \"x\"\n;"];
+        yield 'indented directive' => ["  #pragma once\n;"];
+        yield 'directive between declarations' => [";\n#pragma once\n;"];
+        yield 'directive in the last line' => [";\n#pragma once"];
+        yield 'directive only' => ['#pragma once'];
     }
 
     /**
@@ -39,11 +47,22 @@ abstract class TestCase extends BaseTestCase
      */
     public static function syntaxErrorsDataProvider(): iterable
     {
-        yield 'unknown word' => ['int', 0, 3];
-        yield 'unknown word after declaration' => ["; \n x", 4, 1];
-        yield 'unclosed block comment' => ['; /* comment', 2, 2];
-        yield 'directive' => ['#pragma once', 0, 7];
-        yield 'non-ASCII bytes' => ["\xC3\x84", 0, 2];
+        yield 'keyword' => ['int', 0, 3];
+        yield 'identifier after declaration' => ["; \n x", 4, 1];
+        yield 'identifier in UTF-8' => ["\xC3\x84", 0, 2];
+        yield 'literal' => ['; 42', 2, 2];
+        yield 'unclosed block comment' => ['; /* comment', 2, 1];
+
+        yield 'hash not at the beginning of a line' => ['; # x', 2, 1];
+        yield 'octal constant with 8' => ['08', 0, 2];
+        yield 'binary constant with 2' => ['0b2', 0, 3];
+        yield 'hexadecimal prefix without digits' => ['0x', 0, 2];
+        yield 'doubled digit separator' => ["1''0", 0, 4];
+        yield 'trailing digit separator' => ["1'", 0, 2];
+        yield 'invalid integer suffix' => ['1lul', 0, 4];
+        yield 'unclosed string' => ['"text', 0, 5];
+        yield 'unclosed character constant' => ["'a", 0, 2];
+        yield 'unknown escape sequence' => ['"\\q"', 0, 4];
     }
 
     /**
