@@ -15,16 +15,16 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * Checks the lexemes of resources/grammar/lexemes.pp3. The lexer is built
- * from the grammar, the generated parser is kept equal to it by the
- * staleness test.
+ * Checks the lexemes of `resources/grammar/lexemes.pp3`. The lexer is built
+ * from the grammar, the generated parser is kept equal to it by CI
+ * (`composer grammar:build` and `git diff`).
  */
 #[CoversNothing]
 final class LexemesTest extends TestCase
 {
     private const GRAMMAR = __DIR__ . '/../../resources/grammar.pp3';
 
-    private static ?LexerInterface $lexer = null;
+    private static LexerInterface $lexer;
 
     /**
      * @return iterable<non-empty-string, array{string, list<array{string, string}>}>
@@ -91,6 +91,14 @@ final class LexemesTest extends TestCase
         yield 'keyword followed by a non-ASCII letter' => ["int\xC3\x84", [['T_IDENTIFIER', "int\xC3\x84"]]];
         yield 'keyword followed by a universal character name' => ['int\\u00C4', [['T_IDENTIFIER', 'int\\u00C4']]];
         yield 'keyword followed by a punctuator' => ['int*', [['T_INT', 'int'], ['T_ASTERISK', '*']]];
+        yield 'keyword followed by a character constant' => [
+            "sizeof'a'",
+            [['T_SIZEOF', 'sizeof'], ['T_CHAR_LITERAL', "'a'"]],
+        ];
+        yield 'keyword followed by a floating constant' => [
+            'sizeof.5f',
+            [['T_SIZEOF', 'sizeof'], ['T_FLOAT_LITERAL', '.5f']],
+        ];
         yield 'longer keyword with a common prefix' => ['typeof_unqual typeof', [
             ['T_TYPEOF_UNQUAL', 'typeof_unqual'],
             ['T_TYPEOF', 'typeof'],
@@ -108,7 +116,7 @@ final class LexemesTest extends TestCase
         foreach ([
             '0', '42', "1'000'000", '017', '0x1F', "0x1F'FF", '0XabCD', '0b1010', "0B1'0", '00',
             '1u', '1U', '1l', '1L', '1ll', '1LL', '1ul', '1lu', '1ULL', '1llu', '1wb', '1WB', '1uwb', '1wbU',
-            '0xFFFFFFFFFFFFFFFFFFFFFFFF',
+            '0xFFFFFFFFFFFFFFFFFFFFFFFF', "0'7", '1Ull', '0x1uwb',
         ] as $literal) {
             yield 'integer ' . $literal => [$literal, [['T_INT_LITERAL', $literal]]];
         }
@@ -117,16 +125,23 @@ final class LexemesTest extends TestCase
             '1.5', '.5', '1.', '1e10', '1E+10', '1.5e-3', "1'000.000'1", '1.5f', '1.5F', '1.5l', '1.5L',
             '0x1.8p3', '0x.8p1', '0x1p-1074', '0X1P+4', '0x1.fffffffffffffp1023', '0x1p3f',
             '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x',
-            '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1e999',
+            '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1.0d128x', '1e999',
+            "1e1'0", "0x1p1'0", '0x1.p1', '08.5', '09e1',
         ] as $literal) {
             yield 'floating ' . $literal => [$literal, [['T_FLOAT_LITERAL', $literal]]];
         }
 
-        foreach (["'a'", "'ab'", "'\\n'", "'\\''", "'\"'", "'\\0'", "'\\x41'", "'\\u00E9'", "u8'a'", "u'a'", "U'a'", "L'a'"] as $literal) {
+        foreach ([
+            "'a'", "'ab'", "'\\n'", "'\\''", "'\"'", "'\\0'", "'\\x41'", "'\\u00E9'",
+            "u8'a'", "u'a'", "U'a'", "L'a'",
+        ] as $literal) {
             yield 'character ' . $literal => [$literal, [['T_CHAR_LITERAL', $literal]]];
         }
 
-        foreach (['""', '"text"', '"a\\"b"', "\"'\"", '"\\\\"', '"\\x41\\101\\u00E9\\U0001F600"', 'u8""', 'u""', 'U""', 'L""'] as $literal) {
+        foreach ([
+            '""', '"text"', '"a\\"b"', "\"'\"", '"\\\\"', '"\\x41\\101\\u00E9\\U0001F600"',
+            'u8""', 'u""', 'U""', 'L""',
+        ] as $literal) {
             yield 'string ' . $literal => [$literal, [['T_STRING_LITERAL', $literal]]];
         }
 
@@ -167,6 +182,7 @@ final class LexemesTest extends TestCase
         ]];
 
         yield 'whitespace' => [" \t\r\n\f\vx", [['T_IDENTIFIER', 'x']]];
+        yield 'byte order mark at the beginning' => ["\xEF\xBB\xBFx", [['T_IDENTIFIER', 'x']]];
         yield 'line comment' => ["// int\nx", [['T_IDENTIFIER', 'x']]];
         yield 'block comment' => ["/* int\n */x", [['T_IDENTIFIER', 'x']]];
         yield 'comment in UTF-8' => ["/* \xD0\xBA\xD0\xBE\xD0\xB4 */x", [['T_IDENTIFIER', 'x']]];
@@ -189,13 +205,26 @@ final class LexemesTest extends TestCase
             ['T_IDENTIFIER', 'x'],
         ]];
         yield 'directive after CRLF' => ["x\r\n#pragma once\r\ny", [
-            ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', "#pragma once\r"], ['T_IDENTIFIER', 'y'],
+            ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', '#pragma once'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'directive continued onto the next line after CRLF' => ["#define A \\\r\n  1\r\nx", [
+            ['T_DIRECTIVE', "#define A \\\r\n  1"],
+            ['T_IDENTIFIER', 'x'],
+        ]];
+        yield 'directive spelled by a digraph' => ["%:pragma once\nx", [
+            ['T_DIRECTIVE', '%:pragma once'], ['T_IDENTIFIER', 'x'],
+        ]];
+        yield 'directive indented by a form feed' => ["\f#pragma once\nx", [
+            ['T_DIRECTIVE', "\f#pragma once"], ['T_IDENTIFIER', 'x'],
         ]];
         yield 'hash not at the beginning of a line' => ['x # y', [
             ['T_IDENTIFIER', 'x'], ['Unknown', '#'], ['T_IDENTIFIER', 'y'],
         ]];
 
-        yield 'string broken by a newline' => ["\"a\nb\"", [['Unknown', '"a'], ['T_IDENTIFIER', 'b'], ['Unknown', '"']]];
+        yield 'string broken by a newline' => [
+            "\"a\nb\"",
+            [['Unknown', '"a'], ['T_IDENTIFIER', 'b'], ['Unknown', '"']],
+        ];
         yield 'lone hash at the beginning of a line is a directive' => ['#', [['T_DIRECTIVE', '#']]];
 
         foreach ([

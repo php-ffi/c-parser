@@ -37,6 +37,12 @@ abstract class TestCase extends BaseTestCase
         yield 'directive between declarations' => [";\n#pragma once\n;"];
         yield 'directive in the last line' => [";\n#pragma once"];
         yield 'directive only' => ['#pragma once'];
+
+        yield 'static assertion' => ['static_assert(sizeof(T) == 4, "T");'];
+        yield 'static assertion without a message' => ['_Static_assert((T)1 + 2);'];
+        yield 'static assertions between empty declarations' => [
+            ";static_assert(1);\n;static_assert(a ? b : c, \"a\" \"b\");",
+        ];
     }
 
     /**
@@ -63,6 +69,10 @@ abstract class TestCase extends BaseTestCase
         yield 'unclosed string' => ['"text', 0, 5];
         yield 'unclosed character constant' => ["'a", 0, 2];
         yield 'unknown escape sequence' => ['"\\q"', 0, 4];
+
+        yield 'static assertion without a semicolon' => ['static_assert(1)', 16, 0];
+        yield 'function call in a static assertion' => ['static_assert(f(1));', 15, 1];
+        yield 'assignment in a static assertion' => ['static_assert(a = 1);', 16, 1];
     }
 
     /**

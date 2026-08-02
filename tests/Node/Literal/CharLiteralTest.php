@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\CharLiteral;
+use FFI\Parser\Node\Literal\StringLiteral\StringParser;
 use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(CharLiteral::class)]
+#[CoversClass(StringParser::class)]
 final class CharLiteralTest extends TestCase
 {
     /**
@@ -24,6 +26,10 @@ final class CharLiteralTest extends TestCase
         yield 'escaped quote' => ["'\\''", "'", null];
         yield 'null character' => ["'\\0'", "\0", null];
         yield 'hexadecimal' => ["'\\x41'", 'A', null];
+        yield 'octal' => ["'\\101'", 'A', null];
+        yield 'simple escape' => ["'\\n'", "\n", null];
+        yield 'octal above a byte' => ["'\\400'", "\u{FFFD}", null];
+        yield 'u above a code unit' => ["u'\\x10000'", "\u{FFFD}", StringTypePrefix::Utf16];
         yield 'universal character name' => ["'\\u00E9'", "\u{E9}", null];
         yield 'u8' => ["u8'a'", 'a', StringTypePrefix::Utf8];
         yield 'u' => ["u'\\xFF'", "\u{FF}", StringTypePrefix::Utf16];

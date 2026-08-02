@@ -39,6 +39,28 @@ final class FloatLiteralTest extends TestCase
         yield 'too large hexadecimal' => ['0x1p1024', \INF];
         yield 'small mantissa with a large exponent' => ['0x0.001p1030', 2.0 ** 1018];
         yield 'long mantissa' => ['0x1.' . \str_repeat('0', 20) . '1p0', 1.0];
+        yield 'dropped digits round up a value halfway' => ['0x1.00000000000008000000001p0', 1.0 + 2 ** -52];
+        yield 'value halfway rounds to even' => ['0x1.00000000000008p0', 1.0];
+        yield 'subnormal is rounded once' => ['0xBFFFFFFFFFFFFFp-1129', 2 ** -1074];
+        yield 'half of the smallest subnormal rounds to zero' => ['0x1p-1075', 0.0];
+        yield 'subnormal halfway rounds to even' => ['0x1.8p-1074', 2 ** -1073];
+        yield 'huge exponent' => ['0x1p9223372036854775807', \INF];
+        yield 'huge exponent with a long mantissa' => ['0x1111111111111111p9223372036854775807', \INF];
+        yield 'huge negative exponent' => ['0x1.8p-9223372036854775808', 0.0];
+        yield 'normal value scaled below the smallest subnormal' => [
+            '0x1.00000000000010p-1022',
+            \PHP_FLOAT_MIN + 2 ** -1074,
+        ];
+        yield 'rounding up into the next binade' => ['0x1.fffffffffffff8p0', 2.0];
+        yield 'rounding up from subnormal to normal' => ['0x1.fffffffffffff8p-1023', \PHP_FLOAT_MIN];
+        yield 'overflow after rounding' => ['0x1.fffffffffffff8p1023', \INF];
+        yield 'just below the overflow' => ['0x1.fffffffffffff7fp1023', \PHP_FLOAT_MAX];
+        yield 'mantissa of sixty bits' => ['0xf.ffffffffffffff8p0', 16.0];
+        yield 'many leading zeros' => ['0x0.' . \str_repeat('0', 300) . '1p1200', 2.0 ** -4];
+        yield 'separators in the exponent' => ["0x1p1'0", 1024.0];
+        yield 'dot without the fraction' => ['0x1.p1', 2.0];
+        yield 'upper case' => ['0X1P+4', 16.0];
+        yield 'decimal separators in the exponent' => ["1e1'0", 1e10];
     }
 
     #[DataProvider('valuesDataProvider')]
@@ -74,6 +96,7 @@ final class FloatLiteralTest extends TestCase
         yield 'DL' => ['1.5DL', FloatTypeSuffix::Decimal128];
         yield 'd128' => ['1.5d128', FloatTypeSuffix::Decimal128];
         yield 'd64x' => ['1.5d64x', FloatTypeSuffix::Decimal64x];
+        yield 'D128x' => ['1.5D128x', FloatTypeSuffix::Decimal128x];
         yield 'hexadecimal with f' => ['0x1p3f', FloatTypeSuffix::Float];
         yield 'hexadecimal digit f is not a suffix' => ['0x1.fp3', null];
     }

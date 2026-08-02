@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\StringLiteral;
-use FFI\Parser\Node\Literal\StringLiteral\StringDecoder;
+use FFI\Parser\Node\Literal\StringLiteral\StringParser;
 use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(StringLiteral::class)]
-#[CoversClass(StringDecoder::class)]
+#[CoversClass(StringParser::class)]
 final class StringLiteralTest extends TestCase
 {
     /**
@@ -33,6 +33,7 @@ final class StringLiteralTest extends TestCase
         yield 'octal' => ['"\\101"', 'A'];
         yield 'octal of one digit' => ['"\\0"', "\0"];
         yield 'octal of at most three digits' => ['"\\1011"', 'A1'];
+        yield 'octal zeros of every length' => ['"\\0\\00\\000\\0000"', "\0\0\0\0" . '0'];
         yield 'octal of a byte' => ['"\\377"', "\xFF"];
         yield 'octal above a byte' => ['"\\777"', "\u{FFFD}"];
 
@@ -47,7 +48,8 @@ final class StringLiteralTest extends TestCase
         yield 'long universal character name' => ['"\\U0001F600"', "\u{1F600}"];
         yield 'universal character name of ASCII' => ['"\\u0041"', 'A'];
         yield 'universal character name above Unicode' => ['"\\U00110000"', "\u{FFFD}"];
-        yield 'universal character name of a surrogate' => ['"\\uD800"', "\xED\xA0\x80"];
+        yield 'universal character name of a surrogate' => ['"\\uD800"', "\u{FFFD}"];
+        yield 'hexadecimal ended by a non-hexadecimal character' => ['"\\x41g"', 'Ag'];
 
         yield 'everything at once' => ['"a\\n\\x41\\101\\u00E9\\U0001F600"', "a\nAA\u{E9}\u{1F600}"];
     }
@@ -72,6 +74,16 @@ final class StringLiteralTest extends TestCase
         yield 'U' => ['U"\\x1F600"', StringTypePrefix::Utf32, "\u{1F600}"];
         yield 'L' => ['L"\\x1234"', StringTypePrefix::Wide, "\u{1234}"];
         yield 'L octal' => ['L"\\777"', StringTypePrefix::Wide, "\u{1FF}"];
+        yield 'L octal of at most three digits' => ['L"\\1234"', StringTypePrefix::Wide, 'S4'];
+        yield 'u above a code unit' => ['u"\\x10000"', StringTypePrefix::Utf16, "\u{FFFD}"];
+        yield 'u surrogate pair' => ['u"\\xD83D\\xDE00"', StringTypePrefix::Utf16, "\u{FFFD}\u{FFFD}"];
+        yield 'U above Unicode' => ['U"\\xFFFFFFFF"', StringTypePrefix::Utf32, "\u{FFFD}"];
+        yield 'u8 above a byte' => ['u8"\\x100"', StringTypePrefix::Utf8, "\u{FFFD}"];
+        yield 'u8 octal of a byte' => ['u8"\\377"', StringTypePrefix::Utf8, "\xFF"];
+        yield 'u largest code unit' => ['u"\\xFFFF"', StringTypePrefix::Utf16, "\u{FFFF}"];
+        yield 'u surrogate' => ['u"\\xDFFF"', StringTypePrefix::Utf16, "\u{FFFD}"];
+        yield 'U largest code point' => ['U"\\U0010FFFF"', StringTypePrefix::Utf32, "\u{10FFFF}"];
+        yield 'L above 32 bits' => ['L"\\x100000000"', StringTypePrefix::Wide, "\u{FFFD}"];
     }
 
     /**

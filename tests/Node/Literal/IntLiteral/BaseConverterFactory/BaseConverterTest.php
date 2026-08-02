@@ -44,10 +44,14 @@ final class BaseConverterTest extends TestCase
         yield '2^64 - 1 in octal' => ['1777777777777777777777', 8, '18446744073709551615'];
         yield '2^64 - 1 in binary' => [\str_repeat('1', 64), 2, '18446744073709551615'];
         yield '2^128 - 1' => [\str_repeat('F', 32), 16, '340282366920938463463374607431768211455'];
-        yield '2^400' => ['1' . \str_repeat('0', 100), 16, '2582249878086908589655919172003011874329705792829223512830659356540647622016841194629645353280137831435903171972747493376'];
+        yield '2^400' => [
+            '1' . \str_repeat('0', 100),
+            16,
+            '25822498780869085896559191720030118743297057928292235128306593565406'
+                . '47622016841194629645353280137831435903171972747493376',
+        ];
 
-        // The longest numbers that always fit in a PHP integer and the
-        // shortest ones that may not
+        // Numbers around the size of a PHP integer and a limb
         yield '15 hexadecimal digits' => [\str_repeat('F', 15), 16, '1152921504606846975'];
         yield '16 hexadecimal digits' => [\str_repeat('F', 16), 16, '18446744073709551615'];
         yield '21 octal digits' => [\str_repeat('7', 21), 8, '9223372036854775807'];
@@ -99,8 +103,12 @@ final class BaseConverterTest extends TestCase
         }
     }
 
-    private static function assertConverted(BaseConverterInterface $converter, string $digits, int $base, string $decimal): void
-    {
+    private static function assertConverted(
+        BaseConverterInterface $converter,
+        string $digits,
+        int $base,
+        string $decimal,
+    ): void {
         self::assertTrue($converter->isAvailable());
         self::assertSame($decimal, $converter->toDecimal($digits, $base));
     }

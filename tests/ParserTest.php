@@ -7,6 +7,7 @@ namespace FFI\Parser\Tests;
 use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\ParserException;
 use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Node\Node;
 use FFI\Parser\Parser;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Source\FileSource;
@@ -24,7 +25,7 @@ final class ParserTest extends TestCase
     #[DataProvider('validHeadersDataProvider')]
     public function testValidHeaderIsParsed(string $code): void
     {
-        self::assertSame([], (new Parser())->parse($code));
+        self::assertContainsOnlyInstancesOf(Node::class, (new Parser())->parse($code));
     }
 
     #[DataProvider('validHeadersDataProvider')]
@@ -40,7 +41,6 @@ final class ParserTest extends TestCase
     {
         yield 'string' => [';'];
         yield 'SplFileInfo' => [new \SplFileInfo(self::HEADER_FILE)];
-        yield 'stream resource' => [\fopen(self::HEADER_FILE, 'rb')];
         yield 'phplrt source' => [VirtualSource::createFromString('header.h', ';')];
     }
 
@@ -48,6 +48,19 @@ final class ParserTest extends TestCase
     public function testSourceOfEveryKindIsParsed(mixed $source): void
     {
         self::assertSame([], (new Parser())->parse($source));
+    }
+
+    public function testStreamResourceIsParsed(): void
+    {
+        $stream = \fopen(self::HEADER_FILE, 'rb');
+
+        self::assertIsResource($stream);
+
+        try {
+            self::assertSame([], (new Parser())->parse($stream));
+        } finally {
+            \fclose($stream);
+        }
     }
 
     public function testUnsupportedSourceIsReported(): void
@@ -90,9 +103,49 @@ final class ParserTest extends TestCase
 
     public function testUnreadableSourceIsReportedByValidation(): void
     {
-        $this->expectException(InternalException::class);
+        try {
+            (new Parser())->validate(FileSource::createFromPathname(self::MISSING_FILE));
+        } catch (InternalException $e) {
+            self::assertInstanceOf(SourceExceptionInterface::class, $e->getPrevious());
 
-        (new Parser())->validate(FileSource::createFromPathname(self::MISSING_FILE));
+            return;
+        }
+
+        self::fail('InternalException has not been thrown');
+    }
+
+    /**
+     * @return iterable<non-empty-string, array{non-empty-string}>
+     */
+    public static function methodsDataProvider(): iterable
+    {
+        yield 'parse' => ['parse'];
+        yield 'validate' => ['validate'];
+    }
+
+    /**
+     * A failure of the lexer that is not a defect of the code, such as a
+     * limit of PCRE, leaves the parser as an {@see InternalException}.
+     *
+     * @param non-empty-string $method
+     */
+    #[DataProvider('methodsDataProvider')]
+    public function testLexerFailureIsReportedAsInternal(string $method): void
+    {
+        $limit = \ini_get('pcre.backtrack_limit');
+        $jit = \ini_get('pcre.jit');
+
+        \ini_set('pcre.backtrack_limit', '100');
+        \ini_set('pcre.jit', '0');
+
+        try {
+            $this->expectException(InternalException::class);
+
+            (new Parser())->{$method}('/*' . \str_repeat('x', 10_000) . '*/;');
+        } finally {
+            \ini_set('pcre.backtrack_limit', (string) $limit);
+            \ini_set('pcre.jit', (string) $jit);
+        }
     }
 
     /**

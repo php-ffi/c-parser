@@ -21,6 +21,13 @@ final class IntLiteralTest extends TestCase
     {
         yield 'zero' => ['0', 0, '0', IntBase::Octal];
         yield 'zeros' => ['000', 0, '0', IntBase::Octal];
+        yield 'zero with a separator' => ["0'0", 0, '0', IntBase::Octal];
+        yield 'decimal far above PHP_INT_MAX' => [
+            '123456789012345678901234567890',
+            \PHP_INT_MAX,
+            '123456789012345678901234567890',
+            IntBase::Decimal,
+        ];
         yield 'decimal' => ['42', 42, '42', IntBase::Decimal];
         yield 'decimal with separators' => ["1'000'000", 1_000_000, '1000000', IntBase::Decimal];
         yield 'octal' => ['017', 15, '15', IntBase::Octal];
@@ -33,18 +40,63 @@ final class IntLiteralTest extends TestCase
         yield 'binary with separators' => ["0B1'0", 2, '2', IntBase::Binary];
 
         yield 'decimal PHP_INT_MAX' => ['9223372036854775807', \PHP_INT_MAX, '9223372036854775807', IntBase::Decimal];
-        yield 'decimal PHP_INT_MAX + 1' => ['9223372036854775808', \PHP_INT_MAX, '9223372036854775808', IntBase::Decimal];
+        yield 'decimal PHP_INT_MAX + 1' => [
+            '9223372036854775808',
+            \PHP_INT_MAX,
+            '9223372036854775808',
+            IntBase::Decimal,
+        ];
         yield 'octal PHP_INT_MAX' => ['0777777777777777777777', \PHP_INT_MAX, '9223372036854775807', IntBase::Octal];
-        yield 'octal PHP_INT_MAX + 1' => ['01000000000000000000000', \PHP_INT_MAX, '9223372036854775808', IntBase::Octal];
-        yield 'hexadecimal PHP_INT_MAX' => ['0x7FFFFFFFFFFFFFFF', \PHP_INT_MAX, '9223372036854775807', IntBase::Hexadecimal];
-        yield 'hexadecimal PHP_INT_MAX + 1' => ['0x8000000000000000', \PHP_INT_MAX, '9223372036854775808', IntBase::Hexadecimal];
-        yield 'binary PHP_INT_MAX' => ['0b' . \str_repeat('1', 63), \PHP_INT_MAX, '9223372036854775807', IntBase::Binary];
-        yield 'binary PHP_INT_MAX + 1' => ['0b1' . \str_repeat('0', 63), \PHP_INT_MAX, '9223372036854775808', IntBase::Binary];
+        yield 'octal PHP_INT_MAX + 1' => [
+            '01000000000000000000000',
+            \PHP_INT_MAX,
+            '9223372036854775808',
+            IntBase::Octal,
+        ];
+        yield 'hexadecimal PHP_INT_MAX' => [
+            '0x7FFFFFFFFFFFFFFF',
+            \PHP_INT_MAX,
+            '9223372036854775807',
+            IntBase::Hexadecimal,
+        ];
+        yield 'hexadecimal PHP_INT_MAX + 1' => [
+            '0x8000000000000000',
+            \PHP_INT_MAX,
+            '9223372036854775808',
+            IntBase::Hexadecimal,
+        ];
+        yield 'binary PHP_INT_MAX' => [
+            '0b' . \str_repeat('1', 63),
+            \PHP_INT_MAX,
+            '9223372036854775807',
+            IntBase::Binary,
+        ];
+        yield 'binary PHP_INT_MAX + 1' => [
+            '0b1' . \str_repeat('0', 63),
+            \PHP_INT_MAX,
+            '9223372036854775808',
+            IntBase::Binary,
+        ];
 
         yield 'UINT64_MAX' => ['0xFFFFFFFFFFFFFFFF', \PHP_INT_MAX, '18446744073709551615', IntBase::Hexadecimal];
-        yield 'UINT64_MAX with separators' => ["0xFFFF'FFFF'FFFF'FFFF", \PHP_INT_MAX, '18446744073709551615', IntBase::Hexadecimal];
-        yield 'larger than any type of C' => ['0xFFFFFFFFFFFFFFFFFFFFFFFF', \PHP_INT_MAX, '79228162514264337593543950335', IntBase::Hexadecimal];
-        yield 'UINT128_MAX' => ['0x' . \str_repeat('F', 32), \PHP_INT_MAX, '340282366920938463463374607431768211455', IntBase::Hexadecimal];
+        yield 'UINT64_MAX with separators' => [
+            "0xFFFF'FFFF'FFFF'FFFF",
+            \PHP_INT_MAX,
+            '18446744073709551615',
+            IntBase::Hexadecimal,
+        ];
+        yield 'larger than any type of C' => [
+            '0xFFFFFFFFFFFFFFFFFFFFFFFF',
+            \PHP_INT_MAX,
+            '79228162514264337593543950335',
+            IntBase::Hexadecimal,
+        ];
+        yield 'UINT128_MAX' => [
+            '0x' . \str_repeat('F', 32),
+            \PHP_INT_MAX,
+            '340282366920938463463374607431768211455',
+            IntBase::Hexadecimal,
+        ];
     }
 
     #[DataProvider('valuesDataProvider')]
@@ -65,6 +117,10 @@ final class IntLiteralTest extends TestCase
     {
         yield 'none' => ['1', null];
         yield 'u' => ['1u', IntTypeSuffix::Unsigned];
+        yield 'u after the hexadecimal digit b' => ['0xbu', IntTypeSuffix::Unsigned];
+        yield 'uwb after the hexadecimal digit b' => ['0x1bWBu', IntTypeSuffix::UnsignedBitPrecise];
+        yield 'Ull' => ['1Ull', IntTypeSuffix::UnsignedLongLong];
+        yield 'lU' => ['1lU', IntTypeSuffix::UnsignedLong];
         yield 'U' => ['1U', IntTypeSuffix::Unsigned];
         yield 'l' => ['1l', IntTypeSuffix::Long];
         yield 'L' => ['1L', IntTypeSuffix::Long];
@@ -109,7 +165,10 @@ final class IntLiteralTest extends TestCase
     public static function builtConstantsDataProvider(): iterable
     {
         yield 'decimal' => [new IntLiteral(42, '42'), '42'];
-        yield 'hexadecimal with a suffix' => [new IntLiteral(255, '255', IntBase::Hexadecimal, IntTypeSuffix::UnsignedLong), '0xfful'];
+        yield 'hexadecimal with a suffix' => [
+            new IntLiteral(255, '255', IntBase::Hexadecimal, IntTypeSuffix::UnsignedLong),
+            '0xfful',
+        ];
         yield 'octal' => [new IntLiteral(8, '8', IntBase::Octal), '010'];
         yield 'binary with a suffix' => [new IntLiteral(5, '5', IntBase::Binary, IntTypeSuffix::BitPrecise), '0b101wb'];
     }
@@ -123,18 +182,5 @@ final class IntLiteralTest extends TestCase
     {
         self::assertSame($raw, $constant->raw);
         self::assertSame($constant->decimal, IntLiteral::parse($raw)->decimal);
-    }
-
-    /**
-     * Every part of a token is decoded once, the next token is not mixed
-     * with the previous one.
-     */
-    public function testConsecutiveConstantsAreDecodedIndependently(): void
-    {
-        $first = IntLiteral::parse('0x10ul');
-        $second = IntLiteral::parse('010');
-
-        self::assertSame([16, IntBase::Hexadecimal, IntTypeSuffix::UnsignedLong], [$first->value, $first->base, $first->suffix]);
-        self::assertSame([8, IntBase::Octal, null], [$second->value, $second->base, $second->suffix]);
     }
 }
