@@ -16,12 +16,23 @@ use FFI\Parser\Node\Literal\IntLiteral\IntTypeSuffix;
 final class IntParserResult
 {
     public function __construct(
+        /**
+         * The value, saturated at {@see \PHP_INT_MAX}
+         */
         public readonly int $value,
         /**
+         * The exact value in decimal digits
+         *
          * @var numeric-string
          */
         public readonly string $decimal,
+        /**
+         * The base the digits are written in
+         */
         public readonly IntBase $base,
+        /**
+         * The type suffix or {@see null} in case of there is none
+         */
         public readonly ?IntTypeSuffix $suffix,
     ) {}
 }

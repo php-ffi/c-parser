@@ -12,7 +12,7 @@ use Phplrt\Contracts\Source\ReadableInterface;
  */
 abstract class ParseRuntimeException extends ParserException
 {
-    final public function __construct(
+    final protected function __construct(
         string $message,
         /**
          * The source the failure occurred in

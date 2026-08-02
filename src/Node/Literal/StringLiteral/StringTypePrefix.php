@@ -32,4 +32,20 @@ enum StringTypePrefix: string
      * `L`: the `wchar_t` type.
      */
     case Wide = 'L';
+
+    /**
+     * Returns the largest value of a code unit of the character type, the
+     * limit of an octal or a hexadecimal escape sequence. The size of
+     * `wchar_t` is up to the implementation, so the larger one is taken.
+     *
+     * @return int<255, 4294967295>
+     */
+    public function getMaxCodeUnit(): int
+    {
+        return match ($this) {
+            self::Utf8 => 0xFF,
+            self::Utf16 => 0xFFFF,
+            self::Utf32, self::Wide => 0xFFFF_FFFF,
+        };
+    }
 }

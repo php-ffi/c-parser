@@ -16,9 +16,11 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
  * - An octal or hexadecimal escape (`\101`, `\x41`) becomes a single byte
  *   in an unprefixed or `u8` literal and the UTF-8 encoding of the code
  *   point in a wide one (`L`, `u`, `U`).
- * - A value that does not fit (a byte above `0xFF`, a code point above
- *   `0x10FFFF`) becomes U+FFFD, the exact text is kept by the raw text
- *   of the literal.
+ * - A value that does not fit (a code unit above the limit of the
+ *   character type, a code point above `0x10FFFF` or a surrogate) becomes
+ *   U+FFFD, the exact text is kept by the raw text of the literal. So do
+ *   both halves of a surrogate pair written as two escapes in a `u`
+ *   literal.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
@@ -34,7 +36,8 @@ final class StringParser
      *
      * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
      */
-    private const ESCAPE_PATTERN = '/\\\\(?:([\'"?\\\\abfnrtv])|([0-7]{1,3})|x([0-9A-Fa-f]++)|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8}))/';
+    private const ESCAPE_PATTERN = '/\\\\(?:([\'"?\\\\abfnrtv])|([0-7]{1,3})|x([0-9A-Fa-f]++)'
+        . '|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8}))/';
 
     /**
      * Characters of the simple escape sequences, indexed by the character
@@ -62,7 +65,19 @@ final class StringParser
     private const MAX_CODE_POINT = 0x10_FFFF;
 
     /**
-     * The largest byte.
+     * The first of the surrogates, the halves of a UTF-16 pair, which are
+     * not characters and have no UTF-8 encoding.
+     */
+    private const MIN_SURROGATE = 0xD800;
+
+    /**
+     * The last of the surrogates.
+     */
+    private const MAX_SURROGATE = 0xDFFF;
+
+    /**
+     * The largest byte, the limit of an escape sequence in an unprefixed
+     * literal.
      */
     private const MAX_BYTE = 0xFF;
 
@@ -97,11 +112,9 @@ final class StringParser
             return $body;
         }
 
-        $isWide = $prefix !== null && $prefix !== StringTypePrefix::Utf8;
-
         $result = \preg_replace_callback(
             self::ESCAPE_PATTERN,
-            static fn(array $matches): string => self::decodeEscapeSequence($matches, $isWide),
+            static fn(array $matches): string => self::decodeEscapeSequence($matches, $prefix),
             $body,
         );
 
@@ -113,18 +126,18 @@ final class StringParser
     /**
      * @param array<array-key, string> $matches
      */
-    private static function decodeEscapeSequence(array $matches, bool $isWide): string
+    private static function decodeEscapeSequence(array $matches, ?StringTypePrefix $prefix): string
     {
         if (($matches[1] ?? '') !== '') {
             return self::SIMPLE_ESCAPES[$matches[1]];
         }
 
         if (($matches[2] ?? '') !== '') {
-            return self::encodeCodeUnit((int) \octdec($matches[2]), $isWide);
+            return self::encodeCodeUnit((int) \octdec($matches[2]), $prefix);
         }
 
         if (($matches[3] ?? '') !== '') {
-            return self::encodeCodeUnit(self::parseHexadecimal($matches[3]), $isWide);
+            return self::encodeCodeUnit(self::parseHexadecimal($matches[3]), $prefix);
         }
 
         $codePoint = ($matches[4] ?? '') !== '' ? $matches[4] : ($matches[5] ?? '');
@@ -133,47 +146,50 @@ final class StringParser
     }
 
     /**
-     * @return int<-1, max> the value or -1 in case of it does not fit in a
-     *         code point at all
+     * @return int|null {@see null} in case of the value does not fit
+     *         in a native integer, which is out of range of any character
+     *         type anyway
      */
-    private static function parseHexadecimal(string $digits): int
+    private static function parseHexadecimal(string $digits): ?int
     {
-        $digits = \ltrim($digits, '0');
+        $value = \hexdec($digits);
 
-        // Eight digits always fit in a native integer, a longer escape is
-        // out of range of any character type anyway.
-        if (\strlen($digits) > 8) {
-            return -1;
-        }
-
-        return \max(0, (int) \hexdec($digits === '' ? '0' : $digits));
+        return \is_int($value) ? $value : null;
     }
 
-    private static function encodeCodeUnit(int $value, bool $isWide): string
+    /**
+     * Encodes the value of an octal or a hexadecimal escape sequence, which
+     * is a code unit of the character type of the literal: a byte in an
+     * unprefixed or `u8` literal and a code point in a wide one.
+     */
+    private static function encodeCodeUnit(?int $value, ?StringTypePrefix $prefix): string
     {
-        if ($isWide) {
-            return self::encodeCodePoint($value);
-        }
+        $max = $prefix?->getMaxCodeUnit() ?? self::MAX_BYTE;
 
-        if ($value < 0 || $value > self::MAX_BYTE) {
+        if ($value === null || $value > $max) {
             return self::REPLACEMENT;
         }
 
-        return \chr($value);
+        if ($max === self::MAX_BYTE) {
+            return \chr($value);
+        }
+
+        return self::encodeCodePoint($value);
     }
 
-    private static function encodeCodePoint(int $value): string
+    private static function encodeCodePoint(?int $value): string
     {
-        if ($value < 0 || $value > self::MAX_CODE_POINT) {
+        if ($value === null
+            || $value > self::MAX_CODE_POINT
+            || ($value >= self::MIN_SURROGATE && $value <= self::MAX_SURROGATE)
+        ) {
             return self::REPLACEMENT;
         }
 
-        // The extension is not a dependency, and it refuses surrogates
-        // (U+D800 to U+DFFF), which are then encoded by hand as well.
-        // PHPStan stubs mb_chr() as never returning false, which it does.
-        // @phpstan-ignore-next-line
-        if (\function_exists('mb_chr') && ($result = \mb_chr($value, 'UTF-8')) !== false) {
-            return $result;
+        // The extension is not a dependency, the encoding below is the
+        // fallback without it
+        if (\function_exists('mb_chr')) {
+            return \mb_chr($value, 'UTF-8');
         }
 
         return match (true) {

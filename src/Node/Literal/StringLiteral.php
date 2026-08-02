@@ -15,7 +15,8 @@ use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 final class StringLiteral extends Literal
 {
     /**
-     * @param non-empty-string|null $raw the value exactly as written
+     * @param non-empty-string|null $raw the literal exactly as written, {@see null}
+     *        to spell it out of the value
      * @param int<0, max> $offset
      */
     public function __construct(

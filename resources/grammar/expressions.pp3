@@ -1,0 +1,454 @@
+//
+// Constant expressions, 6.5 and 6.6.
+//
+// A constant expression may not contain an assignment, an increment, a
+// decrement, a function call or a comma outside of an operand that is not
+// evaluated (6.6p3). The function call is left out, so that "(T)(x)" is always
+// a cast. The assignment, the increment and the decrement are left out, since
+// headers do not use them. The comma is kept, since it is a part of every
+// parenthesized expression of C. _Generic (6.5.2.1) is not supported yet.
+//
+// A node starts where its rule does ($offset), so a parenthesized operand
+// keeps its "(" as a token: the parentheses belong to no node, but the node
+// that contains them starts at them.
+//
+
+// 6.5.18 Comma operator, only allowed in parentheses, in a subscript and
+// between "?" and ":"
+Expression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\CommaExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : ConditionalExpression() (
+        ::T_COMMA:: ConditionalExpression()
+    )*
+  ;
+
+// 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
+// a ? b : (c ? d : e)
+ConditionalExpression -> {
+    /**
+     * @var array{Expression\Expression}|array{
+     *     Expression\Expression,
+     *     Expression\Expression,
+     *     Expression\Expression
+     * } $children
+     */
+    if (\count($children) === 1) {
+        return $children[0];
+    }
+
+    return new Expression\ConditionalExpression($children[0], $children[1], $children[2], $offset);
+}
+  : LogicalOrExpression() (
+        ::T_QUESTION:: Expression()
+        ::T_COLON:: ConditionalExpression()
+    )?
+  ;
+
+// Binary operators, one rule per level of precedence from the loosest to the
+// tightest. Every level is left-associative: a - b - c is (a - b) - c.
+
+// 6.5.15 Logical OR operator, a || b
+LogicalOrExpression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\LogicalOrExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : LogicalAndExpression() (
+        ::T_LOGICAL_OR:: LogicalAndExpression()
+    )*
+  ;
+
+// 6.5.14 Logical AND operator, a && b
+LogicalAndExpression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\LogicalAndExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : BitwiseOrExpression() (
+        ::T_LOGICAL_AND:: BitwiseOrExpression()
+    )*
+  ;
+
+// 6.5.13 Bitwise inclusive OR operator, a | b
+BitwiseOrExpression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\BitwiseOrExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : BitwiseXorExpression() (
+        ::T_PIPE:: BitwiseXorExpression()
+    )*
+  ;
+
+// 6.5.12 Bitwise exclusive OR operator, a ^ b
+BitwiseXorExpression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\BitwiseXorExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : BitwiseAndExpression() (
+        ::T_CARET:: BitwiseAndExpression()
+    )*
+  ;
+
+// 6.5.11 Bitwise AND operator, a & b
+BitwiseAndExpression -> {
+    /** @var non-empty-list<Expression\Expression> $children */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = new BinaryExpression\BitwiseAndExpression($result, $children[$i], $offset);
+    }
+
+    return $result;
+}
+  : EqualityExpression() (
+        ::T_AMPERSAND:: EqualityExpression()
+    )*
+  ;
+
+// 6.5.10 Equality operators, a == b and a != b
+EqualityExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_EQUAL => new BinaryExpression\EqualExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_NOT_EQUAL => new BinaryExpression\NotEqualExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : RelationalExpression() (
+        (<T_EQUAL> | <T_NOT_EQUAL>) RelationalExpression()
+    )*
+  ;
+
+// 6.5.9 Relational operators, a < b, a > b, a <= b and a >= b
+RelationalExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_LESS => new BinaryExpression\LessExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_GREATER => new BinaryExpression\GreaterExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_LESS_EQUAL => new BinaryExpression\LessOrEqualExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_GREATER_EQUAL => new BinaryExpression\GreaterOrEqualExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : ShiftExpression() (
+        (<T_LESS> | <T_GREATER> | <T_LESS_EQUAL> | <T_GREATER_EQUAL>) ShiftExpression()
+    )*
+  ;
+
+// 6.5.8 Bitwise shift operators, a << b and a >> b
+ShiftExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_SHL => new BinaryExpression\ShlExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_SHR => new BinaryExpression\ShrExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : AdditiveExpression() (
+        (<T_SHL> | <T_SHR>) AdditiveExpression()
+    )*
+  ;
+
+// 6.5.7 Additive operators, a + b and a - b
+AdditiveExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_PLUS => new BinaryExpression\AddExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_MINUS => new BinaryExpression\SubExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : MultiplicativeExpression() (
+        (<T_PLUS> | <T_MINUS>) MultiplicativeExpression()
+    )*
+  ;
+
+// 6.5.6 Multiplicative operators, a * b, a / b and a % b
+MultiplicativeExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_ASTERISK => new BinaryExpression\MulExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_SLASH => new BinaryExpression\DivExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_PERCENT => new BinaryExpression\ModExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : CastOperand() (
+        (<T_ASTERISK> | <T_SLASH> | <T_PERCENT>) CastOperand()
+    )*
+  ;
+
+CastOperand
+  : CastExpression()
+  | UnaryExpression()
+  ;
+
+// 6.5.5 Cast operators, (T)x. Without a table of the declared names "(T)" is
+// a cast only when the next token can start an operand but cannot continue a
+// parenthesized expression (CastOperandStart), so "(T)-x" is a subtraction
+// and "(x)[0]" is a subscript.
+CastExpression -> {
+    /** @var array{TokenInterface, Type\NamedType, Expression\Expression} $children */
+    return new Expression\CastExpression($children[1], $children[2], $offset);
+}
+  : <T_LPAREN> TypeName() ::T_RPAREN:: &CastOperandStart() CastOperand()
+  ;
+
+CastOperandStart
+  : <T_IDENTIFIER> | <T_LPAREN>
+  | <T_INT_LITERAL> | <T_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
+  | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF>
+  ;
+
+// 6.5.4 Unary operators
+UnaryExpression
+  : PlusExpression()
+  | MinusExpression()
+  | LogicalNotExpression()
+  | BitwiseNotExpression()
+  | DereferenceExpression()
+  | AddressOfExpression()
+  | SizeofTypeExpression()
+  | SizeofExpression()
+  | AlignofExpression()
+  | PostfixExpression()
+  ;
+
+// +x
+PlusExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\PlusExpression($children[1], $offset);
+}
+  : <T_PLUS> CastOperand()
+  ;
+
+// -x
+MinusExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\MinusExpression($children[1], $offset);
+}
+  : <T_MINUS> CastOperand()
+  ;
+
+// !x
+LogicalNotExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\LogicalNotExpression($children[1], $offset);
+}
+  : <T_EXCLAMATION> CastOperand()
+  ;
+
+// ~x
+BitwiseNotExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
+}
+  : <T_TILDE> CastOperand()
+  ;
+
+// *p
+DereferenceExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\DereferenceExpression($children[1], $offset);
+}
+  : <T_ASTERISK> CastOperand()
+  ;
+
+// &x
+AddressOfExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new UnaryExpression\AddressOfExpression($children[1], $offset);
+}
+  : <T_AMPERSAND> CastOperand()
+  ;
+
+// 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
+// parentheses is read as a type unless a postfix operator follows it:
+// sizeof(x)[0] is sizeof((x)[0]).
+SizeofTypeExpression -> {
+    /** @var array{TokenInterface, Type\NamedType} $children */
+    return new Expression\SizeofTypeExpression($children[1], $offset);
+}
+  : <T_SIZEOF> ::T_LPAREN:: TypeName() ::T_RPAREN:: !PostfixOperatorStart()
+  ;
+
+// 6.5.4.4 The sizeof and alignof operators, sizeof x
+SizeofExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new Expression\SizeofExpression($children[1], $offset);
+}
+  : <T_SIZEOF> UnaryExpression()
+  ;
+
+// 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled _Alignof
+AlignofExpression -> {
+    /** @var array{TokenInterface, Type\NamedType} $children */
+    return new Expression\AlignofExpression($children[1], $offset);
+}
+  : <T_ALIGNOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  ;
+
+// 6.5.3 Postfix operators, a[i], s.member, p->member
+PostfixExpression -> {
+    /**
+     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var Expression\Expression $result
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+        $result = match ($children[$i]->id) {
+            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+            self::T_LBRACKET => new Expression\SubscriptExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line a dot is followed by an identifier, a list type cannot express it
+            self::T_DOT => new MemberExpression\DirectMemberExpression($result, $children[$i + 1], $offset),
+            // @phpstan-ignore-next-line an arrow is followed by an identifier, a list type cannot express it
+            self::T_ARROW => new MemberExpression\PointerMemberExpression($result, $children[$i + 1], $offset),
+        };
+    }
+
+    return $result;
+}
+  : PrimaryExpression() (
+        <T_LBRACKET> Expression() ::T_RBRACKET::
+      | (<T_DOT> | <T_ARROW>) Identifier()
+    )*
+  ;
+
+PostfixOperatorStart
+  : <T_LBRACKET> | <T_DOT> | <T_ARROW>
+  ;
+
+// 6.5.2 Primary expressions
+PrimaryExpression
+  : IdentifierExpression()
+  | Constant()
+  | StringLiteral()
+  | ParenthesizedExpression()
+  ;
+
+// The "(" is kept as a token, so that the node containing the parenthesized
+// operand starts at it
+ParenthesizedExpression -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return $children[1];
+}
+  : <T_LPAREN> Expression() ::T_RPAREN::
+  ;
+
+IdentifierExpression -> {
+    /** @var array{Node\Identifier} $children */
+    return new Expression\IdentifierExpression($children[0], $offset);
+}
+  : Identifier()
+  ;
+
+// A name by itself, not an expression: it is also the member of a member
+// access
+Identifier -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Node\Identifier($children->value, $offset);
+}
+  : <T_IDENTIFIER>
+  ;
+
+// A type in a cast, sizeof and alignof is referred to by a name, the parser
+// has no table of the declared names to tell what kind of type it is
+TypeName -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Type\NamedType($children->value, $offset);
+}
+  : <T_IDENTIFIER>
+  ;

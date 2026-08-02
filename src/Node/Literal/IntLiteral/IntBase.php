@@ -7,7 +7,7 @@ namespace FFI\Parser\Node\Literal\IntLiteral;
 /**
  * Base of an integer constant. It matters beyond the value: a decimal
  * constant without a suffix never gets an unsigned type, while the other
- * ones do.
+ * ones may.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.2 Integer constants
  */

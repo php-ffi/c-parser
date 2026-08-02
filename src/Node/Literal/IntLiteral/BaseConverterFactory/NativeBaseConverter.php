@@ -24,9 +24,12 @@ final class NativeBaseConverter implements BaseConverterInterface
      *
      * @var int<1, max>
      */
-    private const LIMB_DIGITS = \PHP_INT_SIZE >= 8 ? 9 : 4;
+    private const LIMB_DIGITS = \PHP_INT_SIZE >= 8 ? 17 : 7;
 
     /**
+     * The value a limb wraps at, the limbs are digits of a number in this
+     * base.
+     *
      * @var int<1, max>
      */
     private const LIMB_BASE = 10 ** self::LIMB_DIGITS;
@@ -38,21 +41,15 @@ final class NativeBaseConverter implements BaseConverterInterface
 
     public function toDecimal(string $digits, int $base): string
     {
-        $digits = \ltrim($digits, '0');
-
-        if (\strlen($digits) <= self::getMaxSafeDigits($base)) {
-            return (string) \intval($digits, $base);
-        }
-
         $limbs = [0];
 
-        foreach (\str_split($digits) as $digit) {
-            $carry = \intval($digit, 36);
+        for ($i = 0, $length = \strlen($digits); $i < $length; ++$i) {
+            $carry = \intval($digits[$i], 36);
 
-            foreach ($limbs as $i => $limb) {
-                $value = $limb * $base + $carry;
+            for ($j = 0, $count = \count($limbs); $j < $count; ++$j) {
+                $value = $limbs[$j] * $base + $carry;
 
-                $limbs[$i] = $value % self::LIMB_BASE;
+                $limbs[$j] = $value % self::LIMB_BASE;
                 $carry = \intdiv($value, self::LIMB_BASE);
             }
 
@@ -61,26 +58,15 @@ final class NativeBaseConverter implements BaseConverterInterface
             }
         }
 
-        $result = (string) \array_pop($limbs);
+        $last = \count($limbs) - 1;
+        $result = (string) $limbs[$last];
 
-        foreach (\array_reverse($limbs) as $limb) {
-            $result .= \str_pad((string) $limb, self::LIMB_DIGITS, '0', \STR_PAD_LEFT);
+        for ($i = $last - 1; $i >= 0; --$i) {
+            $result .= \str_pad((string) $limbs[$i], self::LIMB_DIGITS, '0', \STR_PAD_LEFT);
         }
 
         \assert(\is_numeric($result));
 
         return $result;
-    }
-
-    /**
-     * Returns the number of digits in the given base that always fit in a
-     * PHP integer.
-     *
-     * @param int<2, 36> $base
-     * @return int<0, max>
-     */
-    private static function getMaxSafeDigits(int $base): int
-    {
-        return \max(0, (int) \floor(\log(\PHP_INT_MAX, $base)));
     }
 }

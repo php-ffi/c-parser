@@ -15,7 +15,14 @@ use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
 final class FloatParserResult
 {
     public function __construct(
+        /**
+         * The value rounded to a double, {@see \INF} in case of it is too
+         * large for one
+         */
         public readonly float $value,
+        /**
+         * The type suffix or {@see null} in case of there is none
+         */
         public readonly ?FloatTypeSuffix $suffix,
     ) {}
 }

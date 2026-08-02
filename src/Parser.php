@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace FFI\Parser;
 
 use FFI\Parser\Exception\InternalException;
-use FFI\Parser\Exception\ParserException;
 use FFI\Parser\Exception\SyntaxException;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Parser\ParserExecutor;
+use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
 use Phplrt\Lexer\Exception\LexerSourceException;
-use Phplrt\Parser\Exception\ParserSourceException;
 use Phplrt\Parser\Exception\UnexpectedTokenException;
 use Phplrt\Source\SourceFactory;
 
@@ -48,8 +47,9 @@ final class Parser
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
      * @return list<Node> external declarations in the order they are
      *         written, empty declarations (a lone `;`) are not listed
-     * @throws ParserException in case of the header cannot be read or is not
-     *         syntactically valid
+     * @throws InternalException in case of the header cannot be read or the
+     *         lexer fails on it
+     * @throws SyntaxException in case of the header is not syntactically valid
      */
     public function parse(mixed $source): array
     {
@@ -57,13 +57,14 @@ final class Parser
 
         try {
             return $this->parser->parse($source);
-            // The source is read by the lexer, which reports an unreadable one
-            // by its own exception, not declared by the contract of parse().
-            // @phpstan-ignore-next-line
-        } catch (LexerSourceException|ParserSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (UnexpectedTokenException $e) {
             throw SyntaxException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
+            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
+        } catch (LexerSourceException $e) {
+            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
+        } catch (LexerRuntimeExceptionInterface $e) {
+            throw InternalException::becauseSourceCannotBeAnalyzed($e);
         }
     }
 
@@ -73,7 +74,8 @@ final class Parser
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
-     * @throws InternalException in case of the header cannot be read
+     * @throws InternalException in case of the header cannot be read or the
+     *         lexer fails on it
      */
     public function validate(mixed $source): bool
     {
@@ -83,6 +85,8 @@ final class Parser
             return $this->parser->validate($source);
         } catch (LexerSourceException $e) {
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+        } catch (LexerRuntimeExceptionInterface $e) {
+            throw InternalException::becauseSourceCannotBeAnalyzed($e);
         }
     }
 

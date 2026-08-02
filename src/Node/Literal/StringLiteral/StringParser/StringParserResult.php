@@ -16,7 +16,14 @@ use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 final class StringParserResult
 {
     public function __construct(
+        /**
+         * The characters between the quotes with the escape sequences
+         * expanded
+         */
         public readonly string $value,
+        /**
+         * The encoding prefix or {@see null} in case of there is none
+         */
         public readonly ?StringTypePrefix $prefix,
     ) {}
 }

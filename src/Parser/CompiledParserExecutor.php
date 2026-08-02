@@ -8,6 +8,16 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Parser;
 
+use FFI\Parser\Node;
+use FFI\Parser\Node\Declaration;
+use FFI\Parser\Node\Expression;
+use FFI\Parser\Node\Expression\BinaryExpression;
+use FFI\Parser\Node\Expression\MemberExpression;
+use FFI\Parser\Node\Expression\UnaryExpression;
+use FFI\Parser\Node\Literal;
+use FFI\Parser\Node\Type;
+use Phplrt\Contracts\Lexer\TokenInterface;
+
 \interface_exists(\Phplrt\Contracts\Source\Exception\SourceExceptionInterface::class);
 \interface_exists(\Phplrt\Contracts\Source\ReadableInterface::class);
 \interface_exists(\Phplrt\Contracts\Source\FileInterface::class);
@@ -34,205 +44,208 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     /** @var int */
     public const T_DIRECTIVE = 0;
     /** @var int */
-    public const T_COMMENT_LINE = 1;
+    public const T_BYTE_ORDER_MARK = 1;
     /** @var int */
-    public const T_COMMENT_BLOCK = 2;
+    public const T_COMMENT_LINE = 2;
     /** @var int */
-    public const T_NEWLINE = 3;
+    public const T_COMMENT_BLOCK = 3;
     /** @var int */
-    public const T_WHITESPACE = 4;
+    public const T_NEWLINE = 4;
     /** @var int */
-    public const T_FLOAT_LITERAL = 5;
+    public const T_WHITESPACE = 5;
     /** @var int */
-    public const T_INT_LITERAL = 6;
+    public const T_FLOAT_LITERAL = 6;
     /** @var int */
-    public const T_CHAR_LITERAL = 7;
+    public const T_INT_LITERAL = 7;
     /** @var int */
-    public const T_STRING_LITERAL = 8;
+    public const T_CHAR_LITERAL = 8;
     /** @var int */
-    public const T_ALIGNAS = 9;
+    public const T_STRING_LITERAL = 9;
     /** @var int */
-    public const T_ALIGNOF = 10;
+    public const T_ALIGNAS = 10;
     /** @var int */
-    public const T_AUTO = 11;
+    public const T_ALIGNOF = 11;
     /** @var int */
-    public const T_BOOL = 12;
+    public const T_AUTO = 12;
     /** @var int */
-    public const T_CHAR = 13;
+    public const T_BOOL = 13;
     /** @var int */
-    public const T_CONST = 14;
+    public const T_CHAR = 14;
     /** @var int */
-    public const T_CONSTEXPR = 15;
+    public const T_CONST = 15;
     /** @var int */
-    public const T_DOUBLE = 16;
+    public const T_CONSTEXPR = 16;
     /** @var int */
-    public const T_ENUM = 17;
+    public const T_DOUBLE = 17;
     /** @var int */
-    public const T_EXTERN = 18;
+    public const T_ENUM = 18;
     /** @var int */
-    public const T_FALSE = 19;
+    public const T_EXTERN = 19;
     /** @var int */
-    public const T_FLOAT = 20;
+    public const T_FALSE = 20;
     /** @var int */
-    public const T_INLINE = 21;
+    public const T_FLOAT = 21;
     /** @var int */
-    public const T_INT = 22;
+    public const T_INLINE = 22;
     /** @var int */
-    public const T_LONG = 23;
+    public const T_INT = 23;
     /** @var int */
-    public const T_NULLPTR = 24;
+    public const T_LONG = 24;
     /** @var int */
-    public const T_REGISTER = 25;
+    public const T_NULLPTR = 25;
     /** @var int */
-    public const T_RESTRICT = 26;
+    public const T_REGISTER = 26;
     /** @var int */
-    public const T_SHORT = 27;
+    public const T_RESTRICT = 27;
     /** @var int */
-    public const T_SIGNED = 28;
+    public const T_SHORT = 28;
     /** @var int */
-    public const T_SIZEOF = 29;
+    public const T_SIGNED = 29;
     /** @var int */
-    public const T_STATIC_ASSERT = 30;
+    public const T_SIZEOF = 30;
     /** @var int */
-    public const T_STATIC = 31;
+    public const T_STATIC_ASSERT = 31;
     /** @var int */
-    public const T_STRUCT = 32;
+    public const T_STATIC = 32;
     /** @var int */
-    public const T_THREAD_LOCAL = 33;
+    public const T_STRUCT = 33;
     /** @var int */
-    public const T_TRUE = 34;
+    public const T_THREAD_LOCAL = 34;
     /** @var int */
-    public const T_TYPEDEF = 35;
+    public const T_TRUE = 35;
     /** @var int */
-    public const T_TYPEOF_UNQUAL = 36;
+    public const T_TYPEDEF = 36;
     /** @var int */
-    public const T_TYPEOF = 37;
+    public const T_TYPEOF_UNQUAL = 37;
     /** @var int */
-    public const T_UNION = 38;
+    public const T_TYPEOF = 38;
     /** @var int */
-    public const T_UNSIGNED = 39;
+    public const T_UNION = 39;
     /** @var int */
-    public const T_VOID = 40;
+    public const T_UNSIGNED = 40;
     /** @var int */
-    public const T_VOLATILE = 41;
+    public const T_VOID = 41;
     /** @var int */
-    public const T_ATOMIC = 42;
+    public const T_VOLATILE = 42;
     /** @var int */
-    public const T_BITINT = 43;
+    public const T_ATOMIC = 43;
     /** @var int */
-    public const T_COMPLEX = 44;
+    public const T_BITINT = 44;
     /** @var int */
-    public const T_DECIMAL128 = 45;
+    public const T_COMPLEX = 45;
     /** @var int */
-    public const T_DECIMAL32 = 46;
+    public const T_DECIMAL128 = 46;
     /** @var int */
-    public const T_DECIMAL64 = 47;
+    public const T_DECIMAL32 = 47;
     /** @var int */
-    public const T_IMAGINARY = 48;
+    public const T_DECIMAL64 = 48;
     /** @var int */
-    public const T_NORETURN = 49;
+    public const T_IMAGINARY = 49;
     /** @var int */
-    public const T_RESERVED_KEYWORD = 50;
+    public const T_NORETURN = 50;
     /** @var int */
-    public const T_IDENTIFIER = 51;
+    public const T_RESERVED_KEYWORD = 51;
     /** @var int */
-    public const T_ELLIPSIS = 52;
+    public const T_IDENTIFIER = 52;
     /** @var int */
-    public const T_ARROW = 53;
+    public const T_ELLIPSIS = 53;
     /** @var int */
-    public const T_INCREMENT = 54;
+    public const T_ARROW = 54;
     /** @var int */
-    public const T_DECREMENT = 55;
+    public const T_INCREMENT = 55;
     /** @var int */
-    public const T_SHL_ASSIGN = 56;
+    public const T_DECREMENT = 56;
     /** @var int */
-    public const T_SHR_ASSIGN = 57;
+    public const T_SHL_ASSIGN = 57;
     /** @var int */
-    public const T_LBRACKET = 58;
+    public const T_SHR_ASSIGN = 58;
     /** @var int */
-    public const T_RBRACKET = 59;
+    public const T_LBRACKET = 59;
     /** @var int */
-    public const T_LBRACE = 60;
+    public const T_RBRACKET = 60;
     /** @var int */
-    public const T_RBRACE = 61;
+    public const T_LBRACE = 61;
     /** @var int */
-    public const T_SHL = 62;
+    public const T_RBRACE = 62;
     /** @var int */
-    public const T_SHR = 63;
+    public const T_SHL = 63;
     /** @var int */
-    public const T_LESS_EQUAL = 64;
+    public const T_SHR = 64;
     /** @var int */
-    public const T_GREATER_EQUAL = 65;
+    public const T_LESS_EQUAL = 65;
     /** @var int */
-    public const T_EQUAL = 66;
+    public const T_GREATER_EQUAL = 66;
     /** @var int */
-    public const T_NOT_EQUAL = 67;
+    public const T_EQUAL = 67;
     /** @var int */
-    public const T_LOGICAL_AND = 68;
+    public const T_NOT_EQUAL = 68;
     /** @var int */
-    public const T_LOGICAL_OR = 69;
+    public const T_LOGICAL_AND = 69;
     /** @var int */
-    public const T_MUL_ASSIGN = 70;
+    public const T_LOGICAL_OR = 70;
     /** @var int */
-    public const T_DIV_ASSIGN = 71;
+    public const T_MUL_ASSIGN = 71;
     /** @var int */
-    public const T_MOD_ASSIGN = 72;
+    public const T_DIV_ASSIGN = 72;
     /** @var int */
-    public const T_ADD_ASSIGN = 73;
+    public const T_MOD_ASSIGN = 73;
     /** @var int */
-    public const T_SUB_ASSIGN = 74;
+    public const T_ADD_ASSIGN = 74;
     /** @var int */
-    public const T_AND_ASSIGN = 75;
+    public const T_SUB_ASSIGN = 75;
     /** @var int */
-    public const T_XOR_ASSIGN = 76;
+    public const T_AND_ASSIGN = 76;
     /** @var int */
-    public const T_OR_ASSIGN = 77;
+    public const T_XOR_ASSIGN = 77;
     /** @var int */
-    public const T_DOUBLE_COLON = 78;
+    public const T_OR_ASSIGN = 78;
     /** @var int */
-    public const T_LPAREN = 79;
+    public const T_DOUBLE_COLON = 79;
     /** @var int */
-    public const T_RPAREN = 80;
+    public const T_LPAREN = 80;
     /** @var int */
-    public const T_DOT = 81;
+    public const T_RPAREN = 81;
     /** @var int */
-    public const T_AMPERSAND = 82;
+    public const T_DOT = 82;
     /** @var int */
-    public const T_ASTERISK = 83;
+    public const T_AMPERSAND = 83;
     /** @var int */
-    public const T_PLUS = 84;
+    public const T_ASTERISK = 84;
     /** @var int */
-    public const T_MINUS = 85;
+    public const T_PLUS = 85;
     /** @var int */
-    public const T_TILDE = 86;
+    public const T_MINUS = 86;
     /** @var int */
-    public const T_EXCLAMATION = 87;
+    public const T_TILDE = 87;
     /** @var int */
-    public const T_SLASH = 88;
+    public const T_EXCLAMATION = 88;
     /** @var int */
-    public const T_PERCENT = 89;
+    public const T_SLASH = 89;
     /** @var int */
-    public const T_LESS = 90;
+    public const T_PERCENT = 90;
     /** @var int */
-    public const T_GREATER = 91;
+    public const T_LESS = 91;
     /** @var int */
-    public const T_CARET = 92;
+    public const T_GREATER = 92;
     /** @var int */
-    public const T_PIPE = 93;
+    public const T_CARET = 93;
     /** @var int */
-    public const T_QUESTION = 94;
+    public const T_PIPE = 94;
     /** @var int */
-    public const T_COLON = 95;
+    public const T_QUESTION = 95;
     /** @var int */
-    public const T_SEMICOLON = 96;
+    public const T_COLON = 96;
     /** @var int */
-    public const T_ASSIGN = 97;
+    public const T_SEMICOLON = 97;
     /** @var int */
-    public const T_COMMA = 98;
+    public const T_ASSIGN = 98;
+    /** @var int */
+    public const T_COMMA = 99;
 
     /** @var array<int, non-empty-string> */
     private const PARSER_EXPECTATIONS = [
         'T_DIRECTIVE',
+        'T_BYTE_ORDER_MARK',
         'T_COMMENT_LINE',
         'T_COMMENT_BLOCK',
         'T_NEWLINE',
@@ -338,13 +351,1054 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     private const PARSER_KEPT_TABLE = [
         true,
         false,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
     ];
 
     /** @var array<int, array<int, true>|null> */
     private const PARSER_START_PREDICTION_TABLE = [
         null,
         [
+            31 => true,
+            97 => true,
+        ],
+        [
+            31 => true,
+        ],
+        [
+            31 => true,
+        ],
+        [
+            80 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            80 => true,
+        ],
+        [
+            80 => true,
+        ],
+        [
+            52 => true,
+        ],
+        [
+            81 => true,
+        ],
+        null,
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            87 => true,
+            true,
+        ],
+        [
+            52 => true,
+        ],
+        [
+            7 => true,
+        ],
+        [
+            6 => true,
+        ],
+        [
+            8 => true,
+        ],
+        [
+            9 => true,
+        ],
+        [
+            35 => true,
+        ],
+        [
+            20 => true,
+        ],
+        [
+            25 => true,
+        ],
+        [
+            87 => true,
+        ],
+        [
+            88 => true,
+        ],
+        [
+            30 => true,
+        ],
+        [
+            11 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        [
+            85 => true,
+        ],
+        [
+            85 => true,
+        ],
+        [
+            86 => true,
+        ],
+        [
+            86 => true,
+        ],
+        [
+            88 => true,
+        ],
+        [
+            87 => true,
+        ],
+        [
+            84 => true,
+        ],
+        [
+            84 => true,
+        ],
+        [
+            83 => true,
+        ],
+        [
+            83 => true,
+        ],
+        [
+            30 => true,
+        ],
+        null,
+        [
+            54 => true,
+            59 => true,
+            82 => true,
+        ],
+        [
+            59 => true,
+        ],
+        [
+            82 => true,
+        ],
+        [
+            54 => true,
+        ],
+        [
+            30 => true,
+        ],
+        [
+            11 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            20 => true,
+            25 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            20 => true,
+            25 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+        ],
+        [
+            52 => true,
+        ],
+        [
+            52 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            20 => true,
+            25 => true,
+            35 => true,
+        ],
+        [
+            7 => true,
+        ],
+        [
+            6 => true,
+        ],
+        [
+            8 => true,
+        ],
+        [
+            35 => true,
+        ],
+        [
+            20 => true,
+        ],
+        [
+            25 => true,
+        ],
+        [
+            9 => true,
+        ],
+        [
+            9 => true,
+        ],
+        [
+            80 => true,
+        ],
+        [
+            6 => true,
+            true,
+            true,
+            true,
+            11 => true,
+            20 => true,
+            25 => true,
+            30 => true,
+            35 => true,
+            52 => true,
+            80 => true,
+            83 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+        ],
+        null,
+        [
+            99 => true,
+        ],
+        [
+            99 => true,
+        ],
+        null,
+        [
+            54 => true,
+            59 => true,
+            82 => true,
+        ],
+        [
+            59 => true,
+        ],
+        [
+            60 => true,
+        ],
+        [
+            54 => true,
+            82 => true,
+        ],
+        [
+            54 => true,
+            82 => true,
+        ],
+        null,
+        [
+            84 => true,
+            89 => true,
+            true,
+        ],
+        [
+            84 => true,
+            89 => true,
+            true,
+        ],
+        [
+            89 => true,
+        ],
+        [
+            90 => true,
+        ],
+        null,
+        [
+            85 => true,
+            true,
+        ],
+        [
+            85 => true,
+            true,
+        ],
+        null,
+        [
+            63 => true,
+            true,
+        ],
+        [
+            63 => true,
+            true,
+        ],
+        [
+            63 => true,
+        ],
+        [
+            64 => true,
+        ],
+        null,
+        [
+            65 => true,
+            true,
+            91 => true,
+            true,
+        ],
+        [
+            65 => true,
+            true,
+            91 => true,
+            true,
+        ],
+        [
+            91 => true,
+        ],
+        [
+            92 => true,
+        ],
+        [
+            65 => true,
+        ],
+        [
+            66 => true,
+        ],
+        null,
+        [
+            67 => true,
+            true,
+        ],
+        [
+            67 => true,
+            true,
+        ],
+        [
+            67 => true,
+        ],
+        [
+            68 => true,
+        ],
+        null,
+        [
+            83 => true,
+        ],
+        [
+            83 => true,
+        ],
+        null,
+        [
+            93 => true,
+        ],
+        [
+            93 => true,
+        ],
+        null,
+        [
+            94 => true,
+        ],
+        [
+            94 => true,
+        ],
+        null,
+        [
+            69 => true,
+        ],
+        [
+            69 => true,
+        ],
+        null,
+        [
+            70 => true,
+        ],
+        [
+            70 => true,
+        ],
+        null,
+        [
+            95 => true,
+        ],
+        [
+            95 => true,
+        ],
+        [
             96 => true,
+        ],
+        null,
+        [
+            99 => true,
+        ],
+        [
+            97 => true,
+        ],
+    ];
+
+    /** @var array<int, array<int, list<int>>> */
+    private const PARSER_CHOICE_PREDICTION_TABLE = [
+        1 => [
+            31 => [
+                2,
+            ],
+            97 => [
+                -125,
+            ],
+        ],
+        16 => [
+            6 => [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+            11 => [
+                35,
+            ],
+            20 => [
+                35,
+            ],
+            25 => [
+                35,
+            ],
+            30 => [
+                35,
+            ],
+            35 => [
+                35,
+            ],
+            52 => [
+                35,
+            ],
+            83 => [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+            [
+                35,
+            ],
+        ],
+        22 => [
+            52 => [
+                -24,
+            ],
+            80 => [
+                -19,
+            ],
+            7 => [
+                -25,
+            ],
+            6 => [
+                -26,
+            ],
+            8 => [
+                -27,
+            ],
+            9 => [
+                -28,
+            ],
+            35 => [
+                -29,
+            ],
+            20 => [
+                -30,
+            ],
+            25 => [
+                -31,
+            ],
+            87 => [
+                -32,
+            ],
+            [
+                -33,
+            ],
+            30 => [
+                -34,
+            ],
+            11 => [
+                -35,
+            ],
+        ],
+        35 => [
+            85 => [
+                36,
+            ],
+            [
+                38,
+            ],
+            88 => [
+                40,
+            ],
+            87 => [
+                41,
+            ],
+            84 => [
+                42,
+            ],
+            83 => [
+                44,
+            ],
+            30 => [
+                46,
+                52,
+            ],
+            11 => [
+                53,
+            ],
+            6 => [
+                54,
+            ],
+            7 => [
+                54,
+            ],
+            8 => [
+                54,
+            ],
+            9 => [
+                54,
+            ],
+            20 => [
+                54,
+            ],
+            25 => [
+                54,
+            ],
+            35 => [
+                54,
+            ],
+            52 => [
+                54,
+            ],
+            80 => [
+                54,
+            ],
+        ],
+        48 => [
+            59 => [
+                -50,
+            ],
+            82 => [
+                -51,
+            ],
+            54 => [
+                -52,
+            ],
+        ],
+        55 => [
+            52 => [
+                56,
+            ],
+            6 => [
+                58,
+            ],
+            7 => [
+                58,
+            ],
+            8 => [
+                58,
+            ],
+            20 => [
+                58,
+            ],
+            25 => [
+                58,
+            ],
+            35 => [
+                58,
+            ],
+            9 => [
+                65,
+            ],
+            80 => [
+                67,
+            ],
+        ],
+        58 => [
+            7 => [
+                -60,
+            ],
+            6 => [
+                -61,
+            ],
+            [
+                -62,
+            ],
+            35 => [
+                -63,
+            ],
+            20 => [
+                -64,
+            ],
+            25 => [
+                -65,
+            ],
+        ],
+        73 => [
+            59 => [
+                74,
+            ],
+            54 => [
+                76,
+            ],
+            82 => [
+                76,
+            ],
+        ],
+        77 => [
+            82 => [
+                -51,
+            ],
+            54 => [
+                -52,
+            ],
+        ],
+        80 => [
+            84 => [
+                -44,
+            ],
+            89 => [
+                -82,
+            ],
+            [
+                -83,
+            ],
+        ],
+        85 => [
+            85 => [
+                -38,
+            ],
+            [
+                -40,
+            ],
+        ],
+        88 => [
+            63 => [
+                -90,
+            ],
+            [
+                -91,
+            ],
+        ],
+        93 => [
+            91 => [
+                -95,
+            ],
+            [
+                -96,
+            ],
+            65 => [
+                -97,
+            ],
+            66 => [
+                -98,
+            ],
+        ],
+        100 => [
+            67 => [
+                -102,
+            ],
+            [
+                -103,
+            ],
+        ],
+    ];
+
+    /** @var array<int, list<int>> */
+    private const PARSER_SEQUENCE_PREDICTION_TABLE = [
+        2 => [
+            3,
+            4,
+            5,
+            -124,
+            20,
+            124,
+        ],
+        5 => [
+            6,
+            -120,
         ],
     ];
 
@@ -358,17 +1412,19 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     public function __construct()
     {
         $this->lexer = new \Phplrt\Lexer\Lexer(
-            pattern: '/\\G(?|(?:(?:^[\\x20\\t]*+\\x23(?:[^\\\\\\n]++|\\\\.)*+)(*MARK:0))|(?:(?:\\/\\/[^\\n]*+)(*MARK:1))|(?:(?:\\/\\*.*?\\*\\/)(*MARK:2))|(?:(?:\\n++)(*MARK:3))|(?:(?:[\\x20\\t\\r\\f\\v]++)(*MARK:4))|(?:(?:(?:0[xX](?:(?:(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+))?\\.(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)\\.?)[pP][+-]?(?:[0-9](?:\'?[0-9])*+)|(?:(?:(?:[0-9](?:\'?[0-9])*+))?\\.(?:[0-9](?:\'?[0-9])*+)|(?:[0-9](?:\'?[0-9])*+)\\.)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))?|(?:[0-9](?:\'?[0-9])*+)[eE][+-]?(?:[0-9](?:\'?[0-9])*+))(?:[fF](?:128x?|64x?|32x?|16)|[dD](?:128|64x?|32)|df|DF|dd|DD|dl|DL|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:5))|(?:(?:(?:0[xX](?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|0[bB][01](?:\'?[01])*+|0(?:\'?[0-7])*+|[1-9](?:\'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:6))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|(?:\\\\(?:[\'"?\\\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})))++\')(*MARK:7))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|(?:\\\\(?:[\'"?\\\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})))*+")(*MARK:8))|(?:(?:(?:alignas|_Alignas)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:9))|(?:(?:(?:alignof|_Alignof)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:10))|(?:(?:auto(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:11))|(?:(?:(?:bool|_Bool)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:12))|(?:(?:char(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:13))|(?:(?:const(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:14))|(?:(?:constexpr(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:15))|(?:(?:double(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:16))|(?:(?:enum(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:17))|(?:(?:extern(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:18))|(?:(?:false(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:19))|(?:(?:float(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:20))|(?:(?:inline(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:21))|(?:(?:int(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:22))|(?:(?:long(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:23))|(?:(?:nullptr(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:24))|(?:(?:register(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:25))|(?:(?:restrict(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:26))|(?:(?:short(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:27))|(?:(?:signed(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:28))|(?:(?:sizeof(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:29))|(?:(?:(?:static_assert|_Static_assert)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:30))|(?:(?:static(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:31))|(?:(?:struct(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:32))|(?:(?:(?:thread_local|_Thread_local)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:33))|(?:(?:true(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:34))|(?:(?:typedef(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:35))|(?:(?:typeof_unqual(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:36))|(?:(?:typeof(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:37))|(?:(?:union(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:38))|(?:(?:unsigned(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:39))|(?:(?:void(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:40))|(?:(?:volatile(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:41))|(?:(?:_Atomic(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:42))|(?:(?:_BitInt(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:43))|(?:(?:_Complex(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:44))|(?:(?:_Decimal128(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:45))|(?:(?:_Decimal32(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:46))|(?:(?:_Decimal64(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:47))|(?:(?:_Imaginary(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:48))|(?:(?:_Noreturn(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:49))|(?:(?:(?:break|case|continue|default|do|else|for|goto|if|return|switch|while|_Generic)(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:50))|(?:(?:(?:(?:[A-Za-z_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))(?:(?:[A-Za-z0-9_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))*+)(*MARK:51))|(?:(?:\\.\\.\\.)(*MARK:52))|(?:(?:->)(*MARK:53))|(?:(?:\\+\\+)(*MARK:54))|(?:(?:--)(*MARK:55))|(?:(?:<<=)(*MARK:56))|(?:(?:>>=)(*MARK:57))|(?:(?:\\[|<:)(*MARK:58))|(?:(?:\\]|:>)(*MARK:59))|(?:(?:\\{|<%)(*MARK:60))|(?:(?:\\}|%>)(*MARK:61))|(?:(?:<<)(*MARK:62))|(?:(?:>>)(*MARK:63))|(?:(?:<=)(*MARK:64))|(?:(?:>=)(*MARK:65))|(?:(?:==)(*MARK:66))|(?:(?:!=)(*MARK:67))|(?:(?:&&)(*MARK:68))|(?:(?:\\|\\|)(*MARK:69))|(?:(?:\\*=)(*MARK:70))|(?:(?:\\/=)(*MARK:71))|(?:(?:%=)(*MARK:72))|(?:(?:\\+=)(*MARK:73))|(?:(?:-=)(*MARK:74))|(?:(?:&=)(*MARK:75))|(?:(?:\\^=)(*MARK:76))|(?:(?:\\|=)(*MARK:77))|(?:(?:::)(*MARK:78))|(?:(?:\\()(*MARK:79))|(?:(?:\\))(*MARK:80))|(?:(?:\\.)(*MARK:81))|(?:(?:&)(*MARK:82))|(?:(?:\\*)(*MARK:83))|(?:(?:\\+)(*MARK:84))|(?:(?:-)(*MARK:85))|(?:(?:~)(*MARK:86))|(?:(?:!)(*MARK:87))|(?:(?:\\/)(*MARK:88))|(?:(?:%)(*MARK:89))|(?:(?:<)(*MARK:90))|(?:(?:>)(*MARK:91))|(?:(?:\\^)(*MARK:92))|(?:(?:\\|)(*MARK:93))|(?:(?:\\?)(*MARK:94))|(?:(?::)(*MARK:95))|(?:(?:;)(*MARK:96))|(?:(?:=)(*MARK:97))|(?:(?:,)(*MARK:98))|(?:(?:[^\\s]++)(*MARK:99)))/Ssm',
+            pattern: '/\\G(?|(?:(?:^[\\x20\\t\\f\\v]*+(?:\\x23|%:)(?:[^\\\\\\r\\n]++|\\\\(?:\\r\\n|.)|\\r(?!\\n))*+)(*MARK:0))|(?:(?:\\A\\xEF\\xBB\\xBF)(*MARK:1))|(?:(?:\\/\\/[^\\n]*+)(*MARK:2))|(?:(?:\\/\\*.*?\\*\\/)(*MARK:3))|(?:(?:\\n++)(*MARK:4))|(?:(?:[\\x20\\t\\r\\f\\v]++)(*MARK:5))|(?:(?:(?:(?:0[xX](?:(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)?\\.(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)\\.?)(?:[pP][+-]?(?:[0-9](?:\'?[0-9])*+)))|(?:(?:(?:[0-9](?:\'?[0-9])*+)?\\.(?:[0-9](?:\'?[0-9])*+)|(?:[0-9](?:\'?[0-9])*+)\\.)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))?|(?:[0-9](?:\'?[0-9])*+)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))))(?:[fF](?:128x?|64x?|32x?|16)|(?:[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL)|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:6))|(?:(?:(?:(?:0[xX](?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+))|(?:0[bB][01](?:\'?[01])*+)|(?:0(?:\'?[0-7])*+)|(?:[1-9](?:\'?[0-9])*+))(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU])))(*MARK:7))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))++\')(*MARK:8))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))*+")(*MARK:9))|(?:(?:(?:alignas|_Alignas)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:10))|(?:(?:(?:alignof|_Alignof)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:11))|(?:(?:auto(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:12))|(?:(?:(?:bool|_Bool)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:13))|(?:(?:char(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:14))|(?:(?:const(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:15))|(?:(?:constexpr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:16))|(?:(?:double(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:17))|(?:(?:enum(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:18))|(?:(?:extern(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:19))|(?:(?:false(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:20))|(?:(?:float(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:21))|(?:(?:inline(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:22))|(?:(?:int(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:23))|(?:(?:long(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:24))|(?:(?:nullptr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:25))|(?:(?:register(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:26))|(?:(?:restrict(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:27))|(?:(?:short(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:28))|(?:(?:signed(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:29))|(?:(?:sizeof(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:30))|(?:(?:(?:static_assert|_Static_assert)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:31))|(?:(?:static(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:32))|(?:(?:struct(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:33))|(?:(?:(?:thread_local|_Thread_local)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:34))|(?:(?:true(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:35))|(?:(?:typedef(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:36))|(?:(?:typeof_unqual(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:37))|(?:(?:typeof(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:38))|(?:(?:union(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:39))|(?:(?:unsigned(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:40))|(?:(?:void(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:41))|(?:(?:volatile(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:42))|(?:(?:_Atomic(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:43))|(?:(?:_BitInt(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:44))|(?:(?:_Complex(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:45))|(?:(?:_Decimal128(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:46))|(?:(?:_Decimal32(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:47))|(?:(?:_Decimal64(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:48))|(?:(?:_Imaginary(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:49))|(?:(?:_Noreturn(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:50))|(?:(?:(?:(?:break|case|continue|default|do|else|for|goto|if|return|switch|while)|_Generic)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:51))|(?:(?:(?:[A-Za-z_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))(?:[A-Za-z0-9_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))*+)(*MARK:52))|(?:(?:\\.\\.\\.)(*MARK:53))|(?:(?:->)(*MARK:54))|(?:(?:\\+\\+)(*MARK:55))|(?:(?:--)(*MARK:56))|(?:(?:<<=)(*MARK:57))|(?:(?:>>=)(*MARK:58))|(?:(?:\\[|<:)(*MARK:59))|(?:(?:\\]|:>)(*MARK:60))|(?:(?:\\{|<%)(*MARK:61))|(?:(?:\\}|%>)(*MARK:62))|(?:(?:<<)(*MARK:63))|(?:(?:>>)(*MARK:64))|(?:(?:<=)(*MARK:65))|(?:(?:>=)(*MARK:66))|(?:(?:==)(*MARK:67))|(?:(?:!=)(*MARK:68))|(?:(?:&&)(*MARK:69))|(?:(?:\\|\\|)(*MARK:70))|(?:(?:\\*=)(*MARK:71))|(?:(?:\\/=)(*MARK:72))|(?:(?:%=)(*MARK:73))|(?:(?:\\+=)(*MARK:74))|(?:(?:-=)(*MARK:75))|(?:(?:&=)(*MARK:76))|(?:(?:\\^=)(*MARK:77))|(?:(?:\\|=)(*MARK:78))|(?:(?:::)(*MARK:79))|(?:(?:\\()(*MARK:80))|(?:(?:\\))(*MARK:81))|(?:(?:\\.)(*MARK:82))|(?:(?:&)(*MARK:83))|(?:(?:\\*)(*MARK:84))|(?:(?:\\+)(*MARK:85))|(?:(?:-)(*MARK:86))|(?:(?:~)(*MARK:87))|(?:(?:!)(*MARK:88))|(?:(?:\\/)(*MARK:89))|(?:(?:%)(*MARK:90))|(?:(?:<)(*MARK:91))|(?:(?:>)(*MARK:92))|(?:(?:\\^)(*MARK:93))|(?:(?:\\|)(*MARK:94))|(?:(?:\\?)(*MARK:95))|(?:(?::)(*MARK:96))|(?:(?:;)(*MARK:97))|(?:(?:=)(*MARK:98))|(?:(?:,)(*MARK:99))|(?:(?:[^\\s]++)(*MARK:100)))/Ssm',
             channels: [
                 'Directive',
                 'Hidden',
                 'Hidden',
                 'Hidden',
                 'Hidden',
-                99 => 'Unknown',
+                'Hidden',
+                100 => 'Unknown',
             ],
             names: [
                 'T_DIRECTIVE',
+                'T_BYTE_ORDER_MARK',
                 'T_COMMENT_LINE',
                 'T_COMMENT_BLOCK',
                 'T_NEWLINE',
@@ -474,15 +1530,175 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             lexer: $this->lexer,
             grammar: [
                 new \Phplrt\Parser\Grammar\Repetition(1, 0, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([2, 124]),
+                new \Phplrt\Parser\Grammar\Concatenation([3, 4, 5, 122, 20, 124]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_STATIC_ASSERT, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LPAREN, false),
+                new \Phplrt\Parser\Grammar\Concatenation([6, 118]),
+                new \Phplrt\Parser\Grammar\Concatenation([7, 115]),
+                new \Phplrt\Parser\Grammar\Concatenation([8, 112]),
+                new \Phplrt\Parser\Grammar\Concatenation([9, 109]),
+                new \Phplrt\Parser\Grammar\Concatenation([10, 106]),
+                new \Phplrt\Parser\Grammar\Concatenation([11, 103]),
+                new \Phplrt\Parser\Grammar\Concatenation([12, 98]),
+                new \Phplrt\Parser\Grammar\Concatenation([13, 91]),
+                new \Phplrt\Parser\Grammar\Concatenation([14, 86]),
+                new \Phplrt\Parser\Grammar\Concatenation([15, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([16, 78]),
+                new \Phplrt\Parser\Grammar\Alternation([17, 35]),
+                new \Phplrt\Parser\Grammar\Concatenation([18, 19, 20, 21, 16]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LPAREN, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_IDENTIFIER, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_RPAREN, false),
+                new \Phplrt\Parser\Grammar\Predicate(22, true),
+                new \Phplrt\Parser\Grammar\Alternation([23, 18, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_IDENTIFIER, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_FLOAT_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_CHAR_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_STRING_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_TRUE, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_FALSE, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_NULLPTR, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_TILDE, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_EXCLAMATION, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_SIZEOF, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_ALIGNOF, true),
+                new \Phplrt\Parser\Grammar\Alternation([36, 38, 40, 41, 42, 44, 46, 52, 53, 54]),
+                new \Phplrt\Parser\Grammar\Concatenation([37, 16]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_PLUS, true),
+                new \Phplrt\Parser\Grammar\Concatenation([39, 16]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_MINUS, true),
+                new \Phplrt\Parser\Grammar\Concatenation([32, 16]),
+                new \Phplrt\Parser\Grammar\Concatenation([31, 16]),
+                new \Phplrt\Parser\Grammar\Concatenation([43, 16]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_ASTERISK, true),
+                new \Phplrt\Parser\Grammar\Concatenation([45, 16]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_AMPERSAND, true),
+                new \Phplrt\Parser\Grammar\Concatenation([33, 4, 19, 20, 47]),
+                new \Phplrt\Parser\Grammar\Predicate(48, false),
+                new \Phplrt\Parser\Grammar\Alternation([49, 50, 51]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LBRACKET, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_DOT, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_ARROW, true),
+                new \Phplrt\Parser\Grammar\Concatenation([33, 35]),
+                new \Phplrt\Parser\Grammar\Concatenation([34, 4, 19, 20]),
+                new \Phplrt\Parser\Grammar\Concatenation([55, 72]),
+                new \Phplrt\Parser\Grammar\Alternation([56, 58, 65, 67]),
+                new \Phplrt\Parser\Grammar\Concatenation([57]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_IDENTIFIER, true),
+                new \Phplrt\Parser\Grammar\Alternation([59, 60, 61, 62, 63, 64]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_FLOAT_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_CHAR_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_TRUE, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_FALSE, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_NULLPTR, true),
+                new \Phplrt\Parser\Grammar\Repetition(66, 1, \INF),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_STRING_LITERAL, true),
+                new \Phplrt\Parser\Grammar\Concatenation([18, 68, 20]),
+                new \Phplrt\Parser\Grammar\Concatenation([5, 69]),
+                new \Phplrt\Parser\Grammar\Repetition(70, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([71, 5]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_COMMA, false),
+                new \Phplrt\Parser\Grammar\Repetition(73, 0, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([74, 76]),
+                new \Phplrt\Parser\Grammar\Concatenation([49, 68, 75]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACKET, false),
+                new \Phplrt\Parser\Grammar\Concatenation([77, 57]),
+                new \Phplrt\Parser\Grammar\Alternation([50, 51]),
+                new \Phplrt\Parser\Grammar\Repetition(79, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([80, 16]),
+                new \Phplrt\Parser\Grammar\Alternation([43, 81, 82]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_SLASH, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_PERCENT, true),
+                new \Phplrt\Parser\Grammar\Repetition(84, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([85, 15]),
+                new \Phplrt\Parser\Grammar\Alternation([37, 39]),
+                new \Phplrt\Parser\Grammar\Repetition(87, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([88, 14]),
+                new \Phplrt\Parser\Grammar\Alternation([89, 90]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_SHL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_SHR, true),
+                new \Phplrt\Parser\Grammar\Repetition(92, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([93, 13]),
+                new \Phplrt\Parser\Grammar\Alternation([94, 95, 96, 97]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LESS, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_GREATER, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LESS_EQUAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_GREATER_EQUAL, true),
+                new \Phplrt\Parser\Grammar\Repetition(99, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([100, 12]),
+                new \Phplrt\Parser\Grammar\Alternation([101, 102]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_EQUAL, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_NOT_EQUAL, true),
+                new \Phplrt\Parser\Grammar\Repetition(104, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([105, 11]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_AMPERSAND, false),
+                new \Phplrt\Parser\Grammar\Repetition(107, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([108, 10]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_CARET, false),
+                new \Phplrt\Parser\Grammar\Repetition(110, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([111, 9]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_PIPE, false),
+                new \Phplrt\Parser\Grammar\Repetition(113, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([114, 8]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LOGICAL_AND, false),
+                new \Phplrt\Parser\Grammar\Repetition(116, 0, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([117, 7]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_LOGICAL_OR, false),
+                new \Phplrt\Parser\Grammar\Optional(119),
+                new \Phplrt\Parser\Grammar\Concatenation([120, 68, 121, 5]),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_QUESTION, false),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_COLON, false),
+                new \Phplrt\Parser\Grammar\Optional(123),
+                new \Phplrt\Parser\Grammar\Concatenation([71, 65]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SEMICOLON, false),
             ],
             initial: 0,
             reducers: [
-                0 => self::reduceTranslationUnit(...),
+                2 => self::reduceStaticAssertDeclaration(...),
+                5 => self::reduceConditionalExpression(...),
+                6 => self::reduceLogicalOrExpression(...),
+                7 => self::reduceLogicalAndExpression(...),
+                8 => self::reduceBitwiseOrExpression(...),
+                9 => self::reduceBitwiseXorExpression(...),
+                10 => self::reduceBitwiseAndExpression(...),
+                11 => self::reduceEqualityExpression(...),
+                12 => self::reduceRelationalExpression(...),
+                13 => self::reduceShiftExpression(...),
+                14 => self::reduceAdditiveExpression(...),
+                15 => self::reduceMultiplicativeExpression(...),
+                17 => self::reduceCastExpression(...),
+                19 => self::reduceTypeName(...),
+                36 => self::reducePlusExpression(...),
+                38 => self::reduceMinusExpression(...),
+                40 => self::reduceLogicalNotExpression(...),
+                41 => self::reduceBitwiseNotExpression(...),
+                42 => self::reduceDereferenceExpression(...),
+                44 => self::reduceAddressOfExpression(...),
+                46 => self::reduceSizeofTypeExpression(...),
+                52 => self::reduceSizeofExpression(...),
+                53 => self::reduceAlignofExpression(...),
+                54 => self::reducePostfixExpression(...),
+                56 => self::reduceIdentifierExpression(...),
+                57 => self::reduceIdentifier(...),
+                59 => self::reduceIntLiteral(...),
+                60 => self::reduceFloatLiteral(...),
+                61 => self::reduceCharLiteral(...),
+                62 => self::reduceTrueLiteral(...),
+                63 => self::reduceFalseLiteral(...),
+                64 => self::reduceNullptrLiteral(...),
+                65 => self::reduceStringLiteral(...),
+                66 => self::reduceSingleStringLiteral(...),
+                67 => self::reduceParenthesizedExpression(...),
+                68 => self::reduceExpression(...),
             ],
             expectations: self::PARSER_EXPECTATIONS,
             kept: self::PARSER_KEPT_TABLE,
             startPrediction: self::PARSER_START_PREDICTION_TABLE,
+            choicePrediction: self::PARSER_CHOICE_PREDICTION_TABLE,
+            sequencePrediction: self::PARSER_SEQUENCE_PREDICTION_TABLE,
         );
     }
 
@@ -491,8 +1707,487 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         return $this->parser->parse($source);
     }
 
-    private static function reduceTranslationUnit(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    private static function reduceStaticAssertDeclaration(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        return [];
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var array{
+         *     TokenInterface,
+         *     Expression\Expression,
+         *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
+         * } $children
+         */
+        return new Declaration\StaticAssertDeclaration($children[1], $children[2] ?? null, $offset);
+    }
+
+    private static function reduceConditionalExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var array{Expression\Expression}|array{
+         *     Expression\Expression,
+         *     Expression\Expression,
+         *     Expression\Expression
+         * } $children
+         */
+        if (\count($children) === 1) {
+            return $children[0];
+        }
+
+        return new Expression\ConditionalExpression($children[0], $children[1], $children[2], $offset);
+    }
+
+    private static function reduceLogicalOrExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\LogicalOrExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
+    }
+
+    private static function reduceLogicalAndExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\LogicalAndExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
+    }
+
+    private static function reduceBitwiseOrExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\BitwiseOrExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
+    }
+
+    private static function reduceBitwiseXorExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\BitwiseXorExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
+    }
+
+    private static function reduceBitwiseAndExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\BitwiseAndExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
+    }
+
+    private static function reduceEqualityExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_EQUAL => new BinaryExpression\EqualExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_NOT_EQUAL => new BinaryExpression\NotEqualExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceRelationalExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_LESS => new BinaryExpression\LessExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_GREATER => new BinaryExpression\GreaterExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_LESS_EQUAL => new BinaryExpression\LessOrEqualExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_GREATER_EQUAL => new BinaryExpression\GreaterOrEqualExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceShiftExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_SHL => new BinaryExpression\ShlExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_SHR => new BinaryExpression\ShrExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceAdditiveExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_PLUS => new BinaryExpression\AddExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_MINUS => new BinaryExpression\SubExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceMultiplicativeExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_ASTERISK => new BinaryExpression\MulExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_SLASH => new BinaryExpression\DivExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_PERCENT => new BinaryExpression\ModExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceCastExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Type\NamedType, Expression\Expression} $children */
+        return new Expression\CastExpression($children[1], $children[2], $offset);
+    }
+
+    private static function reduceTypeName(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return new Type\NamedType($children->value, $offset);
+    }
+
+    private static function reducePlusExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\PlusExpression($children[1], $offset);
+    }
+
+    private static function reduceMinusExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\MinusExpression($children[1], $offset);
+    }
+
+    private static function reduceLogicalNotExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\LogicalNotExpression($children[1], $offset);
+    }
+
+    private static function reduceBitwiseNotExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
+    }
+
+    private static function reduceDereferenceExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\DereferenceExpression($children[1], $offset);
+    }
+
+    private static function reduceAddressOfExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new UnaryExpression\AddressOfExpression($children[1], $offset);
+    }
+
+    private static function reduceSizeofTypeExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Type\NamedType} $children */
+        return new Expression\SizeofTypeExpression($children[1], $offset);
+    }
+
+    private static function reduceSizeofExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return new Expression\SizeofExpression($children[1], $offset);
+    }
+
+    private static function reduceAlignofExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{TokenInterface, Type\NamedType} $children */
+        return new Expression\AlignofExpression($children[1], $offset);
+    }
+
+    private static function reducePostfixExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /**
+         * @var non-empty-list<Expression\Expression|TokenInterface> $children
+         * @var Expression\Expression $result
+         */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
+            // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
+            $result = match ($children[$i]->id) {
+                // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
+                self::T_LBRACKET => new Expression\SubscriptExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line a dot is followed by an identifier, a list type cannot express it
+                self::T_DOT => new MemberExpression\DirectMemberExpression($result, $children[$i + 1], $offset),
+                // @phpstan-ignore-next-line an arrow is followed by an identifier, a list type cannot express it
+                self::T_ARROW => new MemberExpression\PointerMemberExpression($result, $children[$i + 1], $offset),
+            };
+        }
+
+        return $result;
+    }
+
+    private static function reduceIdentifierExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var array{Node\Identifier} $children */
+        return new Expression\IdentifierExpression($children[0], $offset);
+    }
+
+    private static function reduceIdentifier(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return new Node\Identifier($children->value, $offset);
+    }
+
+    private static function reduceIntLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return Literal\IntLiteral::parse($children->value, $offset);
+    }
+
+    private static function reduceFloatLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return Literal\FloatLiteral::parse($children->value, $offset);
+    }
+
+    private static function reduceCharLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return Literal\CharLiteral::parse($children->value, $offset);
+    }
+
+    private static function reduceTrueLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return new Literal\BoolLiteral(true, $children->value, $offset);
+    }
+
+    private static function reduceFalseLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return new Literal\BoolLiteral(false, $children->value, $offset);
+    }
+
+    private static function reduceNullptrLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return new Literal\NullptrLiteral($children->value, $offset);
+    }
+
+    private static function reduceStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Literal\StringLiteral> $children */
+        if (\count($children) === 1) {
+            return $children[0];
+        }
+
+        return new Literal\ConcatenatedStringLiteral($children, $offset);
+    }
+
+    private static function reduceSingleStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var TokenInterface $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        return Literal\StringLiteral::parse($children->value, $offset);
+    }
+
+    private static function reduceParenthesizedExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        /** @var array{TokenInterface, Expression\Expression} $children */
+        return $children[1];
+    }
+
+    private static function reduceExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var non-empty-list<Expression\Expression> $children */
+        $result = $children[0];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = new BinaryExpression\CommaExpression($result, $children[$i], $offset);
+        }
+
+        return $result;
     }
 }

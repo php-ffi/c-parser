@@ -1,0 +1,28 @@
+//
+// External declarations, 6.7 and 6.9.
+//
+
+// A lone ";" at file scope is not valid C, but GCC and Clang accept it and
+// headers have it after macros that expand to nothing, so it is skipped
+ExternalDeclaration
+  : StaticAssertDeclaration()
+  | ::T_SEMICOLON::
+  ;
+
+// 6.7.12 Static assertions, static_assert(condition, "message"), the message
+// is optional since C23
+StaticAssertDeclaration -> {
+    /**
+     * @var array{
+     *     TokenInterface,
+     *     Expression\Expression,
+     *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
+     * } $children
+     */
+    return new Declaration\StaticAssertDeclaration($children[1], $children[2] ?? null, $offset);
+}
+  : <T_STATIC_ASSERT> ::T_LPAREN::
+        ConditionalExpression()
+        (::T_COMMA:: StringLiteral())?
+    ::T_RPAREN:: ::T_SEMICOLON::
+  ;

@@ -19,7 +19,7 @@ final class IntParser
     /**
      * @param non-empty-string $raw text of a `T_INT_LITERAL` token
      */
-    public static function parse(string $raw, ?BaseConverterInterface $converter = null): IntParserResult
+    public static function parse(string $raw): IntParserResult
     {
         $literal = \str_replace("'", '', $raw);
         $base = self::parseBase($literal);
@@ -30,10 +30,13 @@ final class IntParser
 
         $suffixOffset = self::getSuffixOffset($literal);
         $digits = self::trimLeadingZeros(\substr($literal, 0, $suffixOffset));
+        $value = \intval($digits, $base->value);
 
         return new IntParserResult(
-            value: \intval($digits, $base->value),
-            decimal: self::toDecimal($digits, $base, $converter ?? BaseConverterFactory::createDefault()),
+            value: $value,
+            // The value saturates at PHP_INT_MAX, only then it differs from
+            // the exact one and the digits have to be converted
+            decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
             base: $base,
             suffix: self::parseSuffix(\substr($literal, $suffixOffset)),
         );
@@ -98,13 +101,13 @@ final class IntParser
      * @param non-empty-string $digits without the leading zeros
      * @return numeric-string
      */
-    private static function toDecimal(string $digits, IntBase $base, BaseConverterInterface $converter): string
+    private static function toDecimal(string $digits, IntBase $base): string
     {
         if ($base === IntBase::Decimal && \is_numeric($digits)) {
             return $digits;
         }
 
-        return $converter->toDecimal($digits, $base->value);
+        return BaseConverterFactory::createDefault()->toDecimal($digits, $base->value);
     }
 
     private static function parseSuffix(string $suffix): ?IntTypeSuffix

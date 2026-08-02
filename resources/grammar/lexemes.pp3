@@ -15,32 +15,64 @@
 %fragment UCN               \\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}
 %fragment ID_START          [A-Za-z_\x80-\xFF]|(?&UCN)
 %fragment ID_CONTINUE       [A-Za-z0-9_\x80-\xFF]|(?&UCN)
-// What may not directly follow a keyword or a number
-%fragment WORD_END          (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU])
+// What may not directly follow a keyword, the rest of an identifier
+%fragment KEYWORD_END       (?![A-Za-z0-9_\x80-\xFF]|\\[uU])
+// What may not directly follow a number: a number of the preprocessor
+// (6.4.8) also takes a quote and a dot, so "1.2.3" is not two constants
+%fragment NUMBER_END        (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU])
 
 // Digit sequences with optional digit separators, 6.4.4.2
 %fragment DEC_DIGITS        [0-9](?:'?[0-9])*+
 %fragment HEX_DIGITS        [0-9A-Fa-f](?:'?[0-9A-Fa-f])*+
 
 // Escape sequences, 6.4.4.5
-%fragment ESCAPE            \\(?:['"?\\abfnrtv]|[0-7]{1,3}|x[0-9A-Fa-f]++|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})
+%fragment SIMPLE_ESCAPE     ['"?\\abfnrtv]
+%fragment NUMERIC_ESCAPE    [0-7]{1,3}|x[0-9A-Fa-f]++
+%fragment ESCAPE            \\(?:(?&SIMPLE_ESCAPE)|(?&NUMERIC_ESCAPE))|(?&UCN)
+
+// Integer constants, 6.4.4.2
+%fragment HEX_INT           0[xX](?&HEX_DIGITS)
+%fragment BIN_INT           0[bB][01](?:'?[01])*+
+%fragment OCT_INT           0(?:'?[0-7])*+
+%fragment DEC_INT           [1-9](?:'?[0-9])*+
+%fragment INT_DIGITS        (?&HEX_INT)|(?&BIN_INT)|(?&OCT_INT)|(?&DEC_INT)
+%fragment INT_SIZE          ll|LL|[lL]|wb|WB
+%fragment INT_SUFFIX        [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
+
+// Floating constants, 6.4.4.3
+%fragment DEC_FRACTION      (?&DEC_DIGITS)?\.(?&DEC_DIGITS)|(?&DEC_DIGITS)\.
+%fragment HEX_SIGNIFICAND   (?&HEX_DIGITS)?\.(?&HEX_DIGITS)|(?&HEX_DIGITS)\.?
+%fragment DEC_EXPONENT      [eE][+-]?(?&DEC_DIGITS)
+%fragment BIN_EXPONENT      [pP][+-]?(?&DEC_DIGITS)
+%fragment DEC_FLOAT         (?&DEC_FRACTION)(?&DEC_EXPONENT)?|(?&DEC_DIGITS)(?&DEC_EXPONENT)
+%fragment HEX_FLOAT         0[xX](?&HEX_SIGNIFICAND)(?&BIN_EXPONENT)
+%fragment FLOAT_NUMBER      (?&HEX_FLOAT)|(?&DEC_FLOAT)
+%fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
+%fragment FLOAT_SUFFIX      [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
+
+// Keywords of statements, 6.4.1
+%fragment STATEMENT_KEYWORD break|case|continue|default|do|else|for|goto|if|return|switch|while
 
 //
 // Preprocessing leftovers
 //
 
-// A line starting with "#": line markers of "gcc -E" (# 1 "file.h" 3),
-// #pragma, #define of "gcc -dD". It is declared before the whitespace,
-// which would otherwise consume the indentation of the line, and the
-// newline is a separate token, so "^" (multiline mode) still holds at the
-// beginning of the next line. A backslash continues the directive onto the
-// next line.
-%token T_DIRECTIVE          ^[\x20\t]*+\x23(?:[^\\\n]++|\\.)*+ -> channel(Directive)
+// A line starting with "#" or its digraph "%:": line markers of "gcc -E"
+// (# 1 "file.h" 3), #pragma, #define of "gcc -dD". It is declared before
+// the whitespace, which would otherwise consume the indentation of the
+// line, and the newline is a separate token, so "^" (multiline mode) still
+// holds at the beginning of the next line. A backslash continues the
+// directive onto the next line, whether the line ends with LF or CRLF, and
+// the CR of a CRLF ending is not a part of the directive.
+%token T_DIRECTIVE          ^[\x20\t\f\v]*+(?:\x23|%:)(?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+ -> channel(Directive)
 
 //
 // Whitespace and comments
 //
 
+// The byte order mark an editor may put at the beginning of the file
+%skip T_BYTE_ORDER_MARK     \A\xEF\xBB\xBF
+// Comments, 6.4.9
 %skip T_COMMENT_LINE        //[^\n]*+
 %skip T_COMMENT_BLOCK       /\*.*?\*/
 %skip T_NEWLINE             \n++
@@ -54,8 +86,8 @@
 // floating constant may start with a dot (.5).
 //
 
-%token T_FLOAT_LITERAL      (?:0[xX](?:(?:(?&HEX_DIGITS))?\.(?&HEX_DIGITS)|(?&HEX_DIGITS)\.?)[pP][+-]?(?&DEC_DIGITS)|(?:(?:(?&DEC_DIGITS))?\.(?&DEC_DIGITS)|(?&DEC_DIGITS)\.)(?:[eE][+-]?(?&DEC_DIGITS))?|(?&DEC_DIGITS)[eE][+-]?(?&DEC_DIGITS))(?:[fF](?:128x?|64x?|32x?|16)|[dD](?:128|64x?|32)|df|DF|dd|DD|dl|DL|[fFlL])?(?&WORD_END)
-%token T_INT_LITERAL        (?:0[xX](?&HEX_DIGITS)|0[bB][01](?:'?[01])*+|0(?:'?[0-7])*+|[1-9](?:'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?&WORD_END)
+%token T_FLOAT_LITERAL      (?&FLOAT_NUMBER)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
+%token T_INT_LITERAL        (?&INT_DIGITS)(?&INT_SUFFIX)?(?&NUMBER_END)
 %token T_CHAR_LITERAL       (?:u8|[uUL])?'(?:[^'\\\n]|(?&ESCAPE))++'
 %token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
 
@@ -66,64 +98,65 @@
 // token, the exact spelling is kept by the value of the token.
 //
 
-%token T_ALIGNAS            (?:alignas|_Alignas)(?&WORD_END)
-%token T_ALIGNOF            (?:alignof|_Alignof)(?&WORD_END)
-%token T_AUTO               auto(?&WORD_END)
-%token T_BOOL               (?:bool|_Bool)(?&WORD_END)
-%token T_CHAR               char(?&WORD_END)
-%token T_CONST              const(?&WORD_END)
-%token T_CONSTEXPR          constexpr(?&WORD_END)
-%token T_DOUBLE             double(?&WORD_END)
-%token T_ENUM               enum(?&WORD_END)
-%token T_EXTERN             extern(?&WORD_END)
-%token T_FALSE              false(?&WORD_END)
-%token T_FLOAT              float(?&WORD_END)
-%token T_INLINE             inline(?&WORD_END)
-%token T_INT                int(?&WORD_END)
-%token T_LONG               long(?&WORD_END)
-%token T_NULLPTR            nullptr(?&WORD_END)
-%token T_REGISTER           register(?&WORD_END)
-%token T_RESTRICT           restrict(?&WORD_END)
-%token T_SHORT              short(?&WORD_END)
-%token T_SIGNED             signed(?&WORD_END)
-%token T_SIZEOF             sizeof(?&WORD_END)
-%token T_STATIC_ASSERT      (?:static_assert|_Static_assert)(?&WORD_END)
-%token T_STATIC             static(?&WORD_END)
-%token T_STRUCT             struct(?&WORD_END)
-%token T_THREAD_LOCAL       (?:thread_local|_Thread_local)(?&WORD_END)
-%token T_TRUE               true(?&WORD_END)
-%token T_TYPEDEF            typedef(?&WORD_END)
-%token T_TYPEOF_UNQUAL      typeof_unqual(?&WORD_END)
-%token T_TYPEOF             typeof(?&WORD_END)
-%token T_UNION              union(?&WORD_END)
-%token T_UNSIGNED           unsigned(?&WORD_END)
-%token T_VOID               void(?&WORD_END)
-%token T_VOLATILE           volatile(?&WORD_END)
-%token T_ATOMIC             _Atomic(?&WORD_END)
-%token T_BITINT             _BitInt(?&WORD_END)
-%token T_COMPLEX            _Complex(?&WORD_END)
-%token T_DECIMAL128         _Decimal128(?&WORD_END)
-%token T_DECIMAL32          _Decimal32(?&WORD_END)
-%token T_DECIMAL64          _Decimal64(?&WORD_END)
-%token T_IMAGINARY          _Imaginary(?&WORD_END)
-%token T_NORETURN           _Noreturn(?&WORD_END)
+%token T_ALIGNAS            (?:alignas|_Alignas)(?&KEYWORD_END)
+%token T_ALIGNOF            (?:alignof|_Alignof)(?&KEYWORD_END)
+%token T_AUTO               auto(?&KEYWORD_END)
+%token T_BOOL               (?:bool|_Bool)(?&KEYWORD_END)
+%token T_CHAR               char(?&KEYWORD_END)
+%token T_CONST              const(?&KEYWORD_END)
+%token T_CONSTEXPR          constexpr(?&KEYWORD_END)
+%token T_DOUBLE             double(?&KEYWORD_END)
+%token T_ENUM               enum(?&KEYWORD_END)
+%token T_EXTERN             extern(?&KEYWORD_END)
+%token T_FALSE              false(?&KEYWORD_END)
+%token T_FLOAT              float(?&KEYWORD_END)
+%token T_INLINE             inline(?&KEYWORD_END)
+%token T_INT                int(?&KEYWORD_END)
+%token T_LONG               long(?&KEYWORD_END)
+%token T_NULLPTR            nullptr(?&KEYWORD_END)
+%token T_REGISTER           register(?&KEYWORD_END)
+%token T_RESTRICT           restrict(?&KEYWORD_END)
+%token T_SHORT              short(?&KEYWORD_END)
+%token T_SIGNED             signed(?&KEYWORD_END)
+%token T_SIZEOF             sizeof(?&KEYWORD_END)
+%token T_STATIC_ASSERT      (?:static_assert|_Static_assert)(?&KEYWORD_END)
+%token T_STATIC             static(?&KEYWORD_END)
+%token T_STRUCT             struct(?&KEYWORD_END)
+%token T_THREAD_LOCAL       (?:thread_local|_Thread_local)(?&KEYWORD_END)
+%token T_TRUE               true(?&KEYWORD_END)
+%token T_TYPEDEF            typedef(?&KEYWORD_END)
+%token T_TYPEOF_UNQUAL      typeof_unqual(?&KEYWORD_END)
+%token T_TYPEOF             typeof(?&KEYWORD_END)
+%token T_UNION              union(?&KEYWORD_END)
+%token T_UNSIGNED           unsigned(?&KEYWORD_END)
+%token T_VOID               void(?&KEYWORD_END)
+%token T_VOLATILE           volatile(?&KEYWORD_END)
+%token T_ATOMIC             _Atomic(?&KEYWORD_END)
+%token T_BITINT             _BitInt(?&KEYWORD_END)
+%token T_COMPLEX            _Complex(?&KEYWORD_END)
+%token T_DECIMAL128         _Decimal128(?&KEYWORD_END)
+%token T_DECIMAL32          _Decimal32(?&KEYWORD_END)
+%token T_DECIMAL64          _Decimal64(?&KEYWORD_END)
+%token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
+%token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
 // Keywords of statements and of _Generic. A header has neither, but they
 // are still reserved and may not be used as identifiers.
-%token T_RESERVED_KEYWORD   (?:break|case|continue|default|do|else|for|goto|if|return|switch|while|_Generic)(?&WORD_END)
+%token T_RESERVED_KEYWORD   (?:(?&STATEMENT_KEYWORD)|_Generic)(?&KEYWORD_END)
 
 //
 // Identifiers, 6.4.2
 //
 
-%token T_IDENTIFIER         (?:(?&ID_START))(?:(?&ID_CONTINUE))*+
+%token T_IDENTIFIER         (?&ID_START)(?&ID_CONTINUE)*+
 
 //
 // Punctuators, 6.4.6
 //
 // Longer punctuators go first. Digraphs (<: :> <% %>) are spellings of the
 // brackets and braces and share their tokens. The "#" and "##" punctuators
-// only exist in the preprocessor and are not recognized.
+// and their digraphs (%: %:%:) only exist in the preprocessor and are not
+// tokens, "#" and "%:" only start a directive (T_DIRECTIVE).
 //
 
 %token T_ELLIPSIS           \.\.\.

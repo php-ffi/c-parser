@@ -79,4 +79,9 @@ enum FloatTypeSuffix: string
      * `d64x` or `D64x`.
      */
     case Decimal64x = 'd64x';
+
+    /**
+     * `d128x` or `D128x`.
+     */
+    case Decimal128x = 'd128x';
 }

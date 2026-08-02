@@ -1,0 +1,81 @@
+//
+// Constants and string literals, 6.4.4 and 6.4.5.
+//
+
+// 6.4.4 Constants
+Constant
+  : IntLiteral()
+  | FloatLiteral()
+  | CharLiteral()
+  | TrueLiteral()
+  | FalseLiteral()
+  | NullptrLiteral()
+  ;
+
+IntLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\IntLiteral::parse($children->value, $offset);
+}
+  : <T_INT_LITERAL>
+  ;
+
+FloatLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\FloatLiteral::parse($children->value, $offset);
+}
+  : <T_FLOAT_LITERAL>
+  ;
+
+CharLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\CharLiteral::parse($children->value, $offset);
+}
+  : <T_CHAR_LITERAL>
+  ;
+
+TrueLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Literal\BoolLiteral(true, $children->value, $offset);
+}
+  : <T_TRUE>
+  ;
+
+FalseLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Literal\BoolLiteral(false, $children->value, $offset);
+}
+  : <T_FALSE>
+  ;
+
+NullptrLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Literal\NullptrLiteral($children->value, $offset);
+}
+  : <T_NULLPTR>
+  ;
+
+// 6.4.5 String literals, adjacent ones are joined by C: "a" "b"
+StringLiteral -> {
+    /** @var non-empty-list<Literal\StringLiteral> $children */
+    if (\count($children) === 1) {
+        return $children[0];
+    }
+
+    return new Literal\ConcatenatedStringLiteral($children, $offset);
+}
+  : SingleStringLiteral()+
+  ;
+
+SingleStringLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\StringLiteral::parse($children->value, $offset);
+}
+  : <T_STRING_LITERAL>
+  ;

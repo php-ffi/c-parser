@@ -16,7 +16,7 @@ use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
  */
 final class BaseConverterFactory
 {
-    private static ?BaseConverterInterface $default = null;
+    private static BaseConverterInterface $default;
 
     /**
      * Returns the fastest converter available in the current environment.
@@ -36,10 +36,10 @@ final class BaseConverterFactory
      * Returns the first of the given converters that is available, or the
      * extension-free {@see NativeBaseConverter} if none of them is.
      *
-     * @param iterable<mixed, BaseConverterInterface> $converters in order of
+     * @param list<BaseConverterInterface> $converters in order of
      *        preference
      */
-    private static function selectFirstAvailable(iterable $converters): BaseConverterInterface
+    private static function selectFirstAvailable(array $converters): BaseConverterInterface
     {
         foreach ($converters as $converter) {
             if ($converter->isAvailable()) {

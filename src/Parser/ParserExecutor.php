@@ -6,6 +6,7 @@ namespace FFI\Parser\Parser;
 
 use FFI\Parser\Node\Node;
 use Phplrt\Contracts\Lexer\Exception\LexerExceptionInterface;
+use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Parser\Analysis\Mode;
 use Phplrt\Parser\Analysis\Result\PartialResult;
@@ -25,6 +26,8 @@ final class ParserExecutor extends CompiledParserExecutor
      * Checks the syntax of the source without building the syntax tree.
      *
      * @throws LexerExceptionInterface in case of the source cannot be read
+     * @throws LexerRuntimeExceptionInterface in case of the lexer fails on the
+     *         source
      */
     public function validate(ReadableInterface $source): bool
     {

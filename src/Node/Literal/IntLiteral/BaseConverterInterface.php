@@ -15,7 +15,7 @@ interface BaseConverterInterface
 {
     /**
      * Whether the converter can work in the current environment, i.e. the
-     * extension or the package it relies on is available.
+     * extension it relies on is loaded.
      */
     public function isAvailable(): bool;
 

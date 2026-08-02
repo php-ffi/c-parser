@@ -10,9 +10,11 @@
 %pragma lexer.pcre.disable Utf8
 
 %include grammar/lexemes
+%include grammar/literals
+%include grammar/expressions
+%include grammar/declarations
 
-// A sequence of external declarations. Empty declarations (a lone ";") are
-// valid C and produce nothing.
-TranslationUnit -> { return []; }
-  : ::T_SEMICOLON::*
+// A sequence of external declarations
+TranslationUnit
+  : ExternalDeclaration()*
   ;
