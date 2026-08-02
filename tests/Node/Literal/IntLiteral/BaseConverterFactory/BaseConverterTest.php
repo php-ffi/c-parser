@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Node\Literal\IntLiteral\BaseConverterFactory;
 
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BcMathBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BrickMathBaseConverter;
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\GmpBaseConverter;
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterInterface;
@@ -20,7 +19,6 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
  */
 #[CoversClass(GmpBaseConverter::class)]
 #[CoversClass(BcMathBaseConverter::class)]
-#[CoversClass(BrickMathBaseConverter::class)]
 #[CoversClass(NativeBaseConverter::class)]
 final class BaseConverterTest extends TestCase
 {
@@ -81,12 +79,6 @@ final class BaseConverterTest extends TestCase
     public function testBcMathConverterConvertsTheBase(string $digits, int $base, string $decimal): void
     {
         self::assertConverted(new BcMathBaseConverter(), $digits, $base, $decimal);
-    }
-
-    #[DataProvider('numbersDataProvider')]
-    public function testBrickMathConverterConvertsTheBase(string $digits, int $base, string $decimal): void
-    {
-        self::assertConverted(new BrickMathBaseConverter(), $digits, $base, $decimal);
     }
 
     #[DataProvider('numbersDataProvider')]

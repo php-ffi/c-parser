@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal\IntLiteral;
 
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BcMathBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BrickMathBaseConverter;
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\GmpBaseConverter;
 use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
 
@@ -27,8 +26,9 @@ final class BaseConverterFactory
     {
         return self::$default ??= self::selectFirstAvailable([
             new GmpBaseConverter(),
+            // BCMath is slower than native php converter o_0
+            // TBD remove it? lol
             new BcMathBaseConverter(),
-            new BrickMathBaseConverter(),
         ]);
     }
 
