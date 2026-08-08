@@ -19,7 +19,7 @@ final class IntLiteral extends Literal
 {
     /**
      * @param non-empty-string|null $raw the literal exactly as written, {@see null}
-     *        to spell it out of the value
+     *        to write the decimal value with the suffix
      * @param int<0, max> $offset
      */
     public function __construct(
@@ -27,6 +27,8 @@ final class IntLiteral extends Literal
          * The value of the constant as a PHP integer, which is
          * {@see \PHP_INT_MAX} for a constant that does not fit in it (such
          * as `0xFFFFFFFFFFFFFFFF`)
+         *
+         * @var int<0, max>
          */
         public readonly int $value,
         /**
@@ -49,14 +51,20 @@ final class IntLiteral extends Literal
         int $offset = 0,
     ) {
         parent::__construct(
-            raw: $raw ?? match ($this->base) {
-                IntBase::Decimal => $this->decimal,
-                IntBase::Hexadecimal => '0x' . \dechex($this->value),
-                IntBase::Octal => '0' . \decoct($this->value),
-                IntBase::Binary => '0b' . \decbin($this->value),
-            } . $this->suffix?->value,
+            raw: $raw ?? $this->representAsRawValue(),
             offset: $offset,
         );
+    }
+
+    /**
+     * The exact value is only known in decimal, so the text is decimal
+     * whatever the base is.
+     *
+     * @return non-empty-string
+     */
+    private function representAsRawValue(): string
+    {
+        return $this->decimal . $this->suffix?->value;
     }
 
     /**

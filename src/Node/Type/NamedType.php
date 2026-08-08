@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Identifier;
+
 /**
  * Type referred to by a name declared elsewhere, such as a typedef name.
  *
@@ -19,11 +21,9 @@ final class NamedType extends Type
      */
     public function __construct(
         /**
-         * The name as written
-         *
-         * @var non-empty-string
+         * The name of the type
          */
-        public readonly string $name,
+        public readonly Identifier $name,
         int $offset = 0,
     ) {
         parent::__construct($offset);

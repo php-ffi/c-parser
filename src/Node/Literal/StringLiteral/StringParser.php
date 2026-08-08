@@ -22,11 +22,11 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
  *   both halves of a surrogate pair written as two escapes in a `u`
  *   literal.
  *
- * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal FFI\Parser\Node\Literal
- *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.5 String literals
+ *
+ * @internal this is an internal library class, please do not use it in your code
+ * @psalm-internal FFI\Parser\Node\Literal
  */
 final class StringParser
 {

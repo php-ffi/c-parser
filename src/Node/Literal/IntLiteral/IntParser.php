@@ -9,10 +9,10 @@ use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntParserResult;
 /**
  * Parses the source text of an integer constant.
  *
+ * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.2 Integer constants
+ *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
- *
- * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.2 Integer constants
  */
 final class IntParser
 {
@@ -30,6 +30,7 @@ final class IntParser
 
         $suffixOffset = self::getSuffixOffset($literal);
         $digits = self::trimLeadingZeros(\substr($literal, 0, $suffixOffset));
+        /** @var int<0, max> */
         $value = \intval($digits, $base->value);
 
         return new IntParserResult(

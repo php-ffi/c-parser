@@ -28,7 +28,7 @@ final class BcMathBaseConverter implements BaseConverterInterface
         foreach (\str_split($digits) as $digit) {
             // The scale is explicit, so that a custom "bcmath.scale" setting
             // does not turn the result into a fractional number.
-            $result = \bcadd(\bcmul($result, $multiplier, 0), (string) \intval($digit, 36), 0);
+            $result = \bcadd(\bcmul($result, $multiplier, 0), (string) \intval($digit, $base), 0);
         }
 
         return $result;

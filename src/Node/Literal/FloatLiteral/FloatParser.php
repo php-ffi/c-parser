@@ -9,24 +9,24 @@ use FFI\Parser\Node\Literal\FloatLiteral\FloatParser\FloatParserResult;
 /**
  * Parses the source text of a floating constant.
  *
+ * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
+ *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
- *
- * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
  */
 final class FloatParser
 {
     /**
-     * Matches a constant without digit separators: the number and the
-     * suffix.
+     * Matches a decimal constant without digit separators: the mantissa, the
+     * optional exponent and the suffix.
      */
-    private const PATTERN = '/^(.+?)([fF](?:128x?|64x?|32x?|16)|[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL|[fFlL])?$/';
+    private const DECIMAL_PATTERN = '/^([0-9]*\.?[0-9]*)(?:[eE]([+-]?[0-9]+))?(.*)$/';
 
     /**
-     * Matches a hexadecimal number: the whole part, the fraction and the
-     * binary exponent.
+     * Matches a hexadecimal constant without digit separators: the mantissa,
+     * the binary exponent and the suffix.
      */
-    private const HEXADECIMAL_PATTERN = '/^0[xX]([0-9A-Fa-f]*)\.?([0-9A-Fa-f]*)[pP]([+-]?[0-9]+)$/';
+    private const HEXADECIMAL_PATTERN = '/^0[xX]([0-9A-Fa-f]*\.?[0-9A-Fa-f]*)[pP]([+-]?[0-9]+)(.*)$/';
 
     /**
      * Hexadecimal digits that always fit in a 64-bit integer (60 bits). The
@@ -54,69 +54,98 @@ final class FloatParser
     private const MIN_NORMAL_EXPONENT = -1022;
 
     /**
-     * A power of two that is a normal double, so scaling by it is exact.
+     * The exponent of the step a small power of two is taken in: `0x1p-1000`
+     * is a normal double, so scaling by it is exact.
      */
     private const SCALE_STEP = 1000;
+
+    /**
+     * Bits a hexadecimal digit stands for.
+     */
+    private const BITS_PER_HEX_DIGIT = 4;
 
     /**
      * @param non-empty-string $raw text of a `T_FLOAT_LITERAL` token
      */
     public static function parse(string $raw): FloatParserResult
     {
-        \preg_match(self::PATTERN, \str_replace("'", '', $raw), $parts);
+        $literal = \str_replace("'", '', $raw);
 
-        // A token of the lexer always matches, the defaults only keep the
-        // types of the parts exact.
-        [, $number, $suffix] = $parts + [1 => '0', 2 => ''];
+        if (\stripos($literal, '0x') === 0) {
+            return self::parseHexadecimal($literal);
+        }
+
+        return self::parseDecimal($literal);
+    }
+
+    private static function parseDecimal(string $literal): FloatParserResult
+    {
+        // A token of the lexer always matches, an absent exponent is an
+        // empty group
+        \preg_match(self::DECIMAL_PATTERN, $literal, $parts);
+
+        /** @var array{string, non-empty-string, numeric-string|'', string} $parts */
+        $exponent = $parts[2] === '' ? '0' : $parts[2];
 
         return new FloatParserResult(
-            value: self::parseValue($number),
-            suffix: self::parseSuffix($suffix),
+            value: (float) ($parts[1] . 'e' . $exponent),
+            mantissa: $parts[1],
+            exponent: $exponent,
+            base: FloatBase::Decimal,
+            suffix: self::parseSuffix($parts[3]),
         );
     }
 
-    private static function parseValue(string $number): float
+    private static function parseHexadecimal(string $literal): FloatParserResult
     {
-        if (\stripos($number, '0x') === 0) {
-            return self::parseHexadecimal($number);
-        }
+        // A token of the lexer always matches
+        \preg_match(self::HEXADECIMAL_PATTERN, $literal, $parts);
 
-        return (float) $number;
+        /** @var array{string, non-empty-string, numeric-string, string} $parts */
+        return new FloatParserResult(
+            value: self::evaluateHexadecimal($parts[1], $parts[2]),
+            mantissa: $parts[1],
+            exponent: $parts[2],
+            base: FloatBase::Hexadecimal,
+            suffix: self::parseSuffix($parts[3]),
+        );
     }
 
     /**
      * PHP does not understand hexadecimal floating numbers, so the value is
      * the mantissa scaled by the binary exponent.
      */
-    private static function parseHexadecimal(string $number): float
+    private static function evaluateHexadecimal(string $mantissa, string $exponent): float
     {
-        \preg_match(self::HEXADECIMAL_PATTERN, $number, $parts);
+        $point = \strpos($mantissa, '.');
+        $power = \max(-self::MAX_EXPONENT, \min(self::MAX_EXPONENT, (int) $exponent));
 
-        [, $whole, $fraction, $exponent] = $parts + [1 => '', 2 => '', 3 => '0'];
+        // Every digit after the point divides the value by 16
+        if ($point !== false) {
+            $power -= self::BITS_PER_HEX_DIGIT * (\strlen($mantissa) - $point - 1);
+        }
 
-        $exponent = \max(-self::MAX_EXPONENT, \min(self::MAX_EXPONENT, (int) $exponent));
-        $exponent -= 4 * \strlen($fraction);
-        $digits = \ltrim($whole . $fraction, '0');
+        $digits = \ltrim(\str_replace('.', '', $mantissa), '0');
 
         if ($digits === '') {
             return 0.0;
         }
 
-        $mantissa = \intval(\substr($digits, 0, self::MAX_MANTISSA_DIGITS), 16);
+        $significand = \intval(\substr($digits, 0, self::MAX_MANTISSA_DIGITS), 16);
 
         if (\strlen($digits) > self::MAX_MANTISSA_DIGITS) {
             $dropped = \substr($digits, self::MAX_MANTISSA_DIGITS);
-            $exponent += 4 * \strlen($dropped);
+            $power += self::BITS_PER_HEX_DIGIT * \strlen($dropped);
 
             // The value is correctly rounded only if the dropped digits are
             // not lost entirely: whether they are zero decides the rounding
             // of a value that lies exactly halfway
             if (\ltrim($dropped, '0') !== '') {
-                $mantissa |= 1;
+                $significand |= 1;
             }
         }
 
-        return self::toFloat($mantissa, $exponent);
+        return self::toFloat($significand, $power);
     }
 
     /**
@@ -168,7 +197,7 @@ final class FloatParser
     /**
      * Multiplies the value by the power of two. The power alone underflows
      * below `0x1p-1074` while the product does not (`0x1.00000000000010p-1022`
-     * is scaled by `2^-1074`), so a small power is taken in two steps. A large
+     * is scaled by `2^-1078`), so a small power is taken in two steps. A large
      * one overflows to {@see \INF} along with the product.
      */
     private static function scale(float $value, int $exponent): float

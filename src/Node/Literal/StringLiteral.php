@@ -21,8 +21,10 @@ final class StringLiteral extends Literal
      */
     public function __construct(
         /**
-         * Characters between the quotes with the escape sequences expanded,
-         * see {@see StringParser}
+         * Characters between the quotes with the escape sequences expanded:
+         * a universal character name, and any escape in a wide literal,
+         * becomes UTF-8, an octal or a hexadecimal escape in a narrow one
+         * stays a byte, a value that does not fit becomes U+FFFD
          */
         public readonly string $value,
         /**
@@ -34,9 +36,17 @@ final class StringLiteral extends Literal
         int $offset = 0,
     ) {
         parent::__construct(
-            raw: $raw ?? \sprintf('%s"%s"', $this->prefix?->value, \addcslashes($this->value, '"\\')),
+            raw: $raw ?? $this->representAsRawValue(),
             offset: $offset,
         );
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function representAsRawValue(): string
+    {
+        return \sprintf('%s"%s"', $this->prefix?->value, \addcslashes($this->value, '"\\'));
     }
 
     /**

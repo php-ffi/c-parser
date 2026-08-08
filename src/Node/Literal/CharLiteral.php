@@ -21,9 +21,11 @@ final class CharLiteral extends Literal
      */
     public function __construct(
         /**
-         * Characters between the quotes with the escape sequences expanded,
-         * see {@see StringParser}. A multicharacter constant (`'ab'`) keeps
-         * all of them.
+         * Characters between the quotes with the escape sequences expanded:
+         * a universal character name, and any escape in a wide literal,
+         * becomes UTF-8, an octal or a hexadecimal escape in a narrow one
+         * stays a byte, a value that does not fit becomes U+FFFD. A
+         * multicharacter constant (`'ab'`) keeps all of them.
          */
         public readonly string $value,
         /**
@@ -35,9 +37,17 @@ final class CharLiteral extends Literal
         int $offset = 0,
     ) {
         parent::__construct(
-            raw: $raw ?? \sprintf("%s'%s'", $this->prefix?->value, \addcslashes($this->value, '\'\\')),
+            raw: $raw ?? $this->representAsRawValue(),
             offset: $offset,
         );
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function representAsRawValue(): string
+    {
+        return \sprintf("%s'%s'", $this->prefix?->value, \addcslashes($this->value, '\'\\'));
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\FloatLiteral\FloatParser;
 
+use FFI\Parser\Node\Literal\FloatLiteral\FloatBase;
 use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
 
 /**
@@ -20,6 +21,22 @@ final class FloatParserResult
          * large for one
          */
         public readonly float $value,
+        /**
+         * The digits with the point as written, without digit separators
+         *
+         * @var non-empty-string
+         */
+        public readonly string $mantissa,
+        /**
+         * The exponent as written, `0` in case of there is none
+         *
+         * @var numeric-string
+         */
+        public readonly string $exponent,
+        /**
+         * The base the mantissa is written in
+         */
+        public readonly FloatBase $base,
         /**
          * The type suffix or {@see null} in case of there is none
          */

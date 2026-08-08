@@ -44,7 +44,7 @@ final class NativeBaseConverter implements BaseConverterInterface
         $limbs = [0];
 
         for ($i = 0, $length = \strlen($digits); $i < $length; ++$i) {
-            $carry = \intval($digits[$i], 36);
+            $carry = \intval($digits[$i], $base);
 
             for ($j = 0, $count = \count($limbs); $j < $count; ++$j) {
                 $value = $limbs[$j] * $base + $carry;

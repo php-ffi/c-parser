@@ -18,6 +18,8 @@ final class IntParserResult
     public function __construct(
         /**
          * The value, saturated at {@see \PHP_INT_MAX}
+         *
+         * @var int<0, max>
          */
         public readonly int $value,
         /**

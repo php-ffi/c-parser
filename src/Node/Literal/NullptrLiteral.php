@@ -19,8 +19,16 @@ final class NullptrLiteral extends Literal
     public function __construct(?string $raw = null, int $offset = 0)
     {
         parent::__construct(
-            raw: $raw ?? 'nullptr',
+            raw: $raw ?? $this->representAsRawValue(),
             offset: $offset,
         );
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function representAsRawValue(): string
+    {
+        return 'nullptr';
     }
 }
