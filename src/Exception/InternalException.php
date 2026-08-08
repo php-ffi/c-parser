@@ -20,7 +20,7 @@ final class InternalException extends ParserException
      */
     public static function becauseSourceIsNotReadable(\Throwable $reason): self
     {
-        $message = \sprintf('The source cannot be read: %s', \addcslashes($reason->getMessage(), '"'));
+        $message = \sprintf('The source cannot be read: "%s"', \addcslashes($reason->getMessage(), '"'));
 
         return new self($message, $reason);
     }
@@ -31,7 +31,7 @@ final class InternalException extends ParserException
      */
     public static function becauseSourceCannotBeAnalyzed(\Throwable $reason): self
     {
-        $message = \sprintf('The source cannot be analyzed: %s', \addcslashes($reason->getMessage(), '"'));
+        $message = \sprintf('The source cannot be analyzed: "%s"', \addcslashes($reason->getMessage(), '"'));
 
         return new self($message, $reason);
     }
