@@ -6,12 +6,14 @@ namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\IntLiteral;
 use FFI\Parser\Node\Literal\IntLiteral\IntBase;
+use FFI\Parser\Node\Literal\IntLiteral\IntParser;
 use FFI\Parser\Node\Literal\IntLiteral\IntTypeSuffix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(IntLiteral::class)]
+#[CoversClass(IntParser::class)]
 final class IntLiteralTest extends TestCase
 {
     /**
@@ -154,28 +156,23 @@ final class IntLiteralTest extends TestCase
         self::assertSame(42, IntLiteral::parse('1', 42)->offset);
     }
 
-    public function testBuiltConstantGetsTheExactDecimalAsSourceText(): void
-    {
-        self::assertSame('18446744073709551615', (new IntLiteral(\PHP_INT_MAX, '18446744073709551615'))->raw);
-    }
-
     /**
      * @return iterable<non-empty-string, array{IntLiteral, non-empty-string}>
      */
     public static function builtConstantsDataProvider(): iterable
     {
         yield 'decimal' => [new IntLiteral(42, '42'), '42'];
-        yield 'hexadecimal with a suffix' => [
-            new IntLiteral(255, '255', IntBase::Hexadecimal, IntTypeSuffix::UnsignedLong),
-            '0xfful',
+        yield 'decimal with a suffix' => [new IntLiteral(42, '42', suffix: IntTypeSuffix::UnsignedLong), '42ul'];
+        yield 'hexadecimal' => [new IntLiteral(255, '255', IntBase::Hexadecimal), '255'];
+        yield 'beyond the native integer' => [
+            new IntLiteral(\PHP_INT_MAX, '18446744073709551615', IntBase::Hexadecimal, IntTypeSuffix::Unsigned),
+            '18446744073709551615u',
         ];
-        yield 'octal' => [new IntLiteral(8, '8', IntBase::Octal), '010'];
-        yield 'binary with a suffix' => [new IntLiteral(5, '5', IntBase::Binary, IntTypeSuffix::BitPrecise), '0b101wb'];
     }
 
     /**
-     * A constant built without the source text gets one written in its base
-     * and with its suffix.
+     * A constant built without the source text gets its decimal value with
+     * its suffix, the only text known to be exact.
      */
     #[DataProvider('builtConstantsDataProvider')]
     public function testBuiltConstantGetsSourceText(IntLiteral $constant, string $raw): void

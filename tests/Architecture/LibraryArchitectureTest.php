@@ -11,7 +11,7 @@ use PHPat\Test\PHPat;
 
 final class LibraryArchitectureTest
 {
-    public function testNodesDoNotDependOnTheParser(): Rule
+    public function testNodesDoNotDependOnTheParserOrTheValidators(): Rule
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('FFI\Parser\Node'))

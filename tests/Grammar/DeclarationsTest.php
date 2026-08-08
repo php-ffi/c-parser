@@ -25,6 +25,8 @@ final class DeclarationsTest extends TestCase
         $declaration = self::parseStaticAssert('static_assert(a);');
 
         self::assertInstanceOf(IdentifierExpression::class, $declaration->condition);
+        self::assertSame('a', $declaration->condition->name->name);
+        self::assertSame(14, $declaration->condition->name->offset);
         self::assertNull($declaration->message);
         self::assertSame(0, $declaration->offset);
     }
@@ -86,6 +88,8 @@ final class DeclarationsTest extends TestCase
     #[DataProvider('invalidDeclarationsDataProvider')]
     public function testInvalidDeclarationIsRejected(string $code, int $offset): void
     {
+        self::assertFalse((new Parser())->validate($code));
+
         try {
             (new Parser())->parse($code);
         } catch (SyntaxException $e) {

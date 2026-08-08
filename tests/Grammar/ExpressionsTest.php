@@ -169,6 +169,26 @@ final class ExpressionsTest extends TestCase
     public function testExpressionIsParsed(string $expression, string $expected): void
     {
         self::assertSame($expected, self::dump(self::parseCondition($expression)));
+        self::assertTrue((new Parser())->validate('static_assert(' . $expression . ');'));
+    }
+
+    public function testNameInAnExpressionRefersToTheIdentifier(): void
+    {
+        $node = self::parseCondition('(a)');
+
+        self::assertInstanceOf(IdentifierExpression::class, $node);
+        self::assertSame('a', $node->name->name);
+        self::assertSame(15, $node->name->offset);
+    }
+
+    public function testMemberIsNamedByTheIdentifier(): void
+    {
+        $node = self::parseCondition('a->b');
+
+        self::assertInstanceOf(PointerMemberExpression::class, $node);
+        self::assertInstanceOf(IdentifierExpression::class, $node->object);
+        self::assertSame('b', $node->member->name);
+        self::assertSame(17, $node->member->offset);
     }
 
     /**
@@ -266,13 +286,18 @@ final class ExpressionsTest extends TestCase
         yield 'member named by a number' => ['a->1', 17];
         yield 'empty parentheses' => ['()', 15];
         yield 'operand after sizeof of a type' => ['sizeof(T)x', 23];
+        yield 'comma outside parentheses' => ['a, b', 17];
     }
 
     #[DataProvider('invalidExpressionsDataProvider')]
     public function testInvalidExpressionIsRejected(string $expression, int $offset): void
     {
+        $code = 'static_assert(' . $expression . ');';
+
+        self::assertFalse((new Parser())->validate($code));
+
         try {
-            (new Parser())->parse('static_assert(' . $expression . ');');
+            (new Parser())->parse($code);
         } catch (SyntaxException $e) {
             self::assertSame($offset, $e->offset);
 
@@ -340,7 +365,7 @@ final class ExpressionsTest extends TestCase
             ),
             $node instanceof IdentifierExpression => $node->name->name,
             $node instanceof Identifier => $node->name,
-            $node instanceof NamedType => 'type:' . $node->name,
+            $node instanceof NamedType => 'type:' . $node->name->name,
             $node instanceof Literal => $node->raw,
             default => self::fail(\sprintf('%s is not expected in a constant expression', $node::class)),
         };

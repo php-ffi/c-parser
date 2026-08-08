@@ -9,13 +9,19 @@ use FFI\Parser\Exception\ParserException;
 use FFI\Parser\Exception\SyntaxException;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Parser;
+use FFI\Parser\Parser\ParserExecutor;
+use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
+use Phplrt\Contracts\Source\SourceFactoryInterface;
 use Phplrt\Source\FileSource;
 use Phplrt\Source\VirtualSource;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(Parser::class)]
+#[CoversClass(ParserExecutor::class)]
+#[CoversClass(InternalException::class)]
+#[CoversClass(SyntaxException::class)]
 final class ParserTest extends TestCase
 {
     private const HEADER_FILE = __DIR__ . '/resources/empty.h';
@@ -139,13 +145,31 @@ final class ParserTest extends TestCase
         \ini_set('pcre.jit', '0');
 
         try {
-            $this->expectException(InternalException::class);
+            (new Parser())->{$method}('/*' . \str_repeat('*x', 10_000) . '*/;');
+        } catch (InternalException $e) {
+            self::assertInstanceOf(LexerRuntimeExceptionInterface::class, $e->getPrevious());
 
-            (new Parser())->{$method}('/*' . \str_repeat('x', 10_000) . '*/;');
+            return;
         } finally {
             \ini_set('pcre.backtrack_limit', (string) $limit);
             \ini_set('pcre.jit', (string) $jit);
         }
+
+        self::fail('InternalException has not been thrown');
+    }
+
+    public function testSourcesAreCreatedByTheGivenFactory(): void
+    {
+        $factory = $this->createMock(SourceFactoryInterface::class);
+        $factory->expects(self::exactly(2))
+            ->method('create')
+            ->with('header')
+            ->willReturn(VirtualSource::createFromString('header.h', ';'));
+
+        $parser = new Parser($factory);
+
+        self::assertSame([], $parser->parse('header'));
+        self::assertTrue($parser->validate('header'));
     }
 
     /**

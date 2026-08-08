@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\FloatLiteral;
+use FFI\Parser\Node\Literal\FloatLiteral\FloatBase;
+use FFI\Parser\Node\Literal\FloatLiteral\FloatParser;
 use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(FloatLiteral::class)]
+#[CoversClass(FloatParser::class)]
 final class FloatLiteralTest extends TestCase
 {
     /**
@@ -118,19 +121,63 @@ final class FloatLiteralTest extends TestCase
     }
 
     /**
+     * @return iterable<non-empty-string, array{non-empty-string, non-empty-string, numeric-string, FloatBase}>
+     */
+    public static function partsDataProvider(): iterable
+    {
+        yield 'fraction' => ['1.5', '1.5', '0', FloatBase::Decimal];
+        yield 'fraction without the whole part' => ['.5', '.5', '0', FloatBase::Decimal];
+        yield 'whole part without the fraction' => ['1.', '1.', '0', FloatBase::Decimal];
+        yield 'exponent' => ['1e10', '1', '10', FloatBase::Decimal];
+        yield 'signed exponent with a suffix' => ['1.5E-3f', '1.5', '-3', FloatBase::Decimal];
+        yield 'separators' => ["1'000.000'1e1'0", '1000.0001', '10', FloatBase::Decimal];
+        yield 'exponent beyond the native integer' => [
+            '1e99999999999999999999',
+            '1',
+            '99999999999999999999',
+            FloatBase::Decimal,
+        ];
+        yield 'mantissa beyond a double' => [
+            '1.00000000000000000000000000001L',
+            '1.00000000000000000000000000001',
+            '0',
+            FloatBase::Decimal,
+        ];
+        yield 'hexadecimal' => ['0x1.8p3', '1.8', '3', FloatBase::Hexadecimal];
+        yield 'hexadecimal with a suffix' => ['0X.Fp-2f', '.F', '-2', FloatBase::Hexadecimal];
+        yield 'hexadecimal with digits e and f' => ['0xe.fp+1', 'e.f', '+1', FloatBase::Hexadecimal];
+    }
+
+    /**
+     * The mantissa and the exponent keep the value exactly, whatever its
+     * precision.
+     */
+    #[DataProvider('partsDataProvider')]
+    public function testPartsAreParsed(string $raw, string $mantissa, string $exponent, FloatBase $base): void
+    {
+        $literal = FloatLiteral::parse($raw);
+
+        self::assertSame($mantissa, $literal->mantissa);
+        self::assertSame($exponent, $literal->exponent);
+        self::assertSame($base, $literal->base);
+    }
+
+    /**
      * @return iterable<non-empty-string, array{FloatLiteral, non-empty-string}>
      */
     public static function builtConstantsDataProvider(): iterable
     {
-        yield 'whole value' => [new FloatLiteral(1.0), '1.0'];
-        yield 'fraction with a suffix' => [new FloatLiteral(1.5, FloatTypeSuffix::Float), '1.5f'];
-        yield 'exponent' => [new FloatLiteral(1.5e20), '1.5E+20'];
-        yield 'decimal floating' => [new FloatLiteral(0.1, FloatTypeSuffix::Decimal64), '0.1dd'];
+        yield 'whole value' => [new FloatLiteral(1.0, '1'), '1e0'];
+        yield 'fraction with a suffix' => [new FloatLiteral(1.5, '1.5', suffix: FloatTypeSuffix::Float), '1.5e0f'];
+        yield 'exponent' => [new FloatLiteral(1.5e20, '1.5', '20'), '1.5e20'];
+        yield 'decimal floating' => [new FloatLiteral(0.1, '0.1', suffix: FloatTypeSuffix::Decimal64), '0.1e0dd'];
+        yield 'hexadecimal' => [new FloatLiteral(12.0, '1.8', '3', FloatBase::Hexadecimal), '0x1.8p3'];
     }
 
     /**
-     * A constant built without the source text gets one with a fraction or
-     * an exponent, so that it is not read as an integer constant.
+     * A constant built without the source text gets one written out of its
+     * mantissa and exponent. The exponent is always there, so that the text
+     * is not read as an integer constant.
      */
     #[DataProvider('builtConstantsDataProvider')]
     public function testBuiltConstantGetsSourceText(FloatLiteral $constant, string $raw): void

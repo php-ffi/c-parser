@@ -217,6 +217,21 @@ final class LexemesTest extends TestCase
         yield 'directive indented by a form feed' => ["\f#pragma once\nx", [
             ['T_DIRECTIVE', "\f#pragma once"], ['T_IDENTIFIER', 'x'],
         ]];
+        yield 'directive indented by a vertical tab' => ["\x0B#pragma once\nx", [
+            ['T_DIRECTIVE', "\x0B#pragma once"], ['T_IDENTIFIER', 'x'],
+        ]];
+        yield 'indented directive after CRLF' => ["x\r\n  #pragma once\r\ny", [
+            ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', '  #pragma once'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'indented directive after a trailing space' => ["x \n  #pragma once\ny", [
+            ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', '  #pragma once'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'directive after the byte order mark' => ["\xEF\xBB\xBF#pragma once\nx", [
+            ['T_DIRECTIVE', '#pragma once'], ['T_IDENTIFIER', 'x'],
+        ]];
+        yield 'byte of a legacy encoding is not whitespace' => ["\x85x", [['T_IDENTIFIER', "\x85x"]]];
+        yield 'long block comment' => ['/*' . \str_repeat('x', 2_000_000) . '*/x', [['T_IDENTIFIER', 'x']]];
+        yield 'block comment of stars' => ['/***/x', [['T_IDENTIFIER', 'x']]];
         yield 'hash not at the beginning of a line' => ['x # y', [
             ['T_IDENTIFIER', 'x'], ['Unknown', '#'], ['T_IDENTIFIER', 'y'],
         ]];
@@ -236,6 +251,9 @@ final class LexemesTest extends TestCase
         }
     }
 
+    /**
+     * @param list<array{string, string}> $expected
+     */
     #[DataProvider('tokensDataProvider')]
     public function testSourceIsSplitIntoTokens(string $code, array $expected): void
     {
