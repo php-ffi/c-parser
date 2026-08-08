@@ -63,8 +63,12 @@
 // line, and the newline is a separate token, so "^" (multiline mode) still
 // holds at the beginning of the next line. A backslash continues the
 // directive onto the next line, whether the line ends with LF or CRLF, and
-// the CR of a CRLF ending is not a part of the directive.
-%token T_DIRECTIVE          ^[\x20\t\f\v]*+(?:\x23|%:)(?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+ -> channel(Directive)
+// the CR of a CRLF ending is not a part of the directive. The first line
+// may also start after the byte order mark. The vertical tab is written as
+// \x0B, since \v of PCRE matches any vertical whitespace, newlines included.
+%fragment LINE_START       ^|(?<=\A\xEF\xBB\xBF)
+%fragment DIRECTIVE_BODY   (?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+
+%token T_DIRECTIVE          (?&LINE_START)[\x20\t\f\x0B]*+(?:\x23|%:)(?&DIRECTIVE_BODY) -> channel(Directive)
 
 //
 // Whitespace and comments
@@ -74,9 +78,11 @@
 %skip T_BYTE_ORDER_MARK     \A\xEF\xBB\xBF
 // Comments, 6.4.9
 %skip T_COMMENT_LINE        //[^\n]*+
-%skip T_COMMENT_BLOCK       /\*.*?\*/
+// The block comment is matched without backtracking, so that a long one does
+// not exhaust the backtrack limit of PCRE
+%skip T_COMMENT_BLOCK       /\*(?:[^*]++|\*(?!/))*+\*/
 %skip T_NEWLINE             \n++
-%skip T_WHITESPACE          [\x20\t\r\f\v]++
+%skip T_WHITESPACE          [\x20\t\r\f\x0B]++
 
 //
 // Literals, 6.4.4 and 6.4.5

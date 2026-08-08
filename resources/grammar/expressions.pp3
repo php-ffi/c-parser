@@ -380,7 +380,7 @@ AlignofExpression -> {
 // 6.5.3 Postfix operators, a[i], s.member, p->member
 PostfixExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
+     * @var non-empty-list<Expression\Expression|Node\Identifier|TokenInterface> $children
      * @var Expression\Expression $result
      */
     $result = $children[0];
@@ -434,7 +434,7 @@ IdentifierExpression -> {
   ;
 
 // A name by itself, not an expression: it is also the member of a member
-// access
+// access and the name of a type
 Identifier -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
@@ -446,9 +446,8 @@ Identifier -> {
 // A type in a cast, sizeof and alignof is referred to by a name, the parser
 // has no table of the declared names to tell what kind of type it is
 TypeName -> {
-    /** @var TokenInterface $children */
-    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return new Type\NamedType($children->value, $offset);
+    /** @var array{Node\Identifier} $children */
+    return new Type\NamedType($children[0], $offset);
 }
-  : <T_IDENTIFIER>
+  : Identifier()
   ;
