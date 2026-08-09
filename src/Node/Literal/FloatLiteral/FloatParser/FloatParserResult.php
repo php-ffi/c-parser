@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\FloatLiteral\FloatParser;
 
-use FFI\Parser\Node\Literal\FloatLiteral\FloatBase;
 use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
 
 /**
@@ -33,10 +32,6 @@ final class FloatParserResult
          * @var numeric-string
          */
         public readonly string $exponent,
-        /**
-         * The base the mantissa is written in
-         */
-        public readonly FloatBase $base,
         /**
          * The type suffix or {@see null} in case of there is none
          */

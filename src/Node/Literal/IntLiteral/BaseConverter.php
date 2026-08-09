@@ -14,7 +14,7 @@ use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
  */
-final class BaseConverterFactory
+final class BaseConverter
 {
     private static BaseConverterInterface $default;
 
@@ -30,6 +30,20 @@ final class BaseConverterFactory
             // TBD remove it? lol
             new BcMathBaseConverter(),
         ]);
+    }
+
+    /**
+     * A facade method for the {@see BaseConverterInterface::toDecimal()}
+     *
+     * @param non-empty-string $digits
+     * @param int<2, 36> $base
+     * @return numeric-string
+     */
+    public static function toDecimal(string $digits, int $base): string
+    {
+        $converter = self::createDefault();
+
+        return $converter->toDecimal($digits, $base);
     }
 
     /**

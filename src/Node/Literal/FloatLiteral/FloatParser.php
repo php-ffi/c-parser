@@ -65,7 +65,7 @@ final class FloatParser
     private const BITS_PER_HEX_DIGIT = 4;
 
     /**
-     * @param non-empty-string $raw text of a `T_FLOAT_LITERAL` token
+     * @param non-empty-string $raw text of a floating constant
      */
     public static function parse(string $raw): FloatParserResult
     {
@@ -91,7 +91,6 @@ final class FloatParser
             value: (float) ($parts[1] . 'e' . $exponent),
             mantissa: $parts[1],
             exponent: $exponent,
-            base: FloatBase::Decimal,
             suffix: self::parseSuffix($parts[3]),
         );
     }
@@ -106,7 +105,6 @@ final class FloatParser
             value: self::evaluateHexadecimal($parts[1], $parts[2]),
             mantissa: $parts[1],
             exponent: $parts[2],
-            base: FloatBase::Hexadecimal,
             suffix: self::parseSuffix($parts[3]),
         );
     }

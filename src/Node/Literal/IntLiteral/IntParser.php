@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\IntLiteral;
 
+use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntBase;
 use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntParserResult;
 
 /**
@@ -17,7 +18,7 @@ use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntParserResult;
 final class IntParser
 {
     /**
-     * @param non-empty-string $raw text of a `T_INT_LITERAL` token
+     * @param non-empty-string $raw text of an integer constant
      */
     public static function parse(string $raw): IntParserResult
     {
@@ -38,7 +39,6 @@ final class IntParser
             // The value saturates at PHP_INT_MAX, only then it differs from
             // the exact one and the digits have to be converted
             decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
-            base: $base,
             suffix: self::parseSuffix(\substr($literal, $suffixOffset)),
         );
     }
@@ -108,7 +108,7 @@ final class IntParser
             return $digits;
         }
 
-        return BaseConverterFactory::createDefault()->toDecimal($digits, $base->value);
+        return BaseConverter::toDecimal($digits, $base->value);
     }
 
     private static function parseSuffix(string $suffix): ?IntTypeSuffix

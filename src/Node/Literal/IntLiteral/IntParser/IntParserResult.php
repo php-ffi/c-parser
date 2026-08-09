@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\IntLiteral\IntParser;
 
-use FFI\Parser\Node\Literal\IntLiteral\IntBase;
 use FFI\Parser\Node\Literal\IntLiteral\IntTypeSuffix;
 
 /**
@@ -28,10 +27,6 @@ final class IntParserResult
          * @var numeric-string
          */
         public readonly string $decimal,
-        /**
-         * The base the digits are written in
-         */
-        public readonly IntBase $base,
         /**
          * The type suffix or {@see null} in case of there is none
          */

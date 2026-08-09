@@ -4,28 +4,64 @@
 
 // 6.4.4 Constants
 Constant
-  : IntLiteral()
-  | FloatLiteral()
+  : DecIntLiteral()
+  | HexIntLiteral()
+  | OctIntLiteral()
+  | BinIntLiteral()
+  | DecFloatLiteral()
+  | HexFloatLiteral()
   | CharLiteral()
   | TrueLiteral()
   | FalseLiteral()
   | NullptrLiteral()
   ;
 
-IntLiteral -> {
+DecIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\IntLiteral::parse($children->value, $offset);
+    return Literal\DecIntLiteral::parse($children->value, $offset);
 }
-  : <T_INT_LITERAL>
+  : <T_DEC_INT_LITERAL>
   ;
 
-FloatLiteral -> {
+HexIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\FloatLiteral::parse($children->value, $offset);
+    return Literal\HexIntLiteral::parse($children->value, $offset);
 }
-  : <T_FLOAT_LITERAL>
+  : <T_HEX_INT_LITERAL>
+  ;
+
+OctIntLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\OctIntLiteral::parse($children->value, $offset);
+}
+  : <T_OCT_INT_LITERAL>
+  ;
+
+BinIntLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\BinIntLiteral::parse($children->value, $offset);
+}
+  : <T_BIN_INT_LITERAL>
+  ;
+
+DecFloatLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\DecFloatLiteral::parse($children->value, $offset);
+}
+  : <T_DEC_FLOAT_LITERAL>
+  ;
+
+HexFloatLiteral -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return Literal\HexFloatLiteral::parse($children->value, $offset);
+}
+  : <T_HEX_FLOAT_LITERAL>
   ;
 
 CharLiteral -> {

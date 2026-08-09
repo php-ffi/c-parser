@@ -35,7 +35,6 @@
 %fragment BIN_INT           0[bB][01](?:'?[01])*+
 %fragment OCT_INT           0(?:'?[0-7])*+
 %fragment DEC_INT           [1-9](?:'?[0-9])*+
-%fragment INT_DIGITS        (?&HEX_INT)|(?&BIN_INT)|(?&OCT_INT)|(?&DEC_INT)
 %fragment INT_SIZE          ll|LL|[lL]|wb|WB
 %fragment INT_SUFFIX        [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
 
@@ -46,7 +45,6 @@
 %fragment BIN_EXPONENT      [pP][+-]?(?&DEC_DIGITS)
 %fragment DEC_FLOAT         (?&DEC_FRACTION)(?&DEC_EXPONENT)?|(?&DEC_DIGITS)(?&DEC_EXPONENT)
 %fragment HEX_FLOAT         0[xX](?&HEX_SIGNIFICAND)(?&BIN_EXPONENT)
-%fragment FLOAT_NUMBER      (?&HEX_FLOAT)|(?&DEC_FLOAT)
 %fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
 %fragment FLOAT_SUFFIX      [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
 
@@ -89,11 +87,16 @@
 //
 // Declared before keywords and identifiers, since an encoding prefix
 // (u8"...") looks like an identifier, and before punctuators, since a
-// floating constant may start with a dot (.5).
+// floating constant may start with a dot (.5). A constant of each base is
+// a token of its own, the base is the class of its node.
 //
 
-%token T_FLOAT_LITERAL      (?&FLOAT_NUMBER)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
-%token T_INT_LITERAL        (?&INT_DIGITS)(?&INT_SUFFIX)?(?&NUMBER_END)
+%token T_HEX_FLOAT_LITERAL  (?&HEX_FLOAT)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
+%token T_DEC_FLOAT_LITERAL  (?&DEC_FLOAT)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
+%token T_HEX_INT_LITERAL    (?&HEX_INT)(?&INT_SUFFIX)?(?&NUMBER_END)
+%token T_BIN_INT_LITERAL    (?&BIN_INT)(?&INT_SUFFIX)?(?&NUMBER_END)
+%token T_OCT_INT_LITERAL    (?&OCT_INT)(?&INT_SUFFIX)?(?&NUMBER_END)
+%token T_DEC_INT_LITERAL    (?&DEC_INT)(?&INT_SUFFIX)?(?&NUMBER_END)
 %token T_CHAR_LITERAL       (?:u8|[uUL])?'(?:[^'\\\n]|(?&ESCAPE))++'
 %token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
 
