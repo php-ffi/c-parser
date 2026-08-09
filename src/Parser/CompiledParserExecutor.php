@@ -1881,8 +1881,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 70 => self::reduceTrueLiteral(...),
                 71 => self::reduceFalseLiteral(...),
                 72 => self::reduceNullptrLiteral(...),
-                73 => self::reduceStringLiteral(...),
-                74 => self::reduceSingleStringLiteral(...),
+                73 => self::reduceConcatenatedStringLiteral(...),
+                74 => self::reduceStringLiteral(...),
                 75 => self::reduceParenthesizedExpression(...),
                 76 => self::reduceExpression(...),
             ],
@@ -2378,7 +2378,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         return new Literal\NullptrLiteral($children->value, $offset);
     }
 
-    private static function reduceStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    private static function reduceConcatenatedStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
@@ -2391,7 +2391,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         return new Literal\ConcatenatedStringLiteral($children, $offset);
     }
 
-    private static function reduceSingleStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    private static function reduceStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
         // The variables below are declared by the compiler
         $offset = $ctx->begin;

@@ -23,6 +23,6 @@ StaticAssertDeclaration -> {
 }
   : <T_STATIC_ASSERT> ::T_LPAREN::
         ConditionalExpression()
-        (::T_COMMA:: StringLiteral())?
+        (::T_COMMA:: ConcatenatedStringLiteral())?
     ::T_RPAREN:: ::T_SEMICOLON::
   ;

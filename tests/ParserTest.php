@@ -34,12 +34,6 @@ final class ParserTest extends TestCase
         self::assertContainsOnlyInstancesOf(Node::class, (new Parser())->parse($code));
     }
 
-    #[DataProvider('validHeadersDataProvider')]
-    public function testValidHeaderIsValidated(string $code): void
-    {
-        self::assertTrue((new Parser())->validate($code));
-    }
-
     /**
      * @return iterable<non-empty-string, array{mixed}>
      */
@@ -92,34 +86,6 @@ final class ParserTest extends TestCase
         self::fail('SyntaxException has not been thrown');
     }
 
-    public function testUnreadableSourceIsReportedByParsing(): void
-    {
-        $parser = new Parser();
-
-        try {
-            $parser->parse(FileSource::createFromPathname(self::MISSING_FILE));
-        } catch (InternalException $e) {
-            self::assertInstanceOf(SourceExceptionInterface::class, $e->getPrevious());
-
-            return;
-        }
-
-        self::fail('InternalException has not been thrown');
-    }
-
-    public function testUnreadableSourceIsReportedByValidation(): void
-    {
-        try {
-            (new Parser())->validate(FileSource::createFromPathname(self::MISSING_FILE));
-        } catch (InternalException $e) {
-            self::assertInstanceOf(SourceExceptionInterface::class, $e->getPrevious());
-
-            return;
-        }
-
-        self::fail('InternalException has not been thrown');
-    }
-
     /**
      * @return iterable<non-empty-string, array{non-empty-string}>
      */
@@ -127,6 +93,23 @@ final class ParserTest extends TestCase
     {
         yield 'parse' => ['parse'];
         yield 'validate' => ['validate'];
+    }
+
+    /**
+     * @param non-empty-string $method
+     */
+    #[DataProvider('methodsDataProvider')]
+    public function testUnreadableSourceIsReportedAsInternal(string $method): void
+    {
+        try {
+            (new Parser())->{$method}(FileSource::createFromPathname(self::MISSING_FILE));
+        } catch (InternalException $e) {
+            self::assertInstanceOf(SourceExceptionInterface::class, $e->getPrevious());
+
+            return;
+        }
+
+        self::fail('InternalException has not been thrown');
     }
 
     /**

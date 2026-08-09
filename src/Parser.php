@@ -8,11 +8,11 @@ use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxException;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Parser\ParserExecutor;
+use Phplrt\Contracts\Lexer\Exception\LexerExceptionInterface;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
-use Phplrt\Lexer\Exception\LexerSourceException;
 use Phplrt\Parser\Exception\UnexpectedTokenException;
 use Phplrt\Source\SourceFactory;
 
@@ -60,11 +60,11 @@ final class Parser
         } catch (UnexpectedTokenException $e) {
             throw SyntaxException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
             // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
-        } catch (LexerSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
-            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
         } catch (LexerRuntimeExceptionInterface $e) {
             throw InternalException::becauseSourceCannotBeAnalyzed($e);
+            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
+        } catch (LexerExceptionInterface $e) {
+            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         }
     }
 
@@ -83,10 +83,10 @@ final class Parser
 
         try {
             return $this->parser->validate($source);
-        } catch (LexerSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (LexerRuntimeExceptionInterface $e) {
             throw InternalException::becauseSourceCannotBeAnalyzed($e);
+        } catch (LexerExceptionInterface $e) {
+            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         }
     }
 

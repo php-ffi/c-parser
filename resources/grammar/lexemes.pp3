@@ -149,8 +149,9 @@
 %token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
-// Keywords of statements and of _Generic. A header has neither, but they
-// are still reserved and may not be used as identifiers.
+// Keywords of statements and of _Generic. Statements are not parsed and
+// _Generic is not supported yet, but they are still reserved and may not be
+// used as identifiers.
 %token T_RESERVED_KEYWORD   (?:(?&STATEMENT_KEYWORD)|_Generic)(?&KEYWORD_END)
 
 //

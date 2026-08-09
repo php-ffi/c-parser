@@ -119,12 +119,13 @@ final class LexemesTest extends TestCase
                 '1uwb', '1wbU', '1Ull',
             ],
             'T_OCT_INT_LITERAL' => ['0', '00', '017', "0'7"],
-            'T_HEX_INT_LITERAL' => ['0x1F', "0x1F'FF", '0XabCD', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '0x1uwb'],
+            'T_HEX_INT_LITERAL' => ['0x1', '0x1F', "0x1F'FF", '0XabCD', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '0x1uwb'],
             'T_BIN_INT_LITERAL' => ['0b1010', "0B1'0"],
             'T_DEC_FLOAT_LITERAL' => [
                 '1.5', '.5', '1.', '1e10', '1E+10', '1.5e-3', "1'000.000'1", '1.5f', '1.5F', '1.5l', '1.5L',
                 '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x',
                 '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1.0d128x', '1e999', "1e1'0", '08.5', '09e1',
+                '0.5', '0e1',
             ],
             'T_HEX_FLOAT_LITERAL' => [
                 '0x1.8p3', '0x.8p1', '0x1p-1074', '0X1P+4', '0x1.fffffffffffffp1023', '0x1p3f', "0x1p1'0", '0x1.p1',
@@ -250,7 +251,8 @@ final class LexemesTest extends TestCase
 
         foreach ([
             '08', '09', '0b2', '0b', '0x', "1''0", "1'", "'1", '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b',
-            '1.5ff', '1.5fl', '1.5dF', '0x1.8', '1e', '1e+', '1.5f8', "''", "'a", '"text',
+            '1.5ff', '1.5fl', '1.5dF', '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8',
+            "''", "'a", '"text',
             '"\\q"', "'\\q'", '"\\x"', '"\\u12"', '@', '$', '`',
         ] as $fragment) {
             yield 'not a lexeme ' . \addcslashes($fragment, "\n") => [$fragment, self::getUnknownTokens($fragment)];

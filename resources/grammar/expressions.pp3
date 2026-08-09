@@ -261,28 +261,28 @@ MultiplicativeExpression -> {
 
     return $result;
 }
-  : CastOperand() (
-        (<T_ASTERISK> | <T_SLASH> | <T_PERCENT>) CastOperand()
+  : CastOrUnaryExpression() (
+        (<T_ASTERISK> | <T_SLASH> | <T_PERCENT>) CastOrUnaryExpression()
     )*
   ;
 
-CastOperand
+CastOrUnaryExpression
   : CastExpression()
   | UnaryExpression()
   ;
 
 // 6.5.5 Cast operators, (T)x. Without a table of the declared names "(T)" is
 // a cast only when the next token can start an operand but cannot continue a
-// parenthesized expression (CastOperandStart), so "(T)-x" is a subtraction
+// parenthesized expression (CastStart), so "(T)-x" is a subtraction
 // and "(x)[0]" is a subscript.
 CastExpression -> {
     /** @var array{TokenInterface, Type\NamedType, Expression\Expression} $children */
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
-  : <T_LPAREN> TypeName() ::T_RPAREN:: &CastOperandStart() CastOperand()
+  : <T_LPAREN> TypeName() ::T_RPAREN:: &CastStart() CastOrUnaryExpression()
   ;
 
-CastOperandStart
+CastStart
   : <T_IDENTIFIER> | <T_LPAREN>
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
@@ -309,7 +309,7 @@ PlusExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\PlusExpression($children[1], $offset);
 }
-  : <T_PLUS> CastOperand()
+  : <T_PLUS> CastOrUnaryExpression()
   ;
 
 // -x
@@ -317,7 +317,7 @@ MinusExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\MinusExpression($children[1], $offset);
 }
-  : <T_MINUS> CastOperand()
+  : <T_MINUS> CastOrUnaryExpression()
   ;
 
 // !x
@@ -325,7 +325,7 @@ LogicalNotExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\LogicalNotExpression($children[1], $offset);
 }
-  : <T_EXCLAMATION> CastOperand()
+  : <T_EXCLAMATION> CastOrUnaryExpression()
   ;
 
 // ~x
@@ -333,7 +333,7 @@ BitwiseNotExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
 }
-  : <T_TILDE> CastOperand()
+  : <T_TILDE> CastOrUnaryExpression()
   ;
 
 // *p
@@ -341,7 +341,7 @@ DereferenceExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\DereferenceExpression($children[1], $offset);
 }
-  : <T_ASTERISK> CastOperand()
+  : <T_ASTERISK> CastOrUnaryExpression()
   ;
 
 // &x
@@ -349,7 +349,7 @@ AddressOfExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return new UnaryExpression\AddressOfExpression($children[1], $offset);
 }
-  : <T_AMPERSAND> CastOperand()
+  : <T_AMPERSAND> CastOrUnaryExpression()
   ;
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
@@ -414,12 +414,10 @@ PostfixOperatorStart
 PrimaryExpression
   : IdentifierExpression()
   | Constant()
-  | StringLiteral()
+  | ConcatenatedStringLiteral()
   | ParenthesizedExpression()
   ;
 
-// The "(" is kept as a token, so that the node containing the parenthesized
-// operand starts at it
 ParenthesizedExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
     return $children[1];

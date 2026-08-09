@@ -96,8 +96,9 @@ NullptrLiteral -> {
   : <T_NULLPTR>
   ;
 
-// 6.4.5 String literals, adjacent ones are joined by C: "a" "b"
-StringLiteral -> {
+// 6.4.5 String literals, adjacent ones are joined by C: "a" "b". A lone one
+// is not wrapped.
+ConcatenatedStringLiteral -> {
     /** @var non-empty-list<Literal\StringLiteral> $children */
     if (\count($children) === 1) {
         return $children[0];
@@ -105,10 +106,10 @@ StringLiteral -> {
 
     return new Literal\ConcatenatedStringLiteral($children, $offset);
 }
-  : SingleStringLiteral()+
+  : StringLiteral()+
   ;
 
-SingleStringLiteral -> {
+StringLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return Literal\StringLiteral::parse($children->value, $offset);

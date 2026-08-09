@@ -18,13 +18,17 @@ use FFI\Parser\Node\Expression\SizeofTypeExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression;
 use FFI\Parser\Node\Identifier;
+use FFI\Parser\Node\Literal\BinIntLiteral;
 use FFI\Parser\Node\Literal\BoolLiteral;
 use FFI\Parser\Node\Literal\CharLiteral;
 use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
-use FFI\Parser\Node\Literal\FloatLiteral;
-use FFI\Parser\Node\Literal\IntLiteral;
+use FFI\Parser\Node\Literal\DecFloatLiteral;
+use FFI\Parser\Node\Literal\DecIntLiteral;
+use FFI\Parser\Node\Literal\HexFloatLiteral;
+use FFI\Parser\Node\Literal\HexIntLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Literal\NullptrLiteral;
+use FFI\Parser\Node\Literal\OctIntLiteral;
 use FFI\Parser\Node\Literal\StringLiteral;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Node\Type\NamedType;
@@ -237,8 +241,18 @@ final class ExpressionsTest extends TestCase
      */
     public static function literalsDataProvider(): iterable
     {
-        yield 'integer constant' => ['1', IntLiteral::class];
-        yield 'floating constant' => ['1.5', FloatLiteral::class];
+        yield 'decimal integer constant' => ['42', DecIntLiteral::class];
+        yield 'zero' => ['0', OctIntLiteral::class];
+        yield 'zeros' => ['00', OctIntLiteral::class];
+        yield 'octal integer constant' => ['017', OctIntLiteral::class];
+        yield 'hexadecimal integer constant' => ['0x1', HexIntLiteral::class];
+        yield 'binary integer constant' => ['0b1', BinIntLiteral::class];
+        yield 'decimal floating constant' => ['1.5', DecFloatLiteral::class];
+        yield 'decimal floating constant without the fraction' => ['1.', DecFloatLiteral::class];
+        yield 'decimal floating constant without the whole part' => ['.5', DecFloatLiteral::class];
+        yield 'decimal floating constant with an octal looking whole part' => ['08.5', DecFloatLiteral::class];
+        yield 'decimal floating constant of zero' => ['0e1', DecFloatLiteral::class];
+        yield 'hexadecimal floating constant' => ['0x1p3', HexFloatLiteral::class];
         yield 'character constant' => ["'a'", CharLiteral::class];
         yield 'string literal' => ['"a"', StringLiteral::class];
         yield 'true' => ['true', BoolLiteral::class];

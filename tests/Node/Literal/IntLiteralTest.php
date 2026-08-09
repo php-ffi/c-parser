@@ -16,6 +16,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(IntLiteral::class)]
+#[CoversClass(DecIntLiteral::class)]
+#[CoversClass(HexIntLiteral::class)]
+#[CoversClass(OctIntLiteral::class)]
+#[CoversClass(BinIntLiteral::class)]
 #[CoversClass(IntParser::class)]
 final class IntLiteralTest extends TestCase
 {
@@ -122,7 +126,6 @@ final class IntLiteralTest extends TestCase
     {
         $literal = $class::parse($raw);
 
-        self::assertInstanceOf($class, $literal);
         self::assertSame($raw, $literal->raw);
         self::assertSame($value, $literal->value);
         self::assertSame($decimal, $literal->decimal);

@@ -28,7 +28,7 @@ const OUTPUT_PATHNAME = __DIR__ . '/../src/Parser/CompiledParserExecutor.php';
     ->load(FileSource::createFromPathname(GRAMMAR_PATHNAME))
     ->generate()
     // The reducers refer to the nodes relative to these namespaces,
-    // e.g. Node\Identifier, Literal\IntLiteral or BinaryExpression\AddExpression
+    // e.g. Node\Identifier, Literal\DecIntLiteral or BinaryExpression\AddExpression
     ->withClassImport('FFI\Parser\Node')
     ->withClassImport('FFI\Parser\Node\Declaration')
     ->withClassImport('FFI\Parser\Node\Expression')
