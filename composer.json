@@ -25,6 +25,7 @@
     ],
     "require": {
         "php": "^8.1",
+        "symfony/polyfill-php85": "^1.43",
         "phplrt/exception": "^4.2",
         "phplrt/runtime": "^4.2"
     },
