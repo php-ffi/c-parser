@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\StringLiteral\StringParser;
 
-use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
+use FFI\Parser\Node\Literal\EncodingPrefix;
 
 /**
  * Parts of a character constant or a string literal parsed out of its
@@ -24,6 +24,6 @@ final class StringParserResult
         /**
          * The encoding prefix or {@see null} in case of there is none
          */
-        public readonly ?StringTypePrefix $prefix,
+        public readonly ?EncodingPrefix $prefix,
     ) {}
 }

@@ -12,6 +12,7 @@
 %include grammar/lexemes
 %include grammar/literals
 %include grammar/expressions
+%include grammar/specifiers
 %include grammar/declarations
 
 // A sequence of external declarations

@@ -201,9 +201,9 @@ ShiftExpression -> {
         // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
         $result = match ($children[$i]->id) {
             // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
-            self::T_SHL => new BinaryExpression\ShlExpression($result, $children[$i + 1], $offset),
+            self::T_SHL => new BinaryExpression\ShiftLeftExpression($result, $children[$i + 1], $offset),
             // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
-            self::T_SHR => new BinaryExpression\ShrExpression($result, $children[$i + 1], $offset),
+            self::T_SHR => new BinaryExpression\ShiftRightExpression($result, $children[$i + 1], $offset),
         };
     }
 
@@ -255,7 +255,7 @@ MultiplicativeExpression -> {
             // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
             self::T_SLASH => new BinaryExpression\DivExpression($result, $children[$i + 1], $offset),
             // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
-            self::T_PERCENT => new BinaryExpression\ModExpression($result, $children[$i + 1], $offset),
+            self::T_PERCENT => new BinaryExpression\RemExpression($result, $children[$i + 1], $offset),
         };
     }
 
@@ -271,15 +271,26 @@ CastOrUnaryExpression
   | UnaryExpression()
   ;
 
-// 6.5.5 Cast operators, (T)x. Without a table of the declared names "(T)" is
-// a cast only when the next token can start an operand but cannot continue a
-// parenthesized expression (CastStart), so "(T)-x" is a subtraction
-// and "(x)[0]" is a subscript.
+// 6.5.5 Cast operators, (T)x. A type name other than a lone identifier
+// cannot be an expression, so "(int)-x" is a cast. Without a table of the
+// declared names "(T)" is a cast only when the next token can start an
+// operand but cannot continue a parenthesized expression (CastStart), so
+// "(T)-x" is a subtraction and "(x)[0]" is a subscript. Both cases are one
+// alternative, so that a failed operand does not make the type name and the
+// nested casts be parsed once again.
 CastExpression -> {
-    /** @var array{TokenInterface, Type\NamedType, Expression\Expression} $children */
+    /** @var array{TokenInterface, Type\Type, Expression\Expression} $children */
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
-  : <T_LPAREN> TypeName() ::T_RPAREN:: &CastStart() CastOrUnaryExpression()
+  : <T_LPAREN> (!LoneIdentifier() | &LoneIdentifierCast()) TypeName() ::T_RPAREN:: CastOrUnaryExpression()
+  ;
+
+LoneIdentifier
+  : <T_IDENTIFIER> <T_RPAREN>
+  ;
+
+LoneIdentifierCast
+  : <T_IDENTIFIER> <T_RPAREN> CastStart()
   ;
 
 CastStart
@@ -298,9 +309,9 @@ UnaryExpression
   | BitwiseNotExpression()
   | DereferenceExpression()
   | AddressOfExpression()
-  | SizeofTypeExpression()
-  | SizeofExpression()
-  | AlignofExpression()
+  | SizeOfTypeExpression()
+  | SizeOfExpression()
+  | AlignOfTypeExpression()
   | PostfixExpression()
   ;
 
@@ -355,25 +366,25 @@ AddressOfExpression -> {
 // 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
 // parentheses is read as a type unless a postfix operator follows it:
 // sizeof(x)[0] is sizeof((x)[0]).
-SizeofTypeExpression -> {
-    /** @var array{TokenInterface, Type\NamedType} $children */
-    return new Expression\SizeofTypeExpression($children[1], $offset);
+SizeOfTypeExpression -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Expression\SizeOfTypeExpression($children[1], $offset);
 }
   : <T_SIZEOF> ::T_LPAREN:: TypeName() ::T_RPAREN:: !PostfixOperatorStart()
   ;
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof x
-SizeofExpression -> {
+SizeOfExpression -> {
     /** @var array{TokenInterface, Expression\Expression} $children */
-    return new Expression\SizeofExpression($children[1], $offset);
+    return new Expression\SizeOfExpression($children[1], $offset);
 }
   : <T_SIZEOF> UnaryExpression()
   ;
 
 // 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled _Alignof
-AlignofExpression -> {
-    /** @var array{TokenInterface, Type\NamedType} $children */
-    return new Expression\AlignofExpression($children[1], $offset);
+AlignOfTypeExpression -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Expression\AlignOfTypeExpression($children[1], $offset);
 }
   : <T_ALIGNOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
   ;
@@ -442,11 +453,7 @@ Identifier -> {
   : <T_IDENTIFIER>
   ;
 
-// A type in a cast, sizeof and alignof is referred to by a name, the parser
-// has no table of the declared names to tell what kind of type it is
-TypeName -> {
-    /** @var array{Node\Identifier} $children */
-    return new Type\NamedType($children[0], $offset);
-}
-  : Identifier()
+// 6.7.8 Type names, the type in a cast, sizeof, alignof and typeof
+TypeName
+  : TypeNameSpecifiers()
   ;

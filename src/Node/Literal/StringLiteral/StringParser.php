@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\StringLiteral;
 
+use FFI\Parser\Node\Literal\EncodingPrefix;
 use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
 
 /**
@@ -95,7 +96,7 @@ final class StringParser
         // The prefix ends at the opening quote of either kind, the closing
         // one is the last character.
         $quote = \strcspn($raw, '\'"');
-        $prefix = StringTypePrefix::tryFrom(\substr($raw, 0, $quote));
+        $prefix = EncodingPrefix::tryFrom(\substr($raw, 0, $quote));
 
         return new StringParserResult(
             value: self::decodeBody(\substr($raw, $quote + 1, -1), $prefix),
@@ -106,7 +107,7 @@ final class StringParser
     /**
      * Expands the escape sequences of the characters between the quotes.
      */
-    private static function decodeBody(string $body, ?StringTypePrefix $prefix): string
+    private static function decodeBody(string $body, ?EncodingPrefix $prefix): string
     {
         if (!\str_contains($body, '\\')) {
             return $body;
@@ -126,7 +127,7 @@ final class StringParser
     /**
      * @param array<array-key, string> $matches
      */
-    private static function decodeEscapeSequence(array $matches, ?StringTypePrefix $prefix): string
+    private static function decodeEscapeSequence(array $matches, ?EncodingPrefix $prefix): string
     {
         if (($matches[1] ?? '') !== '') {
             return self::SIMPLE_ESCAPES[$matches[1]];
@@ -162,7 +163,7 @@ final class StringParser
      * is a code unit of the character type of the literal: a byte in an
      * unprefixed or `u8` literal and a code point in a wide one.
      */
-    private static function encodeCodeUnit(?int $value, ?StringTypePrefix $prefix): string
+    private static function encodeCodeUnit(?int $value, ?EncodingPrefix $prefix): string
     {
         $max = $prefix?->getMaxCodeUnit() ?? self::MAX_BYTE;
 

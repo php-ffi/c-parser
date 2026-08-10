@@ -28,7 +28,7 @@ const OUTPUT_PATHNAME = __DIR__ . '/../src/Parser/CompiledParserExecutor.php';
     ->load(FileSource::createFromPathname(GRAMMAR_PATHNAME))
     ->generate()
     // The reducers refer to the nodes relative to these namespaces,
-    // e.g. Node\Identifier, Literal\DecIntLiteral or BinaryExpression\AddExpression
+    // e.g. Node\Identifier, Literal\IntLiteral\DecIntLiteral or BinaryExpression\AddExpression
     ->withClassImport('FFI\Parser\Node')
     ->withClassImport('FFI\Parser\Node\Declaration')
     ->withClassImport('FFI\Parser\Node\Expression')
@@ -36,6 +36,7 @@ const OUTPUT_PATHNAME = __DIR__ . '/../src/Parser/CompiledParserExecutor.php';
     ->withClassImport('FFI\Parser\Node\Expression\MemberExpression')
     ->withClassImport('FFI\Parser\Node\Expression\UnaryExpression')
     ->withClassImport('FFI\Parser\Node\Literal')
+    ->withClassImport('FFI\Parser\Node\Specifier')
     ->withClassImport('FFI\Parser\Node\Type')
     // The token the @var tags of the reducers refer to
     ->withClassImport('Phplrt\Contracts\Lexer\TokenInterface')

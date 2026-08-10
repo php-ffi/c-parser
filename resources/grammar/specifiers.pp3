@@ -1,0 +1,542 @@
+//
+// Declaration specifiers, 6.7.1 to 6.7.6.
+//
+// The specifiers go in any order (6.7.3.1p2), so the rules below only
+// collect them: the rule of a keyword gives its node or its case of an enum,
+// and DeclarationSpecifiers sorts them out. A keyword is kept as a token, so
+// that the specifiers start where it is written.
+//
+
+// 6.7.1 Declaration specifiers. An identifier is a typedef name only while no
+// other type specifier is written, otherwise it is a declarator: "T x",
+// "unsigned T". No more than one base is written, "int int" is a syntax
+// error, the modifiers of the base are not checked: "long char" gives a
+// syntax tree. The type specifiers and the qualifiers build the type, the
+// other specifiers go to a list in the order written. Both are passed to
+// the parent as two children: the type, null in case of there is none, and
+// the list.
+DeclarationSpecifiers -> {
+    /**
+     * @var (non-empty-list<
+     *     Type\Type
+     *     |Type\ModifiedType\TypeModifier
+     *     |Type\QualifiedType\TypeQualifier
+     *     |Specifier\Specifier
+     * >) $children
+     */
+    $type = null;
+    $modifiers = [];
+    $qualifiers = [];
+    $specifiers = [];
+
+    foreach ($children as $child) {
+        if ($child instanceof Type\ModifiedType\TypeModifier) {
+            $modifiers[] = $child;
+        } elseif ($child instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $child;
+        } elseif ($child instanceof Specifier\Specifier) {
+            $specifiers[] = $child;
+        } else {
+            $type = $child;
+        }
+    }
+
+    if ($modifiers !== []) {
+        $type = new Type\ModifiedType($modifiers, $type, $offset);
+    }
+
+    if ($qualifiers !== []) {
+        $type = new Type\QualifiedType($qualifiers, $type, $offset);
+    }
+
+    return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset ?? $offset)];
+}
+  : NonTypeSpecifier()+ TypeSpecifiers()?
+  | TypeSpecifiers()
+  ;
+
+// A typedef name or type specifiers with at most one base, intermixed with
+// the other specifiers. The alternatives here and in DeclarationSpecifiers
+// start with different tokens, so that none of them parses the specifiers
+// written before it once again.
+TypeSpecifiers
+  : NamedType() (TypeModifier() | NonTypeSpecifier())*
+  | TypeModifier() (TypeModifier() | NonTypeSpecifier())* (BaseType() (TypeModifier() | NonTypeSpecifier())*)?
+  | BaseType() (TypeModifier() | NonTypeSpecifier())*
+  ;
+
+NonTypeSpecifier
+  : StorageClassSpecifier()
+  | FunctionSpecifier()
+  | TypeQualifier()
+  | AlignmentSpecifier()
+  ;
+
+// 6.7.8 The specifiers of a type name. C allows only type specifiers and
+// qualifiers in a type name, and no storage-class or function specifier in
+// a member declaration either (6.7.3.2), but the parser accepts any
+// specifier everywhere, as Clang does: the other specifiers of a type name
+// are kept by a SpecifiedType around the type, and the ones of a member by
+// the member itself.
+TypeNameSpecifiers -> {
+    /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+    if ($children[1]->items === []) {
+        // Without the other specifiers at least one type specifier or
+        // qualifier is written
+        \assert($children[0] !== null);
+
+        return $children[0];
+    }
+
+    return new Type\SpecifiedType($children[0], $children[1], $offset);
+}
+  : DeclarationSpecifiers()
+  ;
+
+//
+// 6.7.2 Storage-class specifiers
+//
+
+StorageClassSpecifier
+  : TypeDefSpecifier()
+  | ExternSpecifier()
+  | StaticSpecifier()
+  | ThreadLocalSpecifier()
+  | AutoSpecifier()
+  | RegisterSpecifier()
+  | ConstExprSpecifier()
+  ;
+
+TypeDefSpecifier -> { return new Specifier\StorageClassSpecifier\TypeDefSpecifier($offset); }
+  : <T_TYPEDEF>
+  ;
+
+ExternSpecifier -> { return new Specifier\StorageClassSpecifier\ExternSpecifier($offset); }
+  : <T_EXTERN>
+  ;
+
+StaticSpecifier -> { return new Specifier\StorageClassSpecifier\StaticSpecifier($offset); }
+  : <T_STATIC>
+  ;
+
+ThreadLocalSpecifier -> { return new Specifier\StorageClassSpecifier\ThreadLocalSpecifier($offset); }
+  : <T_THREAD_LOCAL>
+  ;
+
+AutoSpecifier -> { return new Specifier\StorageClassSpecifier\AutoSpecifier($offset); }
+  : <T_AUTO>
+  ;
+
+RegisterSpecifier -> { return new Specifier\StorageClassSpecifier\RegisterSpecifier($offset); }
+  : <T_REGISTER>
+  ;
+
+ConstExprSpecifier -> { return new Specifier\StorageClassSpecifier\ConstExprSpecifier($offset); }
+  : <T_CONSTEXPR>
+  ;
+
+//
+// 6.7.3.1 Type specifiers: the modifiers of the base
+//
+
+TypeModifier
+  : SignedModifier()
+  | UnsignedModifier()
+  | ShortModifier()
+  | LongModifier()
+  | ComplexModifier()
+  | ImaginaryModifier()
+  ;
+
+SignedModifier -> { return Type\ModifiedType\TypeModifier::Signed; }
+  : <T_SIGNED>
+  ;
+
+UnsignedModifier -> { return Type\ModifiedType\TypeModifier::Unsigned; }
+  : <T_UNSIGNED>
+  ;
+
+ShortModifier -> { return Type\ModifiedType\TypeModifier::Short; }
+  : <T_SHORT>
+  ;
+
+LongModifier -> { return Type\ModifiedType\TypeModifier::Long; }
+  : <T_LONG>
+  ;
+
+ComplexModifier -> { return Type\ModifiedType\TypeModifier::Complex; }
+  : <T_COMPLEX>
+  ;
+
+ImaginaryModifier -> { return Type\ModifiedType\TypeModifier::Imaginary; }
+  : <T_IMAGINARY>
+  ;
+
+//
+// 6.7.3 Type specifiers: the base
+//
+
+BaseType
+  : VoidType()
+  | CharType()
+  | IntType()
+  | FloatType()
+  | DoubleType()
+  | BoolType()
+  | Decimal32Type()
+  | Decimal64Type()
+  | Decimal128Type()
+  | BitIntType()
+  | AtomicType()
+  | StructType()
+  | AnonymousStructType()
+  | UnionType()
+  | AnonymousUnionType()
+  | EnumType()
+  | AnonymousEnumType()
+  | TypeOfTypeType()
+  | TypeOfType()
+  | TypeOfUnqualTypeType()
+  | TypeOfUnqualType()
+  ;
+
+VoidType -> { return new Type\BuiltinType\VoidType($offset); }
+  : <T_VOID>
+  ;
+
+CharType -> { return new Type\BuiltinType\CharType($offset); }
+  : <T_CHAR>
+  ;
+
+IntType -> { return new Type\BuiltinType\IntType($offset); }
+  : <T_INT>
+  ;
+
+FloatType -> { return new Type\BuiltinType\FloatType($offset); }
+  : <T_FLOAT>
+  ;
+
+DoubleType -> { return new Type\BuiltinType\DoubleType($offset); }
+  : <T_DOUBLE>
+  ;
+
+BoolType -> { return new Type\BuiltinType\BoolType($offset); }
+  : <T_BOOL>
+  ;
+
+Decimal32Type -> { return new Type\BuiltinType\Decimal32Type($offset); }
+  : <T_DECIMAL32>
+  ;
+
+Decimal64Type -> { return new Type\BuiltinType\Decimal64Type($offset); }
+  : <T_DECIMAL64>
+  ;
+
+Decimal128Type -> { return new Type\BuiltinType\Decimal128Type($offset); }
+  : <T_DECIMAL128>
+  ;
+
+BitIntType -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new Type\BuiltinType\BitIntType($children[1], $offset);
+}
+  : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
+  ;
+
+// 6.7.3.5 Atomic type specifiers, _Atomic(T)
+AtomicType -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Type\AtomicType($children[1], $offset);
+}
+  : <T_ATOMIC> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  ;
+
+// A typedef name, the parser has no table of the declared names to tell what
+// kind of type it is
+NamedType -> {
+    /** @var array{Node\Identifier} $children */
+    return new Type\NamedType($children[0], $offset);
+}
+  : Identifier()
+  ;
+
+//
+// 6.7.3.2 Structure and union specifiers
+//
+
+StructType -> {
+    /** @var array{TokenInterface, Node\Identifier, 2?: Type\RecordType\MemberDeclarationList} $children */
+    return new Type\RecordType\StructType($children[1], $children[2] ?? null, $offset);
+}
+  : <T_STRUCT> Identifier() RecordBody()?
+  ;
+
+AnonymousStructType -> {
+    /** @var array{TokenInterface, Type\RecordType\MemberDeclarationList} $children */
+    return new Type\RecordType\StructType(null, $children[1], $offset);
+}
+  : <T_STRUCT> RecordBody()
+  ;
+
+UnionType -> {
+    /** @var array{TokenInterface, Node\Identifier, 2?: Type\RecordType\MemberDeclarationList} $children */
+    return new Type\RecordType\UnionType($children[1], $children[2] ?? null, $offset);
+}
+  : <T_UNION> Identifier() RecordBody()?
+  ;
+
+AnonymousUnionType -> {
+    /** @var array{TokenInterface, Type\RecordType\MemberDeclarationList} $children */
+    return new Type\RecordType\UnionType(null, $children[1], $offset);
+}
+  : <T_UNION> RecordBody()
+  ;
+
+RecordBody
+  : ::T_LBRACE:: MemberDeclarationList() ::T_RBRACE::
+  ;
+
+// C23 requires at least one member
+MemberDeclarationList -> {
+    /** @var non-empty-list<Type\RecordType\MemberDeclaration|Declaration\StaticAssertDeclaration> $children */
+    return new Type\RecordType\MemberDeclarationList($children, $offset);
+}
+  : RecordMember()+
+  ;
+
+RecordMember
+  : MemberDeclarations()
+  | StaticAssertDeclaration()
+  ;
+
+// A member declaration gives a node for each of its declarators, and a
+// single node without a name when it has none: an anonymous structure or
+// union, struct { int a; };. Both forms are one rule, so that the
+// specifiers, which may hold a nested body, are parsed only once.
+MemberDeclarations -> {
+    /**
+     * @var list{
+     *     Type\Type|null,
+     *     Specifier\SpecifierList,
+     *     ...<object{name: Node\Identifier|null, width: Expression\Expression|null}>
+     * } $children
+     */
+    if (\count($children) === 2) {
+        return new Type\RecordType\MemberDeclaration($children[0], specifiers: $children[1], offset: $offset);
+    }
+
+    $members = [];
+
+    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        $members[] = new Type\RecordType\MemberDeclaration(
+            $children[0],
+            $children[$i]->name,
+            $children[$i]->width,
+            $children[1],
+            $offset,
+        );
+    }
+
+    return $members;
+}
+  : DeclarationSpecifiers() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)? ::T_SEMICOLON::
+  ;
+
+MemberDeclarator
+  : NamedMemberDeclarator()
+  | UnnamedBitFieldDeclarator()
+  ;
+
+// The declarator of a member is its name and the width of a bit-field, the
+// type comes from the specifiers of the member declaration
+NamedMemberDeclarator -> {
+    /** @var array{Node\Identifier, 1?: Expression\Expression} $children */
+    return new class ($children[0], $children[1] ?? null) {
+        public function __construct(
+            public readonly ?Node\Identifier $name,
+            public readonly ?Expression\Expression $width,
+        ) {}
+    };
+}
+  : Identifier() (::T_COLON:: ConditionalExpression())?
+  ;
+
+UnnamedBitFieldDeclarator -> {
+    /** @var array{Expression\Expression} $children */
+    return new class (null, $children[0]) {
+        public function __construct(
+            public readonly ?Node\Identifier $name,
+            public readonly ?Expression\Expression $width,
+        ) {}
+    };
+}
+  : ::T_COLON:: ConditionalExpression()
+  ;
+
+//
+// 6.7.3.3 Enumeration specifiers
+//
+
+// An enumeration with a name: a reference to it, its declaration with the
+// underlying type only (enum E : int;) or its definition
+EnumType -> {
+    /**
+     * @var array{TokenInterface, Node\Identifier}
+     *     |array{TokenInterface, Node\Identifier, Type\Type|Type\EnumType\EnumeratorList}
+     *     |array{TokenInterface, Node\Identifier, Type\Type, Type\EnumType\EnumeratorList} $children
+     */
+    if (!isset($children[2])) {
+        return new Type\EnumType($children[1], null, null, $offset);
+    }
+
+    if ($children[2] instanceof Type\EnumType\EnumeratorList) {
+        return new Type\EnumType($children[1], null, $children[2], $offset);
+    }
+
+    return new Type\EnumType($children[1], $children[2], $children[3] ?? null, $offset);
+}
+  : <T_ENUM> Identifier() EnumUnderlyingType()? EnumBody()?
+  ;
+
+AnonymousEnumType -> {
+    /**
+     * @var array{TokenInterface, Type\Type, Type\EnumType\EnumeratorList}
+     *     |array{TokenInterface, Type\EnumType\EnumeratorList} $children
+     */
+    if ($children[1] instanceof Type\EnumType\EnumeratorList) {
+        return new Type\EnumType(null, null, $children[1], $offset);
+    }
+
+    return new Type\EnumType(null, $children[1], $children[2], $offset);
+}
+  : <T_ENUM> EnumUnderlyingType()? EnumBody()
+  ;
+
+EnumUnderlyingType
+  : ::T_COLON:: TypeNameSpecifiers()
+  ;
+
+EnumBody
+  : ::T_LBRACE:: EnumeratorList() ::T_RBRACE::
+  ;
+
+// C23 requires at least one enumerator, a trailing comma is allowed
+EnumeratorList -> {
+    /** @var non-empty-list<Type\EnumType\Enumerator> $children */
+    return new Type\EnumType\EnumeratorList($children, $offset);
+}
+  : Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
+  ;
+
+Enumerator -> {
+    /** @var array{Node\Identifier, 1?: Expression\Expression} $children */
+    return new Type\EnumType\Enumerator($children[0], $children[1] ?? null, $offset);
+}
+  : Identifier() (::T_ASSIGN:: ConditionalExpression())?
+  ;
+
+//
+// 6.7.3.6 Typeof specifiers. Whether the operand is a type name or an
+// expression is the class of the node, as in sizeof. A lone identifier in
+// the parentheses is read as a type name.
+//
+
+TypeOfTypeType -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Type\TypeOfTypeType($children[1], $offset);
+}
+  : <T_TYPEOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  ;
+
+TypeOfType -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new Type\TypeOfType($children[1], $offset);
+}
+  : <T_TYPEOF> ::T_LPAREN:: Expression() ::T_RPAREN::
+  ;
+
+TypeOfUnqualTypeType -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Type\TypeOfUnqualTypeType($children[1], $offset);
+}
+  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  ;
+
+TypeOfUnqualType -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new Type\TypeOfUnqualType($children[1], $offset);
+}
+  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: Expression() ::T_RPAREN::
+  ;
+
+//
+// 6.7.4 Type qualifiers
+//
+
+TypeQualifier
+  : ConstQualifier()
+  | VolatileQualifier()
+  | RestrictQualifier()
+  | AtomicQualifier()
+  ;
+
+ConstQualifier -> { return Type\QualifiedType\TypeQualifier::Const; }
+  : <T_CONST>
+  ;
+
+VolatileQualifier -> { return Type\QualifiedType\TypeQualifier::Volatile; }
+  : <T_VOLATILE>
+  ;
+
+RestrictQualifier -> { return Type\QualifiedType\TypeQualifier::Restrict; }
+  : <T_RESTRICT>
+  ;
+
+// 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type specifier
+AtomicQualifier -> { return Type\QualifiedType\TypeQualifier::Atomic; }
+  : <T_ATOMIC> !LeftParenthesis()
+  ;
+
+LeftParenthesis
+  : <T_LPAREN>
+  ;
+
+//
+// 6.7.5 Function specifiers
+//
+
+FunctionSpecifier
+  : InlineSpecifier()
+  | NoReturnSpecifier()
+  ;
+
+InlineSpecifier -> { return new Specifier\FunctionSpecifier\InlineSpecifier($offset); }
+  : <T_INLINE>
+  ;
+
+NoReturnSpecifier -> { return new Specifier\FunctionSpecifier\NoReturnSpecifier($offset); }
+  : <T_NORETURN>
+  ;
+
+//
+// 6.7.6 Alignment specifier
+//
+
+AlignmentSpecifier
+  : AlignAsTypeSpecifier()
+  | AlignAsSpecifier()
+  ;
+
+AlignAsTypeSpecifier -> {
+    /** @var array{TokenInterface, Type\Type} $children */
+    return new Specifier\AlignmentSpecifier\AlignAsTypeSpecifier($children[1], $offset);
+}
+  : <T_ALIGNAS> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  ;
+
+AlignAsSpecifier -> {
+    /** @var array{TokenInterface, Expression\Expression} $children */
+    return new Specifier\AlignmentSpecifier\AlignAsSpecifier($children[1], $offset);
+}
+  : <T_ALIGNAS> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
+  ;

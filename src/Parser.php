@@ -6,7 +6,7 @@ namespace FFI\Parser;
 
 use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxException;
-use FFI\Parser\Node\Node;
+use FFI\Parser\Node\Declaration\Declaration;
 use FFI\Parser\Parser\ParserExecutor;
 use Phplrt\Contracts\Lexer\Exception\LexerExceptionInterface;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
@@ -45,7 +45,7 @@ final class Parser
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
-     * @return list<Node> external declarations in the order they are
+     * @return list<Declaration> external declarations in the order they are
      *         written, empty declarations (a lone `;`) are not listed
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it

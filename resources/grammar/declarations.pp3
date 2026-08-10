@@ -6,7 +6,22 @@
 // headers have it after macros that expand to nothing, so it is skipped
 ExternalDeclaration
   : StaticAssertDeclaration()
+  | Declaration()
   | ::T_SEMICOLON::
+  ;
+
+// 6.7.1 Declarations, so far without declarators. A structure, a union or an
+// enumeration declares its tag, anything else declares nothing, which is
+// still syntactically valid: int;
+Declaration -> {
+    /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+    if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
+        return new Declaration\SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
+    }
+
+    return new Declaration\SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
+}
+  : DeclarationSpecifiers() ::T_SEMICOLON::
   ;
 
 // 6.7.12 Static assertions, static_assert(condition, "message"), the message

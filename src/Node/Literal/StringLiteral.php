@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal;
 
 use FFI\Parser\Node\Literal\StringLiteral\StringParser;
-use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 
 /**
  * String literal, such as `"text"`, `L"wide"` or `u8"\u00E9"`.
@@ -31,7 +30,7 @@ final class StringLiteral extends Literal
          * {@see null} in case of there is no prefix, i.e. the literal is an
          * array of `char`
          */
-        public readonly ?StringTypePrefix $prefix = null,
+        public readonly ?EncodingPrefix $prefix = null,
         ?string $raw = null,
         int $offset = 0,
     ) {

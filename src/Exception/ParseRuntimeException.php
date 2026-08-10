@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Exception;
 
 use Phplrt\Contracts\Source\ReadableInterface;
+use Phplrt\Exception\ErrorPrinter;
 
 /**
  * Base of the failures caused by the parsed source itself, i.e. the ones
@@ -33,5 +34,16 @@ abstract class ParseRuntimeException extends ParserException
         public readonly ?int $length = null,
     ) {
         parent::__construct($message);
+    }
+
+    public function __toString(): string
+    {
+        return (new ErrorPrinter())
+            ->print($this)
+            ->withSource($this->source)
+            ->withMessage($this->message)
+            ->withClass(static::class)
+            ->withInterval($this->offset, (int) $this->length)
+            ->render();
     }
 }

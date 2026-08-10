@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Literal\IntLiteral;
 
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BcMathBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\GmpBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\BaseConverterInterface;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\BcMathBaseConverter;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\GmpBaseConverter;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\NativeBaseConverter;
 
 /**
  * Selects the base converter for the current environment.

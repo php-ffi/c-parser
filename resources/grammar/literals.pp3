@@ -19,7 +19,7 @@ Constant
 DecIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\DecIntLiteral::parse($children->value, $offset);
+    return Literal\IntLiteral\DecIntLiteral::parse($children->value, $offset);
 }
   : <T_DEC_INT_LITERAL>
   ;
@@ -27,7 +27,7 @@ DecIntLiteral -> {
 HexIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\HexIntLiteral::parse($children->value, $offset);
+    return Literal\IntLiteral\HexIntLiteral::parse($children->value, $offset);
 }
   : <T_HEX_INT_LITERAL>
   ;
@@ -35,7 +35,7 @@ HexIntLiteral -> {
 OctIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\OctIntLiteral::parse($children->value, $offset);
+    return Literal\IntLiteral\OctIntLiteral::parse($children->value, $offset);
 }
   : <T_OCT_INT_LITERAL>
   ;
@@ -43,7 +43,7 @@ OctIntLiteral -> {
 BinIntLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\BinIntLiteral::parse($children->value, $offset);
+    return Literal\IntLiteral\BinIntLiteral::parse($children->value, $offset);
 }
   : <T_BIN_INT_LITERAL>
   ;
@@ -51,7 +51,7 @@ BinIntLiteral -> {
 DecFloatLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\DecFloatLiteral::parse($children->value, $offset);
+    return Literal\FloatLiteral\DecFloatLiteral::parse($children->value, $offset);
 }
   : <T_DEC_FLOAT_LITERAL>
   ;
@@ -59,7 +59,7 @@ DecFloatLiteral -> {
 HexFloatLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return Literal\HexFloatLiteral::parse($children->value, $offset);
+    return Literal\FloatLiteral\HexFloatLiteral::parse($children->value, $offset);
 }
   : <T_HEX_FLOAT_LITERAL>
   ;

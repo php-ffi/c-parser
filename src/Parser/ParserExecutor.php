@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Parser;
 
-use FFI\Parser\Node\Node;
+use FFI\Parser\Node\Declaration\Declaration;
 use Phplrt\Contracts\Lexer\Exception\LexerExceptionInterface;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
@@ -18,7 +18,7 @@ use Phplrt\Parser\Analysis\Result\SuccessfulResult;
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser
  *
- * @template-extends CompiledParserExecutor<list<Node>>
+ * @template-extends CompiledParserExecutor<list<Declaration>>
  */
 final class ParserExecutor extends CompiledParserExecutor
 {

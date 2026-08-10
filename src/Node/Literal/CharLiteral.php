@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal;
 
 use FFI\Parser\Node\Literal\StringLiteral\StringParser;
-use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
 
 /**
  * Character constant, such as `'a'`, `'\n'` or `u8'x'`.
@@ -32,7 +31,7 @@ final class CharLiteral extends Literal
          * {@see null} in case of there is no prefix, i.e. the constant is
          * an `int`
          */
-        public readonly ?StringTypePrefix $prefix = null,
+        public readonly ?EncodingPrefix $prefix = null,
         ?string $raw = null,
         int $offset = 0,
     ) {

@@ -7,7 +7,6 @@ namespace FFI\Parser\Node\Declaration;
 use FFI\Parser\Node\Expression\Expression;
 use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
 use FFI\Parser\Node\Literal\StringLiteral;
-use FFI\Parser\Node\Node;
 
 /**
  * Compile-time assertion: `static_assert(condition, "message");`, also
@@ -15,7 +14,7 @@ use FFI\Parser\Node\Node;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.12 Static assertions
  */
-final class StaticAssertDeclaration extends Node
+final class StaticAssertDeclaration extends Declaration
 {
     /**
      * @param int<0, max> $offset
