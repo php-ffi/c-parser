@@ -6,7 +6,7 @@ namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\CharLiteral;
 use FFI\Parser\Node\Literal\StringLiteral\StringParser;
-use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
+use FFI\Parser\Node\Literal\EncodingPrefix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -16,7 +16,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class CharLiteralTest extends TestCase
 {
     /**
-     * @return iterable<non-empty-string, array{non-empty-string, string, StringTypePrefix|null}>
+     * @return iterable<non-empty-string, array{non-empty-string, string, EncodingPrefix|null}>
      */
     public static function valuesDataProvider(): iterable
     {
@@ -29,16 +29,16 @@ final class CharLiteralTest extends TestCase
         yield 'octal' => ["'\\101'", 'A', null];
         yield 'simple escape' => ["'\\n'", "\n", null];
         yield 'octal above a byte' => ["'\\400'", "\u{FFFD}", null];
-        yield 'u above a code unit' => ["u'\\x10000'", "\u{FFFD}", StringTypePrefix::Utf16];
+        yield 'u above a code unit' => ["u'\\x10000'", "\u{FFFD}", EncodingPrefix::Utf16];
         yield 'universal character name' => ["'\\u00E9'", "\u{E9}", null];
-        yield 'u8' => ["u8'a'", 'a', StringTypePrefix::Utf8];
-        yield 'u' => ["u'\\xFF'", "\u{FF}", StringTypePrefix::Utf16];
-        yield 'U' => ["U'a'", 'a', StringTypePrefix::Utf32];
-        yield 'L' => ["L'\\xFFFF'", "\u{FFFF}", StringTypePrefix::Wide];
+        yield 'u8' => ["u8'a'", 'a', EncodingPrefix::Utf8];
+        yield 'u' => ["u'\\xFF'", "\u{FF}", EncodingPrefix::Utf16];
+        yield 'U' => ["U'a'", 'a', EncodingPrefix::Utf32];
+        yield 'L' => ["L'\\xFFFF'", "\u{FFFF}", EncodingPrefix::Wide];
     }
 
     #[DataProvider('valuesDataProvider')]
-    public function testValueIsDecoded(string $raw, string $value, ?StringTypePrefix $prefix): void
+    public function testValueIsDecoded(string $raw, string $value, ?EncodingPrefix $prefix): void
     {
         $literal = CharLiteral::parse($raw, 0);
 
@@ -58,9 +58,9 @@ final class CharLiteralTest extends TestCase
      */
     public function testBuiltConstantGetsValidSourceText(): void
     {
-        $constant = CharLiteral::parse((new CharLiteral("'\\\n", StringTypePrefix::Wide))->raw);
+        $constant = CharLiteral::parse((new CharLiteral("'\\\n", EncodingPrefix::Wide))->raw);
 
         self::assertSame("'\\\n", $constant->value);
-        self::assertSame(StringTypePrefix::Wide, $constant->prefix);
+        self::assertSame(EncodingPrefix::Wide, $constant->prefix);
     }
 }

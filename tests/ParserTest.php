@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests;
 
 use FFI\Parser\Exception\InternalException;
-use FFI\Parser\Exception\ParserException;
 use FFI\Parser\Exception\SyntaxException;
-use FFI\Parser\Node\Node;
+use FFI\Parser\Node\Declaration\Declaration;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
@@ -31,7 +30,7 @@ final class ParserTest extends TestCase
     #[DataProvider('validHeadersDataProvider')]
     public function testValidHeaderIsParsed(string $code): void
     {
-        self::assertContainsOnlyInstancesOf(Node::class, (new Parser())->parse($code));
+        self::assertContainsOnlyInstancesOf(Declaration::class, self::parse($code));
     }
 
     /**
@@ -71,19 +70,12 @@ final class ParserTest extends TestCase
     }
 
     #[DataProvider('syntaxErrorsDataProvider')]
-    public function testSyntaxErrorIsReportedWithItsPosition(string $code, int $offset, int $length): void
+    /**
+     * @param int<0, max> $offset
+     */
+    public function testSyntaxErrorIsReportedWithItsPosition(string $code, int $offset, string $fragment): void
     {
-        try {
-            (new Parser())->parse($code);
-        } catch (SyntaxException $e) {
-            self::assertSame($offset, $e->offset);
-            self::assertSame($length, $e->length);
-            self::assertSame($code, $e->source->getContents());
-
-            return;
-        }
-
-        self::fail('SyntaxException has not been thrown');
+        self::assertSyntaxError($code, $offset, $fragment);
     }
 
     /**
@@ -156,21 +148,34 @@ final class ParserTest extends TestCase
     }
 
     /**
-     * The invariant of the parser: a header is syntactically valid exactly
-     * when it can be parsed.
+     * @return iterable<non-empty-string, array{non-empty-string}>
      */
-    #[DataProvider('headersDataProvider')]
-    public function testValidationAgreesWithParsing(string $code): void
+    public static function deeplyNestedHeadersDataProvider(): iterable
     {
-        $parser = new Parser();
+        $depth = 64;
 
-        try {
-            $parser->parse($code);
-            $isParsed = true;
-        } catch (ParserException) {
-            $isParsed = false;
-        }
+        yield 'anonymous members' => [
+            'struct S { ' . \str_repeat('struct { ', $depth) . 'int a; ' . \str_repeat('}; ', $depth) . '};',
+        ];
+        yield 'casts' => ['static_assert(' . \str_repeat('(int)', $depth) . '1);'];
+        yield 'casts without an operand' => ['static_assert(' . \str_repeat('(int)', $depth) . ');'];
+        yield 'alignment specifiers' => [
+            'alignas(' . \str_repeat('alignas(', $depth) . '8' . \str_repeat(')', $depth) . ') int;',
+        ];
+    }
 
-        self::assertSame($isParsed, $parser->validate($code));
+    /**
+     * Alternatives of the grammar that share their start parse it once
+     * again, which makes the time grow exponentially with the depth of the
+     * nesting. A deep header must still be parsed at once.
+     */
+    #[DataProvider('deeplyNestedHeadersDataProvider')]
+    public function testDeepNestingIsParsedInLinearTime(string $code): void
+    {
+        $start = \microtime(true);
+
+        (new Parser())->validate($code);
+
+        self::assertLessThan(1.0, \microtime(true) - $start);
     }
 }

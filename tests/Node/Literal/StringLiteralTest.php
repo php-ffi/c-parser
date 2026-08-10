@@ -6,7 +6,7 @@ namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\StringLiteral;
 use FFI\Parser\Node\Literal\StringLiteral\StringParser;
-use FFI\Parser\Node\Literal\StringLiteral\StringTypePrefix;
+use FFI\Parser\Node\Literal\EncodingPrefix;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -64,26 +64,26 @@ final class StringLiteralTest extends TestCase
     }
 
     /**
-     * @return iterable<non-empty-string, array{non-empty-string, StringTypePrefix|null, string}>
+     * @return iterable<non-empty-string, array{non-empty-string, EncodingPrefix|null, string}>
      */
     public static function prefixesDataProvider(): iterable
     {
         yield 'none' => ['"\\xFF"', null, "\xFF"];
-        yield 'u8' => ['u8"\\xFF"', StringTypePrefix::Utf8, "\xFF"];
-        yield 'u' => ['u"\\xFF"', StringTypePrefix::Utf16, "\u{FF}"];
-        yield 'U' => ['U"\\x1F600"', StringTypePrefix::Utf32, "\u{1F600}"];
-        yield 'L' => ['L"\\x1234"', StringTypePrefix::Wide, "\u{1234}"];
-        yield 'L octal' => ['L"\\777"', StringTypePrefix::Wide, "\u{1FF}"];
-        yield 'L octal of at most three digits' => ['L"\\1234"', StringTypePrefix::Wide, 'S4'];
-        yield 'u above a code unit' => ['u"\\x10000"', StringTypePrefix::Utf16, "\u{FFFD}"];
-        yield 'u surrogate pair' => ['u"\\xD83D\\xDE00"', StringTypePrefix::Utf16, "\u{FFFD}\u{FFFD}"];
-        yield 'U above Unicode' => ['U"\\xFFFFFFFF"', StringTypePrefix::Utf32, "\u{FFFD}"];
-        yield 'u8 above a byte' => ['u8"\\x100"', StringTypePrefix::Utf8, "\u{FFFD}"];
-        yield 'u8 octal of a byte' => ['u8"\\377"', StringTypePrefix::Utf8, "\xFF"];
-        yield 'u largest code unit' => ['u"\\xFFFF"', StringTypePrefix::Utf16, "\u{FFFF}"];
-        yield 'u surrogate' => ['u"\\xDFFF"', StringTypePrefix::Utf16, "\u{FFFD}"];
-        yield 'U largest code point' => ['U"\\U0010FFFF"', StringTypePrefix::Utf32, "\u{10FFFF}"];
-        yield 'L above 32 bits' => ['L"\\x100000000"', StringTypePrefix::Wide, "\u{FFFD}"];
+        yield 'u8' => ['u8"\\xFF"', EncodingPrefix::Utf8, "\xFF"];
+        yield 'u' => ['u"\\xFF"', EncodingPrefix::Utf16, "\u{FF}"];
+        yield 'U' => ['U"\\x1F600"', EncodingPrefix::Utf32, "\u{1F600}"];
+        yield 'L' => ['L"\\x1234"', EncodingPrefix::Wide, "\u{1234}"];
+        yield 'L octal' => ['L"\\777"', EncodingPrefix::Wide, "\u{1FF}"];
+        yield 'L octal of at most three digits' => ['L"\\1234"', EncodingPrefix::Wide, 'S4'];
+        yield 'u above a code unit' => ['u"\\x10000"', EncodingPrefix::Utf16, "\u{FFFD}"];
+        yield 'u surrogate pair' => ['u"\\xD83D\\xDE00"', EncodingPrefix::Utf16, "\u{FFFD}\u{FFFD}"];
+        yield 'U above Unicode' => ['U"\\xFFFFFFFF"', EncodingPrefix::Utf32, "\u{FFFD}"];
+        yield 'u8 above a byte' => ['u8"\\x100"', EncodingPrefix::Utf8, "\u{FFFD}"];
+        yield 'u8 octal of a byte' => ['u8"\\377"', EncodingPrefix::Utf8, "\xFF"];
+        yield 'u largest code unit' => ['u"\\xFFFF"', EncodingPrefix::Utf16, "\u{FFFF}"];
+        yield 'u surrogate' => ['u"\\xDFFF"', EncodingPrefix::Utf16, "\u{FFFD}"];
+        yield 'U largest code point' => ['U"\\U0010FFFF"', EncodingPrefix::Utf32, "\u{10FFFF}"];
+        yield 'L above 32 bits' => ['L"\\x100000000"', EncodingPrefix::Wide, "\u{FFFD}"];
     }
 
     /**
@@ -91,7 +91,7 @@ final class StringLiteralTest extends TestCase
      * point in a wide one.
      */
     #[DataProvider('prefixesDataProvider')]
-    public function testPrefixSelectsTheEncodingOfEscapes(string $raw, ?StringTypePrefix $prefix, string $value): void
+    public function testPrefixSelectsTheEncodingOfEscapes(string $raw, ?EncodingPrefix $prefix, string $value): void
     {
         $literal = StringLiteral::parse($raw, 0);
 
@@ -105,7 +105,7 @@ final class StringLiteralTest extends TestCase
     }
 
     /**
-     * @return iterable<non-empty-string, array{string, StringTypePrefix|null}>
+     * @return iterable<non-empty-string, array{string, EncodingPrefix|null}>
      */
     public static function builtLiteralsDataProvider(): iterable
     {
@@ -113,8 +113,8 @@ final class StringLiteralTest extends TestCase
         yield 'empty' => ['', null];
         yield 'quotes and backslashes' => ['"\\\'', null];
         yield 'control characters' => ["\0\n\t\x01\x7F", null];
-        yield 'bytes above ASCII' => ["caf\xC3\xA9", StringTypePrefix::Utf8];
-        yield 'wide' => ['wide', StringTypePrefix::Wide];
+        yield 'bytes above ASCII' => ["caf\xC3\xA9", EncodingPrefix::Utf8];
+        yield 'wide' => ['wide', EncodingPrefix::Wide];
     }
 
     /**
@@ -122,7 +122,7 @@ final class StringLiteralTest extends TestCase
      * into the same literal.
      */
     #[DataProvider('builtLiteralsDataProvider')]
-    public function testBuiltLiteralGetsValidSourceText(string $value, ?StringTypePrefix $prefix): void
+    public function testBuiltLiteralGetsValidSourceText(string $value, ?EncodingPrefix $prefix): void
     {
         $literal = StringLiteral::parse((new StringLiteral($value, $prefix))->raw);
 

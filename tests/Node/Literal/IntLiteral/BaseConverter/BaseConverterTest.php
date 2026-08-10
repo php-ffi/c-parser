@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace FFI\Parser\Tests\Node\Literal\IntLiteral\BaseConverterFactory;
+namespace FFI\Parser\Tests\Node\Literal\IntLiteral\BaseConverter;
 
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\BcMathBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\GmpBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterFactory\NativeBaseConverter;
-use FFI\Parser\Node\Literal\IntLiteral\BaseConverterInterface;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\BaseConverterInterface;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\BcMathBaseConverter;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\GmpBaseConverter;
+use FFI\Parser\Node\Literal\IntLiteral\BaseConverter\NativeBaseConverter;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

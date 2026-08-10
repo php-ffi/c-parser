@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests;
 
+use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Node\Declaration\Declaration;
+use FFI\Parser\Node\Node;
+use FFI\Parser\Parser;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -38,6 +42,12 @@ abstract class TestCase extends BaseTestCase
         yield 'directive in the last line' => [";\n#pragma once"];
         yield 'directive only' => ['#pragma once'];
 
+        yield 'declaration without declarators' => ['static const unsigned long;'];
+        yield 'structure' => ['struct S { int a : 3; struct { char b; }; };'];
+        yield 'enumeration' => ['enum E : unsigned char { A = 1 << 2, B, };'];
+        yield 'typedef name without declarators' => ['T;'];
+        yield 'identifier in UTF-8' => ["\xC3\x84;"];
+
         yield 'static assertion' => ['static_assert(sizeof(T) == 4, "T");'];
         yield 'static assertion without a message' => ['_Static_assert((T)1 + 2);'];
         yield 'static assertions between empty declarations' => [
@@ -46,48 +56,118 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Syntactically invalid headers, along with the offset and the size of
-     * the fragment the parser has failed at.
+     * Syntactically invalid headers, along with the offset and the text of
+     * the fragment the parser has failed at, empty at the end of input.
      *
-     * @return iterable<non-empty-string, array{string, int<0, max>, int<0, max>}>
+     * @return iterable<non-empty-string, array{string, int<0, max>, string}>
      */
     public static function syntaxErrorsDataProvider(): iterable
     {
-        yield 'keyword' => ['int', 0, 3];
-        yield 'identifier after declaration' => ["; \n x", 4, 1];
-        yield 'identifier in UTF-8' => ["\xC3\x84", 0, 2];
-        yield 'literal' => ['; 42', 2, 2];
-        yield 'unclosed block comment' => ['; /* comment', 2, 1];
+        yield 'declaration without a semicolon' => ['int', 3, ''];
+        yield 'statement keyword' => ["; \n return", 4, 'return'];
+        yield 'unclosed structure' => ['struct S {', 10, ''];
+        yield 'literal' => ['; 42', 2, '42'];
+        yield 'unclosed block comment' => ['; /* comment', 2, '/'];
 
-        yield 'hash not at the beginning of a line' => ['; # x', 2, 1];
-        yield 'octal constant with 8' => ['08', 0, 2];
-        yield 'binary constant with 2' => ['0b2', 0, 3];
-        yield 'hexadecimal prefix without digits' => ['0x', 0, 2];
-        yield 'doubled digit separator' => ["1''0", 0, 4];
-        yield 'trailing digit separator' => ["1'", 0, 2];
-        yield 'invalid integer suffix' => ['1lul', 0, 4];
-        yield 'unclosed string' => ['"text', 0, 5];
-        yield 'unclosed character constant' => ["'a", 0, 2];
-        yield 'unknown escape sequence' => ['"\\q"', 0, 4];
+        yield 'hash not at the beginning of a line' => ['; # x', 2, '#'];
+        yield 'octal constant with 8' => ['08', 0, '08'];
+        yield 'binary constant with 2' => ['0b2', 0, '0b2'];
+        yield 'hexadecimal prefix without digits' => ['0x', 0, '0x'];
+        yield 'doubled digit separator' => ["1''0", 0, "1''0"];
+        yield 'trailing digit separator' => ["1'", 0, "1'"];
+        yield 'invalid integer suffix' => ['1lul', 0, '1lul'];
+        yield 'unclosed string' => ['"text', 0, '"text'];
+        yield 'unclosed character constant' => ["'a", 0, "'a"];
+        yield 'unknown escape sequence' => ['"\\q"', 0, '"\\q"'];
 
-        yield 'static assertion without a semicolon' => ['static_assert(1)', 16, 0];
-        yield 'function call in a static assertion' => ['static_assert(f(1));', 15, 1];
-        yield 'assignment in a static assertion' => ['static_assert(a = 1);', 16, 1];
+        yield 'static assertion without a semicolon' => ['static_assert(1)', 16, ''];
+        yield 'function call in a static assertion' => ['static_assert(f(1));', 15, '('];
+        yield 'assignment in a static assertion' => ['static_assert(a = 1);', 16, '='];
     }
 
     /**
-     * Every header of the other data providers, valid or not.
+     * Parses a header that is expected to be valid. The invariant of the
+     * parser is checked along the way: a header is syntactically valid
+     * exactly when it can be parsed.
      *
-     * @return iterable<non-empty-string, array{string}>
+     * @return list<Declaration>
      */
-    public static function headersDataProvider(): iterable
+    protected static function parse(string $code): array
     {
-        foreach (self::validHeadersDataProvider() as $name => [$code]) {
-            yield 'valid: ' . $name => [$code];
+        $parser = new Parser();
+
+        self::assertTrue($parser->validate($code));
+
+        return $parser->parse($code);
+    }
+
+    /**
+     * Parses a header of a single declaration of the given class.
+     *
+     * @template TDeclaration of Declaration
+     *
+     * @param class-string<TDeclaration> $class
+     * @return TDeclaration
+     */
+    protected static function parseSingle(string $code, string $class): Declaration
+    {
+        $nodes = self::parse($code);
+
+        self::assertCount(1, $nodes);
+        self::assertInstanceOf($class, $nodes[0]);
+
+        return $nodes[0];
+    }
+
+    /**
+     * Checks that a header is rejected at the given fragment, empty at the
+     * end of input. The invariant of the parser is checked along the way.
+     *
+     * @param int<0, max> $offset
+     */
+    protected static function assertSyntaxError(string $code, int $offset, string $fragment): void
+    {
+        $parser = new Parser();
+
+        self::assertFalse($parser->validate($code));
+
+        try {
+            $parser->parse($code);
+        } catch (SyntaxException $e) {
+            self::assertSame(
+                [$offset, $fragment],
+                [$e->offset, \substr($code, $e->offset, $e->length ?? 0)],
+            );
+            self::assertSame($code, $e->source->getContents());
+
+            return;
         }
 
-        foreach (self::syntaxErrorsDataProvider() as $name => [$code]) {
-            yield 'invalid: ' . $name => [$code];
+        self::fail('SyntaxException has not been thrown');
+    }
+
+    /**
+     * Lists every node of the tree as its short class name and offset, in
+     * the order of the properties, the ones of a base class first.
+     *
+     * @return list<non-empty-string>
+     */
+    protected static function listOffsets(mixed $value): array
+    {
+        if (\is_array($value)) {
+            return \array_merge([], ...\array_map(self::listOffsets(...), \array_values($value)));
         }
+
+        if (!$value instanceof Node) {
+            return [];
+        }
+
+        $result = [(new \ReflectionClass($value))->getShortName() . '@' . $value->offset];
+
+        foreach (\get_object_vars($value) as $property) {
+            $result = [...$result, ...self::listOffsets($property)];
+        }
+
+        return $result;
     }
 }

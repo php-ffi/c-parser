@@ -255,7 +255,7 @@ final class LexemesTest extends TestCase
             "''", "'a", '"text',
             '"\\q"', "'\\q'", '"\\x"', '"\\u12"', '@', '$', '`',
         ] as $fragment) {
-            yield 'not a lexeme ' . \addcslashes($fragment, "\n") => [$fragment, self::getUnknownTokens($fragment)];
+            yield 'not a lexeme ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
     }
 
@@ -293,20 +293,4 @@ final class LexemesTest extends TestCase
         return $result;
     }
 
-    /**
-     * A fragment no lexeme matches is read as tokens of the unknown channel
-     * up to the next whitespace, so it reaches the parser as is.
-     *
-     * @return list<array{string, string}>
-     */
-    private static function getUnknownTokens(string $fragment): array
-    {
-        $result = [];
-
-        foreach (\preg_split('/\s++/', $fragment, -1, \PREG_SPLIT_NO_EMPTY) ?: [] as $part) {
-            $result[] = ['Unknown', $part];
-        }
-
-        return $result;
-    }
 }

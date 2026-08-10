@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Node\Literal;
 
-use FFI\Parser\Node\Literal\BinIntLiteral;
-use FFI\Parser\Node\Literal\DecIntLiteral;
-use FFI\Parser\Node\Literal\HexIntLiteral;
 use FFI\Parser\Node\Literal\IntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\BinIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\DecIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\HexIntLiteral;
 use FFI\Parser\Node\Literal\IntLiteral\IntParser;
 use FFI\Parser\Node\Literal\IntLiteral\IntTypeSuffix;
-use FFI\Parser\Node\Literal\OctIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\OctIntLiteral;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

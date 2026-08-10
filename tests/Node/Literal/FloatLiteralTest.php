@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Node\Literal;
 
-use FFI\Parser\Node\Literal\DecFloatLiteral;
 use FFI\Parser\Node\Literal\FloatLiteral;
+use FFI\Parser\Node\Literal\FloatLiteral\DecFloatLiteral;
 use FFI\Parser\Node\Literal\FloatLiteral\FloatParser;
 use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
-use FFI\Parser\Node\Literal\HexFloatLiteral;
+use FFI\Parser\Node\Literal\FloatLiteral\HexFloatLiteral;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;

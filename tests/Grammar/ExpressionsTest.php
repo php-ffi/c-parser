@@ -4,35 +4,21 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Grammar;
 
-use FFI\Parser\Exception\SyntaxException;
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
-use FFI\Parser\Node\Expression\AlignofExpression;
-use FFI\Parser\Node\Expression\BinaryExpression;
-use FFI\Parser\Node\Expression\CastExpression;
-use FFI\Parser\Node\Expression\ConditionalExpression;
+use FFI\Parser\Node\Expression\Expression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
-use FFI\Parser\Node\Expression\MemberExpression;
-use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
-use FFI\Parser\Node\Expression\SizeofExpression;
-use FFI\Parser\Node\Expression\SizeofTypeExpression;
-use FFI\Parser\Node\Expression\SubscriptExpression;
-use FFI\Parser\Node\Expression\UnaryExpression;
-use FFI\Parser\Node\Identifier;
-use FFI\Parser\Node\Literal\BinIntLiteral;
 use FFI\Parser\Node\Literal\BoolLiteral;
 use FFI\Parser\Node\Literal\CharLiteral;
-use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
-use FFI\Parser\Node\Literal\DecFloatLiteral;
-use FFI\Parser\Node\Literal\DecIntLiteral;
-use FFI\Parser\Node\Literal\HexFloatLiteral;
-use FFI\Parser\Node\Literal\HexIntLiteral;
+use FFI\Parser\Node\Literal\FloatLiteral\DecFloatLiteral;
+use FFI\Parser\Node\Literal\FloatLiteral\HexFloatLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\BinIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\DecIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\HexIntLiteral;
+use FFI\Parser\Node\Literal\IntLiteral\OctIntLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Literal\NullptrLiteral;
-use FFI\Parser\Node\Literal\OctIntLiteral;
 use FFI\Parser\Node\Literal\StringLiteral;
-use FFI\Parser\Node\Node;
-use FFI\Parser\Node\Type\NamedType;
-use FFI\Parser\Parser;
+use FFI\Parser\Tests\NodePrinter;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -46,47 +32,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversNothing]
 final class ExpressionsTest extends TestCase
 {
-    /**
-     * The spelling of the operator of every binary expression node.
-     *
-     * @var array<class-string<BinaryExpression>, non-empty-string>
-     */
-    private const BINARY_OPERATORS = [
-        BinaryExpression\MulExpression::class => '*',
-        BinaryExpression\DivExpression::class => '/',
-        BinaryExpression\ModExpression::class => '%',
-        BinaryExpression\AddExpression::class => '+',
-        BinaryExpression\SubExpression::class => '-',
-        BinaryExpression\ShlExpression::class => '<<',
-        BinaryExpression\ShrExpression::class => '>>',
-        BinaryExpression\LessExpression::class => '<',
-        BinaryExpression\GreaterExpression::class => '>',
-        BinaryExpression\LessOrEqualExpression::class => '<=',
-        BinaryExpression\GreaterOrEqualExpression::class => '>=',
-        BinaryExpression\EqualExpression::class => '==',
-        BinaryExpression\NotEqualExpression::class => '!=',
-        BinaryExpression\BitwiseAndExpression::class => '&',
-        BinaryExpression\BitwiseXorExpression::class => '^',
-        BinaryExpression\BitwiseOrExpression::class => '|',
-        BinaryExpression\LogicalAndExpression::class => '&&',
-        BinaryExpression\LogicalOrExpression::class => '||',
-        BinaryExpression\CommaExpression::class => ',',
-    ];
-
-    /**
-     * The spelling of the operator of every unary expression node.
-     *
-     * @var array<class-string<UnaryExpression>, non-empty-string>
-     */
-    private const UNARY_OPERATORS = [
-        UnaryExpression\PlusExpression::class => '+',
-        UnaryExpression\MinusExpression::class => '-',
-        UnaryExpression\LogicalNotExpression::class => '!',
-        UnaryExpression\BitwiseNotExpression::class => '~',
-        UnaryExpression\DereferenceExpression::class => '*',
-        UnaryExpression\AddressOfExpression::class => '&',
-    ];
-
     /**
      * @return iterable<non-empty-string, array{non-empty-string, non-empty-string}>
      */
@@ -102,7 +47,7 @@ final class ExpressionsTest extends TestCase
         yield 'string literal' => ['"a"', '"a"@14'];
         yield 'adjacent string literals' => ['"a" L"b"', '(concat "a"@14 L"b"@18)@14'];
         yield 'three adjacent string literals' => ['"a" "b" "c"', '(concat "a"@14 "b"@18 "c"@22)@14'];
-        yield 'cast of adjacent string literals' => ['(T)"a" "b"', '(cast type:T@15 (concat "a"@17 "b"@21)@17)@14'];
+        yield 'cast of adjacent string literals' => ['(T)"a" "b"', '(cast T@15 (concat "a"@17 "b"@21)@17)@14'];
         yield 'sizeof of adjacent string literals' => ['sizeof "a" "b"', '(sizeof (concat "a"@21 "b"@25)@21)@14'];
         yield 'true' => ['true', 'true@14'];
         yield 'false' => ['false', 'false@14'];
@@ -132,26 +77,40 @@ final class ExpressionsTest extends TestCase
         yield 'dereference of a member' => ['*p->q', '(*u (-> p@15 q@18)@15)@14'];
 
         // Cast against parentheses
-        yield 'cast of a name' => ['(T)x', '(cast type:T@15 x@17)@14'];
-        yield 'cast of a constant' => ['(T)1', '(cast type:T@15 1@17)@14'];
-        yield 'cast of a parenthesized operand' => ['(T)(x)', '(cast type:T@15 x@18)@14'];
-        yield 'cast of a negation' => ['(T)~x', '(cast type:T@15 (~u x@18)@17)@14'];
-        yield 'cast of sizeof' => ['(T)sizeof x', '(cast type:T@15 (sizeof x@24)@17)@14'];
-        yield 'cast of alignof' => ['(T)alignof(U)', '(cast type:T@15 (alignof type:U@25)@17)@14'];
-        yield 'cast of a logical negation' => ['(T)!x', '(cast type:T@15 (!u x@18)@17)@14'];
-        yield 'cast of a floating constant' => ['(T)1.5', '(cast type:T@15 1.5@17)@14'];
-        yield 'cast of a character constant' => ["(T)'a'", "(cast type:T@15 'a'@17)@14"];
-        yield 'cast of a string literal' => ['(T)"a"', '(cast type:T@15 "a"@17)@14'];
-        yield 'cast of true' => ['(T)true', '(cast type:T@15 true@17)@14'];
-        yield 'cast of false' => ['(T)false', '(cast type:T@15 false@17)@14'];
-        yield 'cast of nullptr' => ['(T)nullptr', '(cast type:T@15 nullptr@17)@14'];
+        yield 'cast of a name' => ['(T)x', '(cast T@15 x@17)@14'];
+        yield 'cast of a constant' => ['(T)1', '(cast T@15 1@17)@14'];
+        yield 'cast of a parenthesized operand' => ['(T)(x)', '(cast T@15 x@18)@14'];
+        yield 'cast of a negation' => ['(T)~x', '(cast T@15 (~u x@18)@17)@14'];
+        yield 'cast of sizeof' => ['(T)sizeof x', '(cast T@15 (sizeof x@24)@17)@14'];
+        yield 'cast of alignof' => ['(T)alignof(U)', '(cast T@15 (alignof U@25)@17)@14'];
+        yield 'cast of a logical negation' => ['(T)!x', '(cast T@15 (!u x@18)@17)@14'];
+        yield 'cast of a floating constant' => ['(T)1.5', '(cast T@15 1.5@17)@14'];
+        yield 'cast of a character constant' => ["(T)'a'", "(cast T@15 'a'@17)@14"];
+        yield 'cast of a string literal' => ['(T)"a"', '(cast T@15 "a"@17)@14'];
+        yield 'cast of true' => ['(T)true', '(cast T@15 true@17)@14'];
+        yield 'cast of false' => ['(T)false', '(cast T@15 false@17)@14'];
+        yield 'cast of nullptr' => ['(T)nullptr', '(cast T@15 nullptr@17)@14'];
         yield 'plus after parentheses is an addition' => ['(T)+x', '(+ T@15 x@18)@14'];
         yield 'ampersand after parentheses is a bitwise and' => ['(T)&x', '(& T@15 x@18)@14'];
-        yield 'nested casts' => ['(A)(B)x', '(cast type:A@15 (cast type:B@18 x@20)@17)@14'];
+        yield 'nested casts' => ['(A)(B)x', '(cast A@15 (cast B@18 x@20)@17)@14'];
         yield 'minus after parentheses is a subtraction' => ['(T)-x', '(- T@15 x@18)@14'];
         yield 'asterisk after parentheses is a multiplication' => ['(T)*p', '(* T@15 p@18)@14'];
         yield 'subscript after parentheses' => ['(x)[0]', '([] x@15 0@18)@14'];
         yield 'member after parentheses' => ['(x).a', '(. x@15 a@18)@14'];
+        yield 'minus after a keyword type is a cast' => ['(int)-1', '(cast int@15 (-u 1@20)@19)@14'];
+        yield 'cast to a modified type' => ['(unsigned long)x', '(cast (unsigned long _)@15 x@29)@14'];
+        yield 'minus after a qualified typedef name is a cast' => [
+            '(const T)-x',
+            '(cast [const T@21]@15 (-u x@24)@23)@14',
+        ];
+        yield 'sizeof of a keyword type' => ['sizeof(unsigned int)', '(sizeof (unsigned int@30)@21)@14'];
+        yield 'alignof of a structure' => ['alignof(struct S)', '(alignof struct S@22)@14'];
+        yield 'sizeof of a type with an alignment specifier' => [
+            'sizeof(alignas(8) int)',
+            '(sizeof {alignas(8@29)@21 int@32}@21)@14',
+        ];
+        yield 'cast to a type with a storage class' => ['(static int)1', '(cast {static@15 int@22}@15 1@26)@14'];
+        yield 'sizeof of an alignment specifier alone' => ['sizeof(alignas(8))', '(sizeof {alignas(8@29)@21 _}@21)@14'];
 
         // Postfix operators
         yield 'chain of postfix operators' => ['p->m.n[2]', '([] (. (-> p@14 m@17)@14 n@19)@14 2@21)@14'];
@@ -160,22 +119,35 @@ final class ExpressionsTest extends TestCase
 
         // sizeof and alignof
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
-        yield 'sizeof of a type' => ['sizeof(T)', '(sizeof type:T@21)@14'];
+        yield 'sizeof of a type' => ['sizeof(T)', '(sizeof T@21)@14'];
         yield 'sizeof of a subscript in parentheses' => ['sizeof(x)[0]', '(sizeof ([] x@21 0@24)@20)@14'];
         yield 'sizeof of a parenthesized expression' => ['sizeof(1 + 2)', '(sizeof (+ 1@21 2@25)@21)@14'];
         yield 'sizeof of sizeof' => ['sizeof sizeof x', '(sizeof (sizeof x@28)@21)@14'];
-        yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof type:T@21)@14 1@26)@14'];
-        yield 'alignof' => ['alignof(T)', '(alignof type:T@22)@14'];
-        yield '_Alignof' => ['_Alignof(T)', '(alignof type:T@23)@14'];
+        yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof T@21)@14 1@26)@14'];
+        yield 'alignof' => ['alignof(T)', '(alignof T@22)@14'];
+        yield '_Alignof' => ['_Alignof(T)', '(alignof T@23)@14'];
+
+        // Every operator
+        foreach (NodePrinter::BINARY_OPERATORS as $operator) {
+            yield 'binary ' . $operator => $operator === ','
+                ? ['(a , b)', '(, a@15 b@19)@15']
+                : ['a ' . $operator . ' b', \sprintf('(%s a@14 b@%d)@14', $operator, 17 + \strlen($operator))];
+        }
+
+        foreach (NodePrinter::UNARY_OPERATORS as $operator) {
+            yield 'unary ' . $operator => [$operator . 'a', \sprintf('(%su a@15)@14', $operator)];
+        }
     }
 
     #[DataProvider('expressionsDataProvider')]
     public function testExpressionIsParsed(string $expression, string $expected): void
     {
-        self::assertSame($expected, self::dump(self::parseCondition($expression)));
-        self::assertTrue((new Parser())->validate('static_assert(' . $expression . ');'));
+        self::assertSame($expected, NodePrinter::printWithOffsets(self::parseCondition($expression)));
     }
 
+    /**
+     * The printer shows the place of the name, not of the identifier in it
+     */
     public function testNameInAnExpressionRefersToTheIdentifier(): void
     {
         $node = self::parseCondition('(a)');
@@ -183,57 +155,6 @@ final class ExpressionsTest extends TestCase
         self::assertInstanceOf(IdentifierExpression::class, $node);
         self::assertSame('a', $node->name->name);
         self::assertSame(15, $node->name->offset);
-    }
-
-    public function testMemberIsNamedByTheIdentifier(): void
-    {
-        $node = self::parseCondition('a->b');
-
-        self::assertInstanceOf(PointerMemberExpression::class, $node);
-        self::assertInstanceOf(IdentifierExpression::class, $node->object);
-        self::assertSame('b', $node->member->name);
-        self::assertSame(17, $node->member->offset);
-    }
-
-    /**
-     * @return iterable<non-empty-string, array{class-string<BinaryExpression>}>
-     */
-    public static function binaryExpressionsDataProvider(): iterable
-    {
-        foreach (self::BINARY_OPERATORS as $class => $operator) {
-            yield 'binary ' . $operator => [$class];
-        }
-    }
-
-    /**
-     * @param class-string<BinaryExpression> $class
-     */
-    #[DataProvider('binaryExpressionsDataProvider')]
-    public function testBinaryOperatorBuildsItsNode(string $class): void
-    {
-        $operator = self::BINARY_OPERATORS[$class];
-        $node = self::parseCondition($operator === ',' ? '(a , b)' : 'a ' . $operator . ' b');
-
-        self::assertInstanceOf($class, $node);
-    }
-
-    /**
-     * @return iterable<non-empty-string, array{class-string<UnaryExpression>}>
-     */
-    public static function unaryExpressionsDataProvider(): iterable
-    {
-        foreach (self::UNARY_OPERATORS as $class => $operator) {
-            yield 'unary ' . $operator => [$class];
-        }
-    }
-
-    /**
-     * @param class-string<UnaryExpression> $class
-     */
-    #[DataProvider('unaryExpressionsDataProvider')]
-    public function testUnaryOperatorBuildsItsNode(string $class): void
-    {
-        self::assertInstanceOf($class, self::parseCondition(self::UNARY_OPERATORS[$class] . 'a'));
     }
 
     /**
@@ -281,109 +202,42 @@ final class ExpressionsTest extends TestCase
     }
 
     /**
-     * @return iterable<non-empty-string, array{non-empty-string, int<0, max>}>
+     * @return iterable<non-empty-string, array{non-empty-string, int<0, max>, string}>
      */
     public static function invalidExpressionsDataProvider(): iterable
     {
-        yield 'missing right operand' => ['1 +', 17];
-        yield 'unclosed parenthesis' => ['(1', 17];
-        yield 'conditional without else' => ['a ? b', 19];
-        yield 'assignment' => ['a = 1', 16];
-        yield 'leading assignment' => ['= 1', 14];
-        yield 'function call' => ['f(1)', 15];
-        yield 'increment' => ['a++', 15];
-        yield 'sizeof without an operand' => ['sizeof', 20];
-        yield 'alignof of an expression' => ['alignof x', 22];
-        yield 'cast without an operand' => ['(T)~', 18];
-        yield 'unclosed subscript' => ['a[1', 17];
-        yield 'member without a name' => ['a.', 16];
-        yield 'member named by a number' => ['a->1', 17];
-        yield 'empty parentheses' => ['()', 15];
-        yield 'operand after sizeof of a type' => ['sizeof(T)x', 23];
-        yield 'comma outside parentheses' => ['a, b', 17];
+        yield 'missing right operand' => ['1 +', 17, ')'];
+        yield 'unclosed parenthesis' => ['(1', 17, ';'];
+        yield 'conditional without else' => ['a ? b', 19, ')'];
+        yield 'assignment' => ['a = 1', 16, '='];
+        yield 'leading assignment' => ['= 1', 14, '='];
+        yield 'function call' => ['f(1)', 15, '('];
+        yield 'increment' => ['a++', 15, '++'];
+        yield 'sizeof without an operand' => ['sizeof', 20, ')'];
+        yield 'alignof of an expression' => ['alignof x', 22, 'x'];
+        yield 'cast without an operand' => ['(T)~', 18, ')'];
+        yield 'unclosed subscript' => ['a[1', 17, ')'];
+        yield 'member without a name' => ['a.', 16, ')'];
+        yield 'member named by a number' => ['a->1', 17, '1'];
+        yield 'empty parentheses' => ['()', 15, ')'];
+        yield 'operand after sizeof of a type' => ['sizeof(T)x', 23, 'x'];
+        yield 'comma outside parentheses' => ['a, b', 17, 'b'];
     }
 
+    /**
+     * @param int<0, max> $offset
+     */
     #[DataProvider('invalidExpressionsDataProvider')]
-    public function testInvalidExpressionIsRejected(string $expression, int $offset): void
+    public function testInvalidExpressionIsRejected(string $expression, int $offset, string $fragment): void
     {
-        $code = 'static_assert(' . $expression . ');';
-
-        self::assertFalse((new Parser())->validate($code));
-
-        try {
-            (new Parser())->parse($code);
-        } catch (SyntaxException $e) {
-            self::assertSame($offset, $e->offset);
-
-            return;
-        }
-
-        self::fail('SyntaxException has not been thrown');
+        self::assertSyntaxError('static_assert(' . $expression . ');', $offset, $fragment);
     }
 
     /**
      * @param non-empty-string $expression
      */
-    private static function parseCondition(string $expression): Node
+    private static function parseCondition(string $expression): Expression
     {
-        $nodes = (new Parser())->parse('static_assert(' . $expression . ');');
-
-        self::assertCount(1, $nodes);
-        self::assertInstanceOf(StaticAssertDeclaration::class, $nodes[0]);
-
-        return $nodes[0]->condition;
-    }
-
-    private static function dump(Node $node): string
-    {
-        $body = match (true) {
-            $node instanceof BinaryExpression => \sprintf(
-                '(%s %s %s)',
-                self::BINARY_OPERATORS[$node::class],
-                self::dump($node->left),
-                self::dump($node->right),
-            ),
-            $node instanceof UnaryExpression => \sprintf(
-                '(%su %s)',
-                self::UNARY_OPERATORS[$node::class],
-                self::dump($node->operand),
-            ),
-            $node instanceof ConditionalExpression => \sprintf(
-                '(? %s %s %s)',
-                self::dump($node->condition),
-                self::dump($node->then),
-                self::dump($node->else),
-            ),
-            $node instanceof CastExpression => \sprintf(
-                '(cast %s %s)',
-                self::dump($node->type),
-                self::dump($node->operand),
-            ),
-            $node instanceof SizeofExpression => \sprintf('(sizeof %s)', self::dump($node->operand)),
-            $node instanceof SizeofTypeExpression => \sprintf('(sizeof %s)', self::dump($node->type)),
-            $node instanceof AlignofExpression => \sprintf('(alignof %s)', self::dump($node->type)),
-            $node instanceof SubscriptExpression => \sprintf(
-                '([] %s %s)',
-                self::dump($node->array),
-                self::dump($node->index),
-            ),
-            $node instanceof MemberExpression => \sprintf(
-                '(%s %s %s)',
-                $node instanceof PointerMemberExpression ? '->' : '.',
-                self::dump($node->object),
-                self::dump($node->member),
-            ),
-            $node instanceof ConcatenatedStringLiteral => \sprintf(
-                '(concat %s)',
-                \implode(' ', \array_map(self::dump(...), $node->parts)),
-            ),
-            $node instanceof IdentifierExpression => $node->name->name,
-            $node instanceof Identifier => $node->name,
-            $node instanceof NamedType => 'type:' . $node->name->name,
-            $node instanceof Literal => $node->raw,
-            default => self::fail(\sprintf('%s is not expected in a constant expression', $node::class)),
-        };
-
-        return $body . '@' . $node->offset;
+        return self::parseSingle('static_assert(' . $expression . ');', StaticAssertDeclaration::class)->condition;
     }
 }
