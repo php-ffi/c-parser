@@ -72,12 +72,13 @@ NonTypeSpecifier
   | AlignmentSpecifier()
   ;
 
-// 6.7.8 The specifiers of a type name. C allows only type specifiers and
+// 6.7.8 The specifiers of a type name, and of the underlying type of an
+// enumeration, which has no declarator. C allows only type specifiers and
 // qualifiers in a type name, and no storage-class or function specifier in
 // a member declaration either (6.7.3.2), but the parser accepts any
 // specifier everywhere, as Clang does: the other specifiers of a type name
-// are kept by a SpecifiedType around the type, and the ones of a member by
-// the member itself.
+// are kept by a SpecifiedType around the type of the specifiers, and the
+// ones of a member by the member itself.
 TypeNameSpecifiers -> {
     /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
     if ($children[1]->items === []) {
@@ -318,57 +319,58 @@ MemberDeclarations -> {
      * @var list{
      *     Type\Type|null,
      *     Specifier\SpecifierList,
-     *     ...<object{name: Node\Identifier|null, width: Expression\Expression|null}>
+     *     ...<\Closure(Type\RecordType\MemberDeclaration): Type\RecordType\MemberDeclaration>
      * } $children
      */
-    if (\count($children) === 2) {
-        return new Type\RecordType\MemberDeclaration($children[0], specifiers: $children[1], offset: $offset);
-    }
-
+    $member = new Type\RecordType\MemberDeclaration($children[0], specifiers: $children[1], offset: $offset);
     $members = [];
 
     for ($i = 2, $count = \count($children); $i < $count; ++$i) {
-        $members[] = new Type\RecordType\MemberDeclaration(
-            $children[0],
-            $children[$i]->name,
-            $children[$i]->width,
-            $children[1],
-            $offset,
-        );
+        $members[] = $children[$i]($member);
     }
 
-    return $members;
+    return $members === [] ? $member : $members;
 }
   : DeclarationSpecifiers() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)? ::T_SEMICOLON::
   ;
 
+// The declarator of a member is a function from the member without a
+// declarator, which holds the specifiers, to the declared one
 MemberDeclarator
   : NamedMemberDeclarator()
   | UnnamedBitFieldDeclarator()
   ;
 
-// The declarator of a member is its name and the width of a bit-field, the
-// type comes from the specifiers of the member declaration
 NamedMemberDeclarator -> {
-    /** @var array{Node\Identifier, 1?: Expression\Expression} $children */
-    return new class ($children[0], $children[1] ?? null) {
-        public function __construct(
-            public readonly ?Node\Identifier $name,
-            public readonly ?Expression\Expression $width,
-        ) {}
-    };
+    /**
+     * @var array{
+     *     Node\Identifier,
+     *     \Closure(Type\Type|null): (Type\Type|null),
+     *     2?: Expression\Expression
+     * } $children
+     */
+    return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
+        => new Type\RecordType\MemberDeclaration(
+            $children[1]($member->type),
+            $children[0],
+            $children[2] ?? null,
+            $member->specifiers,
+            $member->offset,
+        );
 }
-  : Identifier() (::T_COLON:: ConditionalExpression())?
+  : Declarator() (::T_COLON:: ConditionalExpression())?
   ;
 
 UnnamedBitFieldDeclarator -> {
     /** @var array{Expression\Expression} $children */
-    return new class (null, $children[0]) {
-        public function __construct(
-            public readonly ?Node\Identifier $name,
-            public readonly ?Expression\Expression $width,
-        ) {}
-    };
+    return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
+        => new Type\RecordType\MemberDeclaration(
+            $member->type,
+            null,
+            $children[0],
+            $member->specifiers,
+            $member->offset,
+        );
 }
   : ::T_COLON:: ConditionalExpression()
   ;
@@ -445,7 +447,7 @@ TypeOfTypeType -> {
     /** @var array{TokenInterface, Type\Type} $children */
     return new Type\TypeOfTypeType($children[1], $offset);
 }
-  : <T_TYPEOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_TYPEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 TypeOfType -> {
@@ -459,7 +461,7 @@ TypeOfUnqualTypeType -> {
     /** @var array{TokenInterface, Type\Type} $children */
     return new Type\TypeOfUnqualTypeType($children[1], $offset);
 }
-  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 TypeOfUnqualType -> {
@@ -531,7 +533,7 @@ AlignAsTypeSpecifier -> {
     /** @var array{TokenInterface, Type\Type} $children */
     return new Specifier\AlignmentSpecifier\AlignAsTypeSpecifier($children[1], $offset);
 }
-  : <T_ALIGNAS> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_ALIGNAS> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 AlignAsSpecifier -> {

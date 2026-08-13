@@ -271,18 +271,20 @@ CastOrUnaryExpression
   | UnaryExpression()
   ;
 
-// 6.5.5 Cast operators, (T)x. A type name other than a lone identifier
-// cannot be an expression, so "(int)-x" is a cast. Without a table of the
-// declared names "(T)" is a cast only when the next token can start an
-// operand but cannot continue a parenthesized expression (CastStart), so
-// "(T)-x" is a subtraction and "(x)[0]" is a subscript. Both cases are one
-// alternative, so that a failed operand does not make the type name and the
-// nested casts be parsed once again.
+// 6.5.5 Cast operators, (T)x. Most type names cannot be an expression, so
+// "(int)-x" and "(T *)-x" are casts, and the ones that read as an
+// expression other than a lone identifier are never a cast (see
+// ExpressionLikeTypeName). Without a table of the declared names "(T)" is a
+// cast only when the next token can start an operand but cannot continue a
+// parenthesized expression (CastStart), so "(T)-x" is a subtraction and
+// "(x)[0]" is a subscript. Both cases are one alternative, so that a failed
+// operand does not make the type name and the nested casts be parsed once
+// again.
 CastExpression -> {
     /** @var array{TokenInterface, Type\Type, Expression\Expression} $children */
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
-  : <T_LPAREN> (!LoneIdentifier() | &LoneIdentifierCast()) TypeName() ::T_RPAREN:: CastOrUnaryExpression()
+  : <T_LPAREN> (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN:: CastOrUnaryExpression()
   ;
 
 LoneIdentifier
@@ -370,7 +372,7 @@ SizeOfTypeExpression -> {
     /** @var array{TokenInterface, Type\Type} $children */
     return new Expression\SizeOfTypeExpression($children[1], $offset);
 }
-  : <T_SIZEOF> ::T_LPAREN:: TypeName() ::T_RPAREN:: !PostfixOperatorStart()
+  : <T_SIZEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: !PostfixOperatorStart()
   ;
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof x
@@ -453,7 +455,3 @@ Identifier -> {
   : <T_IDENTIFIER>
   ;
 
-// 6.7.8 Type names, the type in a cast, sizeof, alignof and typeof
-TypeName
-  : TypeNameSpecifiers()
-  ;

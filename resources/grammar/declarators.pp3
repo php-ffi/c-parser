@@ -1,0 +1,277 @@
+//
+// Declarators and type names, 6.7.7 and 6.7.8.
+//
+// A declarator is turned into the tree of types of what it declares: the
+// reducers return no node, but a function from the type of the specifiers
+// to the declared type, which the reducer of the declaration applies. The
+// closures are composed so that the parts nearest to the name apply last:
+// in "*a[3]" the pointer applies to the base, the array to the pointer. A
+// concrete declarator gives two children to its parent, the name and the
+// function, an abstract one gives the function alone.
+//
+
+// 6.7.7.1 General, a declarator with a name
+Declarator
+  : PointerDeclarator()
+  | DirectDeclarator()
+  ;
+
+PointerDeclarator -> {
+    /**
+     * @var array{
+     *     \Closure(Type\Type|null): Type\Type,
+     *     Node\Identifier,
+     *     \Closure(Type\Type|null): (Type\Type|null)
+     * } $children
+     */
+    return [$children[1], static fn(?Type\Type $type): ?Type\Type => $children[2]($children[0]($type))];
+}
+  : Pointer() Declarator()
+  ;
+
+// The name or a parenthesized declarator, followed by the arrays and the
+// functions, which apply in reverse order: "a[2][3]" is an array of two
+// arrays of three. The parenthesized declarator applies last of all, so
+// "(*f)(int)" is a pointer to a function.
+DirectDeclarator -> {
+    /** @var list{Node\Identifier, ...<\Closure(Type\Type|null): (Type\Type|null)>} $children */
+    return [$children[0], static function (?Type\Type $type) use ($children): ?Type\Type {
+        for ($i = \count($children) - 1; $i > 0; --$i) {
+            $type = $children[$i]($type);
+        }
+
+        return $type;
+    }];
+}
+  : (Identifier() | ::T_LPAREN:: Declarator() ::T_RPAREN::) DeclaratorSuffix()*
+  ;
+
+// 6.7.8 Type names, a declarator without a name. The parenthesized one is
+// tried before the parameters of a function: "(*)" starts with a token no
+// parameter does.
+AbstractDeclarator
+  : AbstractPointerDeclarator()
+  | DirectAbstractDeclarator()
+  ;
+
+AbstractPointerDeclarator -> {
+    /**
+     * @var array{
+     *     \Closure(Type\Type|null): Type\Type,
+     *     1?: \Closure(Type\Type|null): (Type\Type|null)
+     * } $children
+     */
+    if (!isset($children[1])) {
+        return $children[0];
+    }
+
+    return static fn(?Type\Type $type): ?Type\Type => $children[1]($children[0]($type));
+}
+  : Pointer() AbstractDeclarator()?
+  ;
+
+DirectAbstractDeclarator -> {
+    /** @var non-empty-list<\Closure(Type\Type|null): (Type\Type|null)> $children */
+    return static function (?Type\Type $type) use ($children): ?Type\Type {
+        for ($i = \count($children) - 1; $i >= 0; --$i) {
+            $type = $children[$i]($type);
+        }
+
+        return $type;
+    };
+}
+  : ::T_LPAREN:: AbstractDeclarator() ::T_RPAREN:: DeclaratorSuffix()*
+  | DeclaratorSuffix()+
+  ;
+
+// 6.7.7.2 Pointer declarators. The qualifiers of the pointer wrap it.
+Pointer -> {
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    $qualifiers = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $qualifiers[] = $children[$i];
+    }
+
+    if ($qualifiers === []) {
+        return static fn(?Type\Type $type): Type\Type => new Type\PointerType($type, $offset);
+    }
+
+    return static fn(?Type\Type $type): Type\Type => new Type\QualifiedType(
+        $qualifiers,
+        new Type\PointerType($type, $offset),
+        $offset,
+    );
+}
+  : <T_ASTERISK> TypeQualifier()*
+  ;
+
+DeclaratorSuffix
+  : ArrayDeclarator()
+  | FunctionDeclarator()
+  ;
+
+//
+// 6.7.7.3 Array declarators. The expression of the size is tried first, so
+// that "[*p]" is a size and "[*]" is not. The bracket is kept, so that the
+// array starts where it is written.
+//
+
+ArrayDeclarator
+  : SizedArrayDeclarator()
+  | UnspecifiedSizeArrayDeclarator()
+  | IncompleteArrayDeclarator()
+  ;
+
+// [3], [const 3], [static 3], [static const 3] and [const static 3]
+SizedArrayDeclarator -> {
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\Expression>
+     * } $children
+     */
+    $qualifiers = [];
+    $isStatic = false;
+    $last = \count($children) - 1;
+
+    for ($i = 1; $i < $last; ++$i) {
+        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $children[$i];
+        } else {
+            $isStatic = true;
+        }
+    }
+
+    // The size ends the rule
+    \assert($children[$last] instanceof Expression\Expression);
+
+    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\SizedArrayType(
+        $type,
+        $children[$last],
+        $isStatic,
+        $qualifiers,
+        $offset,
+    );
+}
+  : <T_LBRACKET>
+        (<T_STATIC> TypeQualifier()* | TypeQualifier()* <T_STATIC>?)
+        ConditionalExpression()
+    ::T_RBRACKET::
+  ;
+
+// [*] and [const *]
+UnspecifiedSizeArrayDeclarator -> {
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    $qualifiers = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $qualifiers[] = $children[$i];
+    }
+
+    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\UnspecifiedSizeArrayType(
+        $type,
+        $qualifiers,
+        $offset,
+    );
+}
+  : <T_LBRACKET> TypeQualifier()* ::T_ASTERISK:: ::T_RBRACKET::
+  ;
+
+// [] and [const]
+IncompleteArrayDeclarator -> {
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    $qualifiers = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $qualifiers[] = $children[$i];
+    }
+
+    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\IncompleteArrayType(
+        $type,
+        $qualifiers,
+        $offset,
+    );
+}
+  : <T_LBRACKET> TypeQualifier()* ::T_RBRACKET::
+  ;
+
+//
+// 6.7.7.4 Function declarators
+//
+
+// (), (void), (int a, char *b), (int, ...) and (...). The parenthesis is
+// kept, so that the function starts where it is written.
+FunctionDeclarator -> {
+    /** @var list{TokenInterface, ...<Type\FunctionType\Parameter|TokenInterface>} $children */
+    $parameters = [];
+    $isVariadic = false;
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Type\FunctionType\Parameter) {
+            $parameters[] = $children[$i];
+        } else {
+            $isVariadic = true;
+        }
+    }
+
+    $list = new Type\FunctionType\ParameterList($parameters, $parameters[0]->offset ?? $offset);
+
+    return static fn(?Type\Type $type): Type\Type => new Type\FunctionType($type, $list, $isVariadic, $offset);
+}
+  : <T_LPAREN> ParameterTypeList()? ::T_RPAREN::
+  ;
+
+ParameterTypeList
+  : Parameter() (::T_COMMA:: Parameter())* (::T_COMMA:: <T_ELLIPSIS>)?
+  | <T_ELLIPSIS>
+  ;
+
+// A parameter with a name, an abstract declarator or none. A declarator
+// fails before its arrays and functions, at the place of the name, so an
+// abstract one parses only the pointers and the parentheses once again.
+Parameter -> {
+    /**
+     * @var array{Type\Type|null, Specifier\SpecifierList}
+     *     |array{Type\Type|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\Type|null): (Type\Type|null)}
+     *     |array{Type\Type|null, Specifier\SpecifierList, \Closure(Type\Type|null): (Type\Type|null)} $children
+     */
+    if (!isset($children[2])) {
+        return new Type\FunctionType\Parameter($children[0], null, $children[1], $offset);
+    }
+
+    if ($children[2] instanceof Node\Identifier) {
+        return new Type\FunctionType\Parameter($children[3]($children[0]), $children[2], $children[1], $offset);
+    }
+
+    return new Type\FunctionType\Parameter($children[2]($children[0]), null, $children[1], $offset);
+}
+  : DeclarationSpecifiers() (Declarator() | AbstractDeclarator())?
+  ;
+
+// 6.7.8 Type names, the type in a cast, sizeof, alignof, alignas, typeof
+// and _Atomic(T): the specifiers and an abstract declarator
+TypeName -> {
+    /** @var array{Type\Type, 1?: \Closure(Type\Type|null): (Type\Type|null)} $children */
+    if (!isset($children[1])) {
+        return $children[0];
+    }
+
+    // An abstract declarator always builds a type around the specifiers
+    $type = $children[1]($children[0]);
+    \assert($type !== null);
+
+    return $type;
+}
+  : TypeNameSpecifiers() AbstractDeclarator()?
+  ;
+
+// A type name that reads as an expression as well, other than a lone
+// identifier: an array "a[3]" or a function returning a pointer "a * (b)"
+// or "a * ((b))", since an identifier in an abstract declarator starts a
+// parameter. C allows no cast to an array or a function type, so where an
+// expression is allowed too, it is read as the expression: "sizeof(a[0])"
+// is the size of an element, "(a * (b)) + 1" is a product.
+ExpressionLikeTypeName
+  : <T_IDENTIFIER> (<T_LBRACKET> | <T_ASTERISK>+ <T_LPAREN>+ <T_IDENTIFIER>)
+  ;
