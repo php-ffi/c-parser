@@ -162,6 +162,21 @@ final class ParserTest extends TestCase
         yield 'alignment specifiers' => [
             'alignas(' . \str_repeat('alignas(', $depth) . '8' . \str_repeat(')', $depth) . ') int;',
         ];
+        yield 'parenthesized declarators' => [
+            'struct S { int ' . \str_repeat('(*', $depth) . 'p' . \str_repeat(')', $depth) . '; };',
+        ];
+        yield 'parameters' => [
+            'struct S { void ' . \str_repeat('(*f)(void ', $depth) . \str_repeat(')', $depth) . '; };',
+        ];
+        yield 'abstract parameters' => [
+            'struct S { void f(' . \str_repeat('void (*)(', $depth) . 'int' . \str_repeat(')', $depth) . '); };',
+        ];
+        yield 'parameters without a name' => [
+            'struct S { void ' . \str_repeat('f(int (*', $depth) . \str_repeat('))', $depth) . '; };',
+        ];
+        yield 'products that read as type names' => [
+            'static_assert(' . \str_repeat('(a * (', $depth) . 'b' . \str_repeat('))', $depth) . ');',
+        ];
     }
 
     /**

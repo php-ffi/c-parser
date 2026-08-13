@@ -26,12 +26,16 @@ use FFI\Parser\Node\Specifier\AlignmentSpecifier\AlignAsSpecifier;
 use FFI\Parser\Node\Specifier\AlignmentSpecifier\AlignAsTypeSpecifier;
 use FFI\Parser\Node\Specifier\FunctionSpecifier;
 use FFI\Parser\Node\Specifier\StorageClassSpecifier;
+use FFI\Parser\Node\Type\ArrayType;
 use FFI\Parser\Node\Type\AtomicType;
 use FFI\Parser\Node\Type\BuiltinType;
 use FFI\Parser\Node\Type\EnumType;
 use FFI\Parser\Node\Type\EnumType\Enumerator;
+use FFI\Parser\Node\Type\FunctionType;
+use FFI\Parser\Node\Type\FunctionType\Parameter;
 use FFI\Parser\Node\Type\ModifiedType;
 use FFI\Parser\Node\Type\NamedType;
+use FFI\Parser\Node\Type\PointerType;
 use FFI\Parser\Node\Type\QualifiedType;
 use FFI\Parser\Node\Type\RecordType;
 use FFI\Parser\Node\Type\RecordType\MemberDeclaration;
@@ -44,7 +48,8 @@ use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
 /**
  * Prints a syntax tree as an S-expression, so that a test compares the whole
  * tree with one string: `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
- * `struct S { int a }`. With the offsets every node ends with its offset:
+ * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. With the offsets
+ * every node ends with its offset:
  * `(+ 1@14 2@18)@14`. A missing node is `_`.
  */
 final class NodePrinter
@@ -210,6 +215,33 @@ final class NodePrinter
             ),
             $node instanceof AlignAsSpecifier => 'alignas(' . $this->format($node->operand) . ')',
             $node instanceof AlignAsTypeSpecifier => 'alignas(' . $this->format($node->type) . ')',
+            $node instanceof PointerType => '(ptr ' . $this->format($node->type) . ')',
+            $node instanceof ArrayType => \sprintf(
+                '(array %s)',
+                \implode(' ', [
+                    $this->format($node->type),
+                    ...($node instanceof ArrayType\SizedArrayType && $node->isStatic ? ['static'] : []),
+                    ...\array_map(static fn($qualifier): string => $qualifier->value, $node->qualifiers),
+                    ...match (true) {
+                        $node instanceof ArrayType\SizedArrayType => [$this->format($node->size)],
+                        $node instanceof ArrayType\UnspecifiedSizeArrayType => ['*'],
+                        default => [],
+                    },
+                ]),
+            ),
+            $node instanceof FunctionType => \sprintf(
+                '(fn %s (%s))',
+                $this->format($node->returnType),
+                \implode(', ', [
+                    ...\array_map($this->format(...), $node->parameters->items),
+                    ...($node->isVariadic ? ['...'] : []),
+                ]),
+            ),
+            $node instanceof Parameter => \implode(' ', \array_filter([
+                $this->format($node->specifiers),
+                $this->format($node->type),
+                $node->name === null ? '' : $this->format($node->name),
+            ])),
             $node instanceof RecordType => \sprintf(
                 '%s %s%s',
                 $node instanceof RecordType\UnionType ?'union' : 'struct',
