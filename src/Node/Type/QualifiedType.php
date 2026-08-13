@@ -7,9 +7,11 @@ namespace FFI\Parser\Node\Type;
 use FFI\Parser\Node\Type\QualifiedType\TypeQualifier;
 
 /**
- * Type with qualifiers, such as `const volatile int`. The qualifiers are
- * gathered from anywhere among the specifiers, and the node wraps the whole
- * type of them, a {@see ModifiedType} included.
+ * Type with qualifiers, such as `const volatile int` or `int *const`. The
+ * qualifiers of the specifiers are gathered from anywhere among them, and
+ * the node wraps the whole type of them, a {@see ModifiedType} included.
+ * The qualifiers written after the `*` of a pointer wrap the
+ * {@see PointerType}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.4 Type qualifiers
  */

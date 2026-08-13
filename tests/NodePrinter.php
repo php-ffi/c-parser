@@ -192,7 +192,7 @@ final class NodePrinter
                 '(concat %s)',
                 \implode(' ', \array_map($this->format(...), $node->parts)),
             ),
-            $node instanceof BuiltinType\BitIntType =>'_BitInt(' . $this->format($node->width) . ')',
+            $node instanceof BuiltinType\BitIntType => '_BitInt(' . $this->format($node->width) . ')',
             $node instanceof AtomicType => '_Atomic(' . $this->format($node->type) . ')',
             $node instanceof TypeOfType => 'typeof(' . $this->format($node->operand) . ')',
             $node instanceof TypeOfTypeType => 'typeof(' . $this->format($node->type) . ')',
@@ -244,7 +244,7 @@ final class NodePrinter
             ])),
             $node instanceof RecordType => \sprintf(
                 '%s %s%s',
-                $node instanceof RecordType\UnionType ?'union' : 'struct',
+                $node instanceof RecordType\UnionType ? 'union' : 'struct',
                 $node->name->name ?? '_',
                 $node->members === null ? '' : ' { ' . \implode('; ', \array_map(
                     $this->format(...),

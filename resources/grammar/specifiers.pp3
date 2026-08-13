@@ -73,12 +73,13 @@ NonTypeSpecifier
   ;
 
 // 6.7.8 The specifiers of a type name, and of the underlying type of an
-// enumeration, which has no declarator. C allows only type specifiers and
-// qualifiers in a type name, and no storage-class or function specifier in
-// a member declaration either (6.7.3.2), but the parser accepts any
-// specifier everywhere, as Clang does: the other specifiers of a type name
-// are kept by a SpecifiedType around the type of the specifiers, and the
-// ones of a member by the member itself.
+// enumeration, which has no declarator. C allows only type specifiers,
+// qualifiers and, in a compound literal, alignment specifiers in a type
+// name (6.7.6), and no storage-class or function specifier in a member
+// declaration either (6.7.3.2), but the parser accepts any specifier
+// everywhere, as Clang does: the other specifiers of a type name are kept
+// by a SpecifiedType around the type of the specifiers, and the ones of a
+// member by the member itself.
 TypeNameSpecifiers -> {
     /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
     if ($children[1]->items === []) {
@@ -312,7 +313,7 @@ RecordMember
 
 // A member declaration gives a node for each of its declarators, and a
 // single node without a name when it has none: an anonymous structure or
-// union, struct { int a; };. Both forms are one rule, so that the
+// union, "struct { int a; };". Both forms are one rule, so that the
 // specifiers, which may hold a nested body, are parsed only once.
 MemberDeclarations -> {
     /**

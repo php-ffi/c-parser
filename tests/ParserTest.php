@@ -148,7 +148,7 @@ final class ParserTest extends TestCase
     }
 
     /**
-     * @return iterable<non-empty-string, array{non-empty-string}>
+     * @return iterable<non-empty-string, array{non-empty-string, bool}>
      */
     public static function deeplyNestedHeadersDataProvider(): iterable
     {
@@ -156,26 +156,33 @@ final class ParserTest extends TestCase
 
         yield 'anonymous members' => [
             'struct S { ' . \str_repeat('struct { ', $depth) . 'int a; ' . \str_repeat('}; ', $depth) . '};',
+            true,
         ];
-        yield 'casts' => ['static_assert(' . \str_repeat('(int)', $depth) . '1);'];
-        yield 'casts without an operand' => ['static_assert(' . \str_repeat('(int)', $depth) . ');'];
+        yield 'casts' => ['static_assert(' . \str_repeat('(int)', $depth) . '1);', true];
+        yield 'casts without an operand' => ['static_assert(' . \str_repeat('(int)', $depth) . ');', false];
         yield 'alignment specifiers' => [
             'alignas(' . \str_repeat('alignas(', $depth) . '8' . \str_repeat(')', $depth) . ') int;',
+            true,
         ];
         yield 'parenthesized declarators' => [
             'struct S { int ' . \str_repeat('(*', $depth) . 'p' . \str_repeat(')', $depth) . '; };',
+            true,
         ];
         yield 'parameters' => [
             'struct S { void ' . \str_repeat('(*f)(void ', $depth) . \str_repeat(')', $depth) . '; };',
+            true,
         ];
         yield 'abstract parameters' => [
             'struct S { void f(' . \str_repeat('void (*)(', $depth) . 'int' . \str_repeat(')', $depth) . '); };',
+            true,
         ];
-        yield 'parameters without a name' => [
+        yield 'functions returning pointers as parameters' => [
             'struct S { void ' . \str_repeat('f(int (*', $depth) . \str_repeat('))', $depth) . '; };',
+            true,
         ];
         yield 'products that read as type names' => [
             'static_assert(' . \str_repeat('(a * (', $depth) . 'b' . \str_repeat('))', $depth) . ');',
+            true,
         ];
     }
 
@@ -185,12 +192,11 @@ final class ParserTest extends TestCase
      * nesting. A deep header must still be parsed at once.
      */
     #[DataProvider('deeplyNestedHeadersDataProvider')]
-    public function testDeepNestingIsParsedInLinearTime(string $code): void
+    public function testDeepNestingIsParsedInLinearTime(string $code, bool $isValid): void
     {
         $start = \microtime(true);
 
-        (new Parser())->validate($code);
-
+        self::assertSame($isValid, (new Parser())->validate($code));
         self::assertLessThan(1.0, \microtime(true) - $start);
     }
 }

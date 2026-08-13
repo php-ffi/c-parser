@@ -21,8 +21,8 @@ final class FunctionType extends Type
      */
     public function __construct(
         /**
-         * The return type, {@see null} in case of no type specifier and no
-         * qualifier is written, such as in `static f(void);`
+         * The return type, {@see null} in case of the specifiers give no
+         * type, such as in `static f(void);`
          */
         public readonly ?Type $returnType,
         /**

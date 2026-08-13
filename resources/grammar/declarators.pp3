@@ -46,9 +46,7 @@ DirectDeclarator -> {
   : (Identifier() | ::T_LPAREN:: Declarator() ::T_RPAREN::) DeclaratorSuffix()*
   ;
 
-// 6.7.8 Type names, a declarator without a name. The parenthesized one is
-// tried before the parameters of a function: "(*)" starts with a token no
-// parameter does.
+// 6.7.8 Type names, a declarator without a name
 AbstractDeclarator
   : AbstractPointerDeclarator()
   | DirectAbstractDeclarator()
@@ -70,6 +68,10 @@ AbstractPointerDeclarator -> {
   : Pointer() AbstractDeclarator()?
   ;
 
+// The parenthesized declarator is tried before the parameters of a
+// function: "(*)" starts with a token no parameter does. Without a name
+// the parenthesized declarator applies first and the arrays and the
+// functions after it, in the same order as in DirectDeclarator.
 DirectAbstractDeclarator -> {
     /** @var non-empty-list<\Closure(Type\Type|null): (Type\Type|null)> $children */
     return static function (?Type\Type $type) use ($children): ?Type\Type {
@@ -160,7 +162,8 @@ SizedArrayDeclarator -> {
     ::T_RBRACKET::
   ;
 
-// [*] and [const *]
+// [*] and [const *]. C allows the qualifiers only in a declarator with a
+// name, but the parser accepts them in a type name as well, as GCC does.
 UnspecifiedSizeArrayDeclarator -> {
     /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
     $qualifiers = [];
@@ -266,12 +269,40 @@ TypeName -> {
   : TypeNameSpecifiers() AbstractDeclarator()?
   ;
 
-// A type name that reads as an expression as well, other than a lone
-// identifier: an array "a[3]" or a function returning a pointer "a * (b)"
-// or "a * ((b))", since an identifier in an abstract declarator starts a
-// parameter. C allows no cast to an array or a function type, so where an
-// expression is allowed too, it is read as the expression: "sizeof(a[0])"
-// is the size of an element, "(a * (b)) + 1" is a product.
+// The first tokens of a type name that reads as an expression as well,
+// other than a lone identifier: an array with a size "a[3]" or a function
+// returning a pointer whose first parameter starts with a typedef name and
+// reads as an expression too, "a * (b)", "a * ((b), c)", "a * (b[2])" or
+// "a * (b * c)". Where an expression is allowed too (a cast, sizeof,
+// typeof, typeof_unqual and alignas), such a type name is read as the
+// expression: "sizeof(a[0])" is the size of an element, "(a * (b)) + 1" is
+// a product. Only the first tokens are checked, so "typeof(T[3])" and
+// "typeof(T *(U, V))" are expressions as well, though a typedef name T
+// makes them valid types. The arrays without a size and the parameters
+// that cannot be an expression ("T[]", "T[static 3]", "T *(U *)") stay
+// type names.
 ExpressionLikeTypeName
-  : <T_IDENTIFIER> (<T_LBRACKET> | <T_ASTERISK>+ <T_LPAREN>+ <T_IDENTIFIER>)
+  : <T_IDENTIFIER> <T_LBRACKET> !ArrayDeclaratorStart()
+  | <T_IDENTIFIER> <T_ASTERISK>+ <T_LPAREN>+ <T_IDENTIFIER> ExpressionLikeParameterEnd()
+  ;
+
+// What follows the "[" of an array without a size, the qualifiers and
+// "static" of a parameter: no expression starts with it
+ArrayDeclaratorStart
+  : <T_RBRACKET>
+  | <T_STATIC>
+  | <T_CONST>
+  | <T_VOLATILE>
+  | <T_RESTRICT>
+  | <T_ATOMIC>
+  | <T_ASTERISK> <T_RBRACKET>
+  ;
+
+// A token after the typedef name of a parameter that an expression can have
+// after an identifier too
+ExpressionLikeParameterEnd
+  : <T_RPAREN>
+  | <T_COMMA>
+  | <T_LBRACKET>
+  | <T_ASTERISK>+ (<T_IDENTIFIER> | <T_LPAREN>)
   ;

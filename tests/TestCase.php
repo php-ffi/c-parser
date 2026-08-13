@@ -46,6 +46,7 @@ abstract class TestCase extends BaseTestCase
         yield 'structure' => ['struct S { int a : 3; struct { char b; }; };'];
         yield 'enumeration' => ['enum E : unsigned char { A = 1 << 2, B, };'];
         yield 'typedef name without declarators' => ['T;'];
+        yield 'members with declarators' => ['struct S { int (*f)(const char *, ...), a[3]; };'];
         yield 'identifier in UTF-8' => ["\xC3\x84;"];
 
         yield 'static assertion' => ['static_assert(sizeof(T) == 4, "T");'];
@@ -83,6 +84,7 @@ abstract class TestCase extends BaseTestCase
         yield 'static assertion without a semicolon' => ['static_assert(1)', 16, ''];
         yield 'function call in a static assertion' => ['static_assert(f(1));', 15, '('];
         yield 'assignment in a static assertion' => ['static_assert(a = 1);', 16, '='];
+        yield 'parameter after the ellipsis' => ['struct S { int f(..., int); };', 20, ','];
     }
 
     /**

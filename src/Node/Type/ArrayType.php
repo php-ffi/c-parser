@@ -19,15 +19,16 @@ abstract class ArrayType extends Type
      */
     public function __construct(
         /**
-         * The element type, {@see null} in case of no type specifier and no
-         * qualifier is written, such as in `static a[3];`
+         * The element type, {@see null} in case of the specifiers give no
+         * type, such as in `static a[3];`
          */
         public readonly ?Type $type,
         /**
          * The qualifiers written in the brackets (`int a[const 3]`), in the
-         * order written. C allows them only in a parameter, where they
-         * qualify the pointer the array is adjusted to, but the parser
-         * accepts them everywhere and keeps them for a validator.
+         * order written. C allows them only in the outermost array of a
+         * parameter, where they qualify the pointer the array is adjusted
+         * to, but the parser accepts them everywhere and keeps them for a
+         * validator.
          *
          * @var list<TypeQualifier>
          */

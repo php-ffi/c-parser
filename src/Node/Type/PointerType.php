@@ -18,8 +18,8 @@ final class PointerType extends Type
      */
     public function __construct(
         /**
-         * The referenced type, {@see null} in case of no type specifier and
-         * no qualifier is written, such as in `static *p;`
+         * The referenced type, {@see null} in case of the specifiers give no
+         * type, such as in `static *p;`
          */
         public readonly ?Type $type,
         int $offset = 0,

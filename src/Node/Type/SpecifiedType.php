@@ -8,9 +8,10 @@ use FFI\Parser\Node\Specifier\SpecifierList;
 
 /**
  * Type name written with specifiers that are not a part of the type, such
- * as `alignas(8) int` in `sizeof(alignas(8) int)`. C allows none of them
- * in a type name, but the parser accepts them, as Clang does, and keeps
- * them for a validator. A type name without them is the type itself. The
+ * as `alignas(8) int` in `sizeof(alignas(8) int)`. C allows only an
+ * alignment specifier and only in the type name of a compound literal, but
+ * the parser accepts any of them, as Clang does, and keeps them for a
+ * validator. A type name without them is the type itself. The
  * node wraps the type of the specifiers, and the abstract declarator wraps
  * the node: `alignas(8) int *` is a pointer to it.
  *

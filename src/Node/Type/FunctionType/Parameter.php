@@ -25,8 +25,10 @@ final class Parameter extends SpecifiedDeclaration
      */
     public function __construct(
         /**
-         * The type of the parameter, {@see null} in case of no type
-         * specifier and no qualifier is written, such as in `f(register)`
+         * The type of the parameter, built of the specifiers and the
+         * declarator, {@see null} in case of no type specifier, no
+         * qualifier and no pointer, array or function is written, such as
+         * in `f(register x)`
          */
         public readonly ?Type $type,
         /**
