@@ -31,10 +31,13 @@ const OUTPUT_PATHNAME = __DIR__ . '/../src/Parser/CompiledParserExecutor.php';
     // e.g. Node\Identifier, Literal\IntLiteral\DecIntLiteral or BinaryExpression\AddExpression
     ->withClassImport('FFI\Parser\Node')
     ->withClassImport('FFI\Parser\Node\Declaration')
+    ->withClassImport('FFI\Parser\Node\Declaration\SpecifiedDeclaration')
     ->withClassImport('FFI\Parser\Node\Expression')
     ->withClassImport('FFI\Parser\Node\Expression\BinaryExpression')
     ->withClassImport('FFI\Parser\Node\Expression\MemberExpression')
     ->withClassImport('FFI\Parser\Node\Expression\UnaryExpression')
+    ->withClassImport('FFI\Parser\Node\Initializer')
+    ->withClassImport('FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer')
     ->withClassImport('FFI\Parser\Node\Literal')
     ->withClassImport('FFI\Parser\Node\Specifier')
     ->withClassImport('FFI\Parser\Node\Type')
