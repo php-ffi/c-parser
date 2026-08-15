@@ -18,8 +18,9 @@
 // What may not directly follow a keyword, the rest of an identifier
 %fragment KEYWORD_END       (?![A-Za-z0-9_\x80-\xFF]|\\[uU])
 // What may not directly follow a number: a number of the preprocessor
-// (6.4.8) also takes a quote and a dot, so "1.2.3" is not two constants
-%fragment NUMBER_END        (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU])
+// (6.4.8) also takes a quote, a dot and a sign after "e" or "p", so "1.2.3"
+// is not two constants and "0xE+1" is not a sum
+%fragment NUMBER_END        (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU]|(?<=[eEpP])[+-])
 
 // Digit sequences with optional digit separators, 6.4.4.2
 %fragment DEC_DIGITS        [0-9](?:'?[0-9])*+

@@ -46,7 +46,8 @@ final class Parser
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
      * @return list<RootDeclarationInterface> declarations in the order they are
-     *         written, empty declarations (a lone `;`) are not listed
+     *         written, one for each declarator, empty declarations (a lone `;`)
+     *         are not listed
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it
      * @throws SyntaxException in case of the header is not syntactically valid
@@ -59,10 +60,8 @@ final class Parser
             return $this->parser->parse($source);
         } catch (UnexpectedTokenException $e) {
             throw SyntaxException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
-            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
         } catch (LexerRuntimeExceptionInterface $e) {
             throw InternalException::becauseSourceCannotBeAnalyzed($e);
-            // @phpstan-ignore-next-line the lexer throws it, parse() of the generated parser does not declare it
         } catch (LexerExceptionInterface $e) {
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         }

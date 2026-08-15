@@ -271,20 +271,34 @@ CastOrUnaryExpression
   | UnaryExpression()
   ;
 
-// 6.5.5 Cast operators, (T)x. Most type names cannot be an expression, so
-// "(int)-x" and "(T *)-x" are casts, and the ones that read as an
-// expression other than a lone identifier are never a cast (see
-// ExpressionLikeTypeName). Without a table of the declared names "(T)" is a
-// cast only when the next token can start an operand but cannot continue a
-// parenthesized expression (CastStart), so "(T)-x" is a subtraction and
-// "(x)[0]" is a subscript. Both cases are one alternative, so that a failed
-// operand does not make the type name and the nested casts be parsed once
-// again.
+// 6.5.5 Cast operators, (T)x, and 6.5.3.6 Compound literals, (T){1}. Most
+// type names cannot be an expression, so "(int)-x" and "(T *)-x" are casts,
+// and the ones that read as an expression other than a lone identifier are
+// never a cast (see ExpressionLikeTypeName). Without a table of the declared
+// names "(T)" is a cast only when the next token can start an operand but
+// cannot continue a parenthesized expression (CastStart), so "(T)-x" is a
+// subtraction and "(x)[0]" is a subscript. The cast and the compound
+// literal are one rule, and the lone identifier cases one alternative, so
+// that the type name is parsed once: a type name may hold an expression
+// with the same construct (an array size, typeof), and parsing it again on
+// each level of the nesting would double the work on each of them.
 CastExpression -> {
-    /** @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface} $children */
+    /**
+     * @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface}
+     *     |array{
+     *         TokenInterface,
+     *         Type\TypeInterface,
+     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
+     *     } $children
+     */
+    if ($children[2] instanceof \Closure) {
+        return $children[2]($children[0], $children[1]);
+    }
+
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
-  : <T_LPAREN> (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN:: CastOrUnaryExpression()
+  : <T_LPAREN> (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN::
+        (CompoundLiteral() | CastOrUnaryExpression())
   ;
 
 LoneIdentifier
@@ -300,7 +314,33 @@ CastStart
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
-  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_LBRACE>
+  ;
+
+// The braces of a compound literal after its type name, and the postfix
+// operators applied to the literal: (struct S){1}.a. A function from the
+// parenthesis and the type name to the expression.
+CompoundLiteral -> {
+    /**
+     * @var list{
+     *     Initializer\InitializerList,
+     *     ...<\Closure(Expression\ExpressionInterface, int): Expression\ExpressionInterface>
+     * } $children
+     */
+    return static function (
+        TokenInterface $parenthesis,
+        Type\TypeInterface $type,
+    ) use ($children): Expression\ExpressionInterface {
+        $result = new Expression\CompoundLiteralExpression($type, $children[0], $parenthesis->offset);
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $result = $children[$i]($result, $parenthesis->offset);
+        }
+
+        return $result;
+    };
+}
+  : InitializerList() PostfixOperator()*
   ;
 
 // 6.5.4 Unary operators
@@ -367,12 +407,27 @@ AddressOfExpression -> {
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
 // parentheses is read as a type unless a postfix operator follows it:
-// sizeof(x)[0] is sizeof((x)[0]).
+// sizeof(x)[0] is sizeof((x)[0]). A brace after the type name makes the
+// operand a compound literal, sizeof (int){1}, built by the same rule, so
+// that the type name is parsed once.
 SizeOfTypeExpression -> {
-    /** @var array{TokenInterface, Type\TypeInterface} $children */
-    return new Expression\SizeOfTypeExpression($children[1], $offset);
+    /**
+     * @var array{TokenInterface, TokenInterface, Type\TypeInterface}
+     *     |array{
+     *         TokenInterface,
+     *         TokenInterface,
+     *         Type\TypeInterface,
+     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
+     *     } $children
+     */
+    if (isset($children[3])) {
+        return new Expression\SizeOfExpression($children[3]($children[1], $children[2]), $offset);
+    }
+
+    return new Expression\SizeOfTypeExpression($children[2], $offset);
 }
-  : <T_SIZEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: !PostfixOperatorStart()
+  : <T_SIZEOF> <T_LPAREN> !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
+        (CompoundLiteral() | !PostfixOperatorStart())
   ;
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof x
@@ -391,32 +446,69 @@ AlignOfTypeExpression -> {
   : <T_ALIGNOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
   ;
 
-// 6.5.3 Postfix operators, a[i], s.member, p->member
+// 6.5.3 Postfix operators, a[i], s.member, p->member. Every node of the
+// chain starts where the whole expression does.
 PostfixExpression -> {
     /**
-     * @var non-empty-list<Expression\ExpressionInterface|Node\Identifier|TokenInterface> $children
-     * @var Expression\ExpressionInterface $result
+     * @var list{
+     *     Expression\ExpressionInterface,
+     *     ...<\Closure(Expression\ExpressionInterface, int): Expression\ExpressionInterface>
+     * } $children
      */
     $result = $children[0];
 
-    for ($i = 1, $count = \count($children); $i < $count; $i += 2) {
-        // @phpstan-ignore-next-line odd children are the listed tokens, so id exists and an arm matches
-        $result = match ($children[$i]->id) {
-            // @phpstan-ignore-next-line even children are operands, a list type cannot express the alternation
-            self::T_LBRACKET => new Expression\SubscriptExpression($result, $children[$i + 1], $offset),
-            // @phpstan-ignore-next-line a dot is followed by an identifier, a list type cannot express it
-            self::T_DOT => new MemberExpression\DirectMemberExpression($result, $children[$i + 1], $offset),
-            // @phpstan-ignore-next-line an arrow is followed by an identifier, a list type cannot express it
-            self::T_ARROW => new MemberExpression\PointerMemberExpression($result, $children[$i + 1], $offset),
-        };
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = $children[$i]($result, $offset);
     }
 
     return $result;
 }
-  : PrimaryExpression() (
-        <T_LBRACKET> Expression() ::T_RBRACKET::
-      | (<T_DOT> | <T_ARROW>) Identifier()
-    )*
+  : PrimaryExpression() PostfixOperator()*
+  ;
+
+// A postfix operator is a function from its operand and the start of the
+// whole expression to the expression, so that a compound literal applies
+// the same operators
+PostfixOperator
+  : SubscriptOperator()
+  | DirectMemberOperator()
+  | PointerMemberOperator()
+  ;
+
+SubscriptOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
+        // The start of an expression is a byte offset
+        \assert($start >= 0);
+
+        return new Expression\SubscriptExpression($operand, $children[0], $start);
+    };
+}
+  : ::T_LBRACKET:: Expression() ::T_RBRACKET::
+  ;
+
+DirectMemberOperator -> {
+    /** @var array{Node\Identifier} $children */
+    return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
+        // The start of an expression is a byte offset
+        \assert($start >= 0);
+
+        return new MemberExpression\DirectMemberExpression($operand, $children[0], $start);
+    };
+}
+  : ::T_DOT:: Identifier()
+  ;
+
+PointerMemberOperator -> {
+    /** @var array{Node\Identifier} $children */
+    return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
+        // The start of an expression is a byte offset
+        \assert($start >= 0);
+
+        return new MemberExpression\PointerMemberExpression($operand, $children[0], $start);
+    };
+}
+  : ::T_ARROW:: Identifier()
   ;
 
 PostfixOperatorStart

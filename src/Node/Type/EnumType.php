@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Declaration\DeclarationInterface;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Type\EnumType\EnumeratorList;
 
 /**
- * Enumeration type, such as `enum E : unsigned char { A, B = 2 }`.
+ * Enumeration type, such as `enum E : unsigned char { A, B = 2 }`. It is a
+ * declaration as well: with a body it declares its tag and its constants.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.3 Enumeration specifiers
  */
-final class EnumType extends Type
+final class EnumType extends Type implements DeclarationInterface
 {
     /**
      * @param int<0, max> $offset

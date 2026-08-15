@@ -45,7 +45,7 @@ final class StringLiteral extends Literal
      */
     private function representAsRawValue(): string
     {
-        return \sprintf('%s"%s"', $this->prefix?->value, \addcslashes($this->value, '"\\'));
+        return \sprintf('%s"%s"', $this->prefix?->value, \addcslashes($this->value, "\0..\37\"\\\177"));
     }
 
     /**

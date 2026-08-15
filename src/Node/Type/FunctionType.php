@@ -22,7 +22,7 @@ final class FunctionType extends Type
     public function __construct(
         /**
          * The return type, {@see null} in case of the specifiers give no
-         * type, such as in `static f(void);`
+         * type, such as in `static (f)(void);`
          */
         public readonly ?TypeInterface $returnType,
         /**

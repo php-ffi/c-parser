@@ -76,35 +76,27 @@ abstract class NodeList extends Node implements
 
     public function offsetExists(mixed $offset): bool
     {
-        // @phpstan-ignore-next-line
-        assert(\is_int($offset) && $offset >= 0);
+        // @phpstan-ignore-next-line the contract already narrows the offset, the assertion checks a caller that ignores it
+        \assert(\is_int($offset) && $offset >= 0);
 
         return isset($this->items[$offset]);
     }
 
     public function offsetGet(mixed $offset): ?NodeInterface
     {
-        // @phpstan-ignore-next-line
-        assert(\is_int($offset) && $offset >= 0);
+        // @phpstan-ignore-next-line the contract already narrows the offset, the assertion checks a caller that ignores it
+        \assert(\is_int($offset) && $offset >= 0);
 
         return $this->items[$offset] ?? null;
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        // @phpstan-ignore-next-line
-        assert(\is_int($offset) && $offset >= 0);
-        // @phpstan-ignore-next-line
-        assert($value instanceof NodeInterface);
-
         throw new \RuntimeException('Cannot modify readonly ' . static::class);
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        // @phpstan-ignore-next-line
-        assert(\is_int($offset) && $offset >= 0);
-
         throw new \RuntimeException('Cannot modify readonly ' . static::class);
     }
 

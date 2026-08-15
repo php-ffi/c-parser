@@ -10,18 +10,169 @@ ExternalDeclaration
   | ::T_SEMICOLON::
   ;
 
-// 6.7.1 Declarations, so far without declarators. A structure, a union or an
-// enumeration declares its tag, anything else declares nothing, which is
-// still syntactically valid: int;
+// 6.7.1 Declarations. A declaration gives a node for each of its
+// declarators. Without declarators a bare structure, union or enumeration
+// is the declaration of its tag (6.7.3.4p11), anything else is a
+// declaration of the specifiers alone, which is still syntactically valid:
+// "int;", "const struct S;". Both forms are one rule, so that the
+// specifiers, which may hold a nested body, are parsed only once.
 Declaration -> {
-    /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
-    if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
-        return new Declaration\SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
+    /**
+     * @var list{
+     *     Type\TypeInterface|null,
+     *     Specifier\SpecifierList,
+     *     ...<\Closure(SpecifiedDeclaration\TypeDeclaration): SpecifiedDeclaration\DeclaratorDeclaration>
+     * } $children
+     */
+    if (\count($children) === 2
+        && ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType)
+    ) {
+        return new SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
     }
 
-    return new Declaration\SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
+    $declaration = new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
+    $declarations = [];
+
+    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        $declarations[] = $children[$i]($declaration);
+    }
+
+    return $declarations === [] ? $declaration : $declarations;
 }
-  : DeclarationSpecifiers() ::T_SEMICOLON::
+  : DeclarationSpecifiers() (InitDeclarator() (::T_COMMA:: InitDeclarator())*)? ::T_SEMICOLON::
+  ;
+
+// The declarator of a declaration is a function from the declaration
+// without declarators, which holds the specifiers, to the declared one.
+// "typedef" among the specifiers gives a typedef name, a function type a
+// function, anything else an object, and each keeps the initializer, even
+// where C allows none.
+InitDeclarator -> {
+    /**
+     * @var array{
+     *     Node\Identifier,
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+     *     2?: Expression\ExpressionInterface|Initializer\InitializerList
+     * } $children
+     */
+    return static function (
+        SpecifiedDeclaration\TypeDeclaration $declaration,
+    ) use ($children): SpecifiedDeclaration\DeclaratorDeclaration {
+        $type = $children[1]($declaration->type);
+
+        foreach ($declaration->specifiers as $specifier) {
+            if ($specifier instanceof Specifier\StorageClassSpecifier\TypeDefSpecifier) {
+                return new SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration(
+                    $type,
+                    $children[0],
+                    $children[2] ?? null,
+                    $declaration->specifiers,
+                    $declaration->offset,
+                );
+            }
+        }
+
+        if ($type instanceof Type\FunctionType) {
+            return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration(
+                $type,
+                $children[0],
+                $children[2] ?? null,
+                $declaration->specifiers,
+                $declaration->offset,
+            );
+        }
+
+        return new SpecifiedDeclaration\DeclaratorDeclaration\VariableDeclaration(
+            $type,
+            $children[0],
+            $children[2] ?? null,
+            $declaration->specifiers,
+            $declaration->offset,
+        );
+    };
+}
+  : Declarator() (::T_ASSIGN:: Initializer())?
+  ;
+
+//
+// 6.7.11 Initialization
+//
+
+// An expression or a list in braces. The expression is an assignment
+// expression in C, but the objects of a header have static storage, so
+// their initializers are constant (6.7.11p4), and a constant expression has
+// no assignment (6.6p3).
+Initializer
+  : InitializerList()
+  | ConditionalExpression()
+  ;
+
+// {}, {1, 2}, {1, 2,} and {.a = 1, [2] = {3}}. The brace is kept, so that
+// the list starts where it is written.
+InitializerList -> {
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<Expression\ExpressionInterface|Initializer\InitializerList|DesignatedInitializer>
+     * } $children
+     */
+    $items = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $items[] = $children[$i];
+    }
+
+    return new Initializer\InitializerList($items, $offset);
+}
+  : <T_LBRACE>
+        (InitializerListItem() (::T_COMMA:: InitializerListItem())* ::T_COMMA::?)?
+    ::T_RBRACE::
+  ;
+
+// No expression starts with "." or "[", so the alternatives never parse the
+// same tokens
+InitializerListItem
+  : DesignatedInitializer()
+  | Initializer()
+  ;
+
+// .a = 1, [2] = 3 and .a[2].b = 4
+DesignatedInitializer -> {
+    /**
+     * @var array{
+     *     DesignatedInitializer\DesignatorList,
+     *     Expression\ExpressionInterface|Initializer\InitializerList
+     * } $children
+     */
+    return new DesignatedInitializer($children[0], $children[1], $offset);
+}
+  : DesignatorList() ::T_ASSIGN:: Initializer()
+  ;
+
+DesignatorList -> {
+    /** @var non-empty-list<DesignatedInitializer\Designator> $children */
+    return new DesignatedInitializer\DesignatorList($children, $offset);
+}
+  : Designator()+
+  ;
+
+Designator
+  : MemberDesignator()
+  | IndexDesignator()
+  ;
+
+MemberDesignator -> {
+    /** @var array{TokenInterface, Node\Identifier} $children */
+    return new DesignatedInitializer\Designator\MemberDesignator($children[1], $offset);
+}
+  : <T_DOT> Identifier()
+  ;
+
+IndexDesignator -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    return new DesignatedInitializer\Designator\IndexDesignator($children[1], $offset);
+}
+  : <T_LBRACKET> ConditionalExpression() ::T_RBRACKET::
   ;
 
 // 6.7.12 Static assertions, static_assert(condition, "message"), the message

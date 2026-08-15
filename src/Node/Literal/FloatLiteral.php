@@ -18,9 +18,10 @@ use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
 abstract class FloatLiteral extends Literal
 {
     /**
-     * The digits with the point, in the base of the constant and without
-     * digit separators: `1.5` in `1.5e3`, `1.8` in `0x1.8p3`. Along with
-     * {@see $exponent} it keeps the value exactly, whatever its precision.
+     * The digits of the constant with the point, if one is written, in its
+     * base and without digit separators: `1.5` in `1.5e3`, `1` in `1e5`,
+     * `1.8` in `0x1.8p3`. Along with {@see $exponent} it keeps the value
+     * exactly, whatever its precision.
      *
      * @var non-empty-string
      */

@@ -11,10 +11,13 @@ use FFI\Parser\Node\Type\EnumType;
 use FFI\Parser\Node\Type\RecordType;
 
 /**
- * Declaration without declarators whose type is a bare structure, union or
- * enumeration, such as `struct S { int a; };` or `enum E : int;`. A
- * qualified one (`const struct S { int a; };`) is a {@see TypeDeclaration},
- * though it declares the tag as well.
+ * Declaration without declarators whose type is a structure, union or
+ * enumeration by itself, not wrapped into qualifiers or `_Atomic(T)`, such
+ * as `struct S { int a; };`, `struct S;` or `static struct S;`. The other
+ * specifiers are kept in the list: the form of 6.7.3.4p11, which declares
+ * a new type even if an outer scope has the tag, allows none of them, and
+ * for an enumeration requires the underlying type, `enum E : int;`. A
+ * qualified tag (`const struct S;`) is a {@see TypeDeclaration}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.4 Tags
  */

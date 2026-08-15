@@ -77,7 +77,7 @@ NonTypeSpecifier
 // qualifiers and, in a compound literal, alignment specifiers in a type
 // name (6.7.6), and no storage-class or function specifier in a member
 // declaration either (6.7.3.2), but the parser accepts any specifier
-// everywhere, as Clang does: the other specifiers of a type name are kept
+// everywhere, as Clang's parser does: the other specifiers of a type name are kept
 // by a SpecifiedType around the type of the specifiers, and the ones of a
 // member by the member itself.
 TypeNameSpecifiers -> {
@@ -254,12 +254,18 @@ AtomicType -> {
   ;
 
 // A typedef name, the parser has no table of the declared names to tell what
-// kind of type it is
+// kind of type it is. A name before "=" is the declarator of a declaration
+// whose type is inferred (6.7.10), "static x = 1;" and "constexpr auto n = 1;":
+// no declarator starts with "=".
 NamedType -> {
     /** @var array{Node\Identifier} $children */
     return new Type\NamedType($children[0], $offset);
 }
-  : Identifier()
+  : Identifier() !InitializerStart()
+  ;
+
+InitializerStart
+  : <T_ASSIGN>
   ;
 
 //

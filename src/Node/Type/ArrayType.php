@@ -20,7 +20,7 @@ abstract class ArrayType extends Type
     public function __construct(
         /**
          * The element type, {@see null} in case of the specifiers give no
-         * type, such as in `static a[3];`
+         * type, such as in `static (a)[3];`
          */
         public readonly ?TypeInterface $type,
         /**
@@ -28,7 +28,7 @@ abstract class ArrayType extends Type
          * order written. C allows them only in the outermost array of a
          * parameter, where they qualify the pointer the array is adjusted
          * to, but the parser accepts them everywhere and keeps them for a
-         * validator.
+         * validator
          *
          * @var list<TypeQualifier>
          */
