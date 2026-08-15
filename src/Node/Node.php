@@ -7,7 +7,7 @@ namespace FFI\Parser\Node;
 /**
  * Base of every node of the syntax tree.
  */
-abstract class Node
+abstract class Node implements NodeInterface
 {
     public function __construct(
         /**

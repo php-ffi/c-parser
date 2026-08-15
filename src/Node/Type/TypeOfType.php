@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
-use FFI\Parser\Node\Expression\Expression;
+use FFI\Parser\Node\Expression\ExpressionInterface;
 
 /**
  * Type of an expression, `typeof(x + 1)`, which keeps the qualifiers of the
@@ -21,7 +21,7 @@ final class TypeOfType extends Type
         /**
          * The expression in the parentheses
          */
-        public readonly Expression $operand,
+        public readonly ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

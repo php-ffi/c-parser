@@ -22,7 +22,7 @@ abstract class ArrayType extends Type
          * The element type, {@see null} in case of the specifiers give no
          * type, such as in `static a[3];`
          */
-        public readonly ?Type $type,
+        public readonly ?TypeInterface $type,
         /**
          * The qualifiers written in the brackets (`int a[const 3]`), in the
          * order written. C allows them only in the outermost array of a

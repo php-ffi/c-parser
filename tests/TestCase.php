@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests;
 
 use FFI\Parser\Exception\SyntaxException;
-use FFI\Parser\Node\Declaration\Declaration;
+use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Parser;
 use PHPUnit\Framework\TestCase as BaseTestCase;
@@ -92,7 +92,7 @@ abstract class TestCase extends BaseTestCase
      * parser is checked along the way: a header is syntactically valid
      * exactly when it can be parsed.
      *
-     * @return list<Declaration>
+     * @return list<RootDeclarationInterface>
      */
     protected static function parse(string $code): array
     {
@@ -106,12 +106,12 @@ abstract class TestCase extends BaseTestCase
     /**
      * Parses a header of a single declaration of the given class.
      *
-     * @template TDeclaration of Declaration
+     * @template TDeclaration of RootDeclarationInterface
      *
      * @param class-string<TDeclaration> $class
      * @return TDeclaration
      */
-    protected static function parseSingle(string $code, string $class): Declaration
+    protected static function parseSingle(string $code, string $class): RootDeclarationInterface
     {
         $nodes = self::parse($code);
 

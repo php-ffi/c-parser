@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Expression;
 
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Conversion of an operand to a type: `(T)x`.
@@ -24,11 +24,11 @@ final class CastExpression extends Expression
         /**
          * The type the operand is converted to
          */
-        public readonly Type $type,
+        public readonly TypeInterface $type,
         /**
          * The expression being converted
          */
-        public readonly Expression $operand,
+        public readonly ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

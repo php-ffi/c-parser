@@ -10,7 +10,8 @@ use FFI\Parser\Node\Expression\Expression;
  * Base of the constants and string literals, which keep their source text
  * along with the value.
  */
-abstract class Literal extends Expression
+abstract class Literal extends Expression implements
+    LiteralInterface
 {
     /**
      * @param int<0, max> $offset

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Expression;
 
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * The `sizeof` operator applied to a type: `sizeof(T)`.
@@ -24,7 +24,7 @@ final class SizeOfTypeExpression extends Expression
         /**
          * The type whose size is taken
          */
-        public readonly Type $type,
+        public readonly TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

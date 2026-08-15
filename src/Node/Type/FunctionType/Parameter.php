@@ -7,7 +7,7 @@ namespace FFI\Parser\Node\Type\FunctionType;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Specifier\SpecifierList;
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Parameter of a function type, such as `const char *s` or the unnamed
@@ -30,7 +30,7 @@ final class Parameter extends SpecifiedDeclaration
          * qualifier and no pointer, array or function is written, such as
          * in `f(register x)`
          */
-        public readonly ?Type $type,
+        public readonly ?TypeInterface $type,
         /**
          * The name, {@see null} in case of the declarator is abstract or
          * there is none

@@ -18,11 +18,11 @@ final class SubscriptExpression extends Expression
         /**
          * The expression before `[`
          */
-        public readonly Expression $array,
+        public readonly ExpressionInterface $array,
         /**
          * The expression between `[` and `]`
          */
-        public readonly Expression $index,
+        public readonly ExpressionInterface $index,
         int $offset = 0,
     ) {
         parent::__construct($offset);

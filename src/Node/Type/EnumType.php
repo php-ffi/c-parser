@@ -26,7 +26,7 @@ final class EnumType extends Type
          * The fixed underlying type written after the colon, {@see null}
          * in case of there is none
          */
-        public readonly ?Type $underlyingType = null,
+        public readonly ?TypeInterface $underlyingType = null,
         /**
          * The enumerators, {@see null} in case of there is no body: a
          * reference to the tag or its declaration without the enumerators,

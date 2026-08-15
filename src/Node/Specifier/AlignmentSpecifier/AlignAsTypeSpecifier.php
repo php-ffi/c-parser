@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Specifier\AlignmentSpecifier;
 
 use FFI\Parser\Node\Specifier\AlignmentSpecifier;
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Alignment of a type, `alignas(double)`. A lone identifier in the
@@ -23,7 +23,7 @@ final class AlignAsTypeSpecifier extends AlignmentSpecifier
         /**
          * The type whose alignment is taken
          */
-        public readonly Type $type,
+        public readonly TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

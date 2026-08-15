@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 
+use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Specifier\SpecifierList;
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Declaration without declarators whose type is not a bare structure, union
@@ -17,7 +18,7 @@ use FFI\Parser\Node\Type\Type;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */
-final class TypeDeclaration extends SpecifiedDeclaration
+final class TypeDeclaration extends SpecifiedDeclaration implements RootDeclarationInterface
 {
     /**
      * @param int<0, max> $offset
@@ -27,7 +28,7 @@ final class TypeDeclaration extends SpecifiedDeclaration
          * The type of the specifiers, {@see null} in case of no type
          * specifier and no qualifier is written, such as in `static;`
          */
-        public readonly ?Type $type,
+        public readonly ?TypeInterface $type,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

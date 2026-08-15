@@ -31,7 +31,7 @@ final class QualifiedType extends Type
          * The qualified type, {@see null} in case of no type specifier is
          * written, such as in `const;`
          */
-        public readonly ?Type $type = null,
+        public readonly ?TypeInterface $type = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

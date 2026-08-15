@@ -13,4 +13,5 @@ use FFI\Parser\Node\Node;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.6 Constant expressions
  */
-abstract class Expression extends Node {}
+abstract class Expression extends Node implements
+    ExpressionInterface {}

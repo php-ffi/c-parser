@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Expression;
 
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * The `alignof` operator, also spelled `_Alignof`: `alignof(T)`.
@@ -20,7 +20,7 @@ final class AlignOfTypeExpression extends Expression
         /**
          * The type whose alignment is taken
          */
-        public readonly Type $type,
+        public readonly TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

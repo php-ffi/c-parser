@@ -18,10 +18,10 @@
 DeclarationSpecifiers -> {
     /**
      * @var (non-empty-list<
-     *     Type\Type
+     *     Type\TypeInterface
      *     |Type\ModifiedType\TypeModifier
      *     |Type\QualifiedType\TypeQualifier
-     *     |Specifier\Specifier
+     *     |Specifier\SpecifierInterface
      * >) $children
      */
     $type = null;
@@ -34,7 +34,7 @@ DeclarationSpecifiers -> {
             $modifiers[] = $child;
         } elseif ($child instanceof Type\QualifiedType\TypeQualifier) {
             $qualifiers[] = $child;
-        } elseif ($child instanceof Specifier\Specifier) {
+        } elseif ($child instanceof Specifier\SpecifierInterface) {
             $specifiers[] = $child;
         } else {
             $type = $child;
@@ -81,7 +81,7 @@ NonTypeSpecifier
 // by a SpecifiedType around the type of the specifiers, and the ones of a
 // member by the member itself.
 TypeNameSpecifiers -> {
-    /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+    /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
     if ($children[1]->items === []) {
         // Without the other specifiers at least one type specifier or
         // qualifier is written
@@ -239,7 +239,7 @@ Decimal128Type -> { return new Type\BuiltinType\Decimal128Type($offset); }
   ;
 
 BitIntType -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\BuiltinType\BitIntType($children[1], $offset);
 }
   : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
@@ -247,7 +247,7 @@ BitIntType -> {
 
 // 6.7.3.5 Atomic type specifiers, _Atomic(T)
 AtomicType -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\AtomicType($children[1], $offset);
 }
   : <T_ATOMIC> ::T_LPAREN:: TypeName() ::T_RPAREN::
@@ -318,7 +318,7 @@ RecordMember
 MemberDeclarations -> {
     /**
      * @var list{
-     *     Type\Type|null,
+     *     Type\TypeInterface|null,
      *     Specifier\SpecifierList,
      *     ...<\Closure(Type\RecordType\MemberDeclaration): Type\RecordType\MemberDeclaration>
      * } $children
@@ -346,8 +346,8 @@ NamedMemberDeclarator -> {
     /**
      * @var array{
      *     Node\Identifier,
-     *     \Closure(Type\Type|null): (Type\Type|null),
-     *     2?: Expression\Expression
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+     *     2?: Expression\ExpressionInterface
      * } $children
      */
     return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
@@ -363,7 +363,7 @@ NamedMemberDeclarator -> {
   ;
 
 UnnamedBitFieldDeclarator -> {
-    /** @var array{Expression\Expression} $children */
+    /** @var array{Expression\ExpressionInterface} $children */
     return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
         => new Type\RecordType\MemberDeclaration(
             $member->type,
@@ -385,8 +385,8 @@ UnnamedBitFieldDeclarator -> {
 EnumType -> {
     /**
      * @var array{TokenInterface, Node\Identifier}
-     *     |array{TokenInterface, Node\Identifier, Type\Type|Type\EnumType\EnumeratorList}
-     *     |array{TokenInterface, Node\Identifier, Type\Type, Type\EnumType\EnumeratorList} $children
+     *     |array{TokenInterface, Node\Identifier, Type\TypeInterface|Type\EnumType\EnumeratorList}
+     *     |array{TokenInterface, Node\Identifier, Type\TypeInterface, Type\EnumType\EnumeratorList} $children
      */
     if (!isset($children[2])) {
         return new Type\EnumType($children[1], null, null, $offset);
@@ -403,7 +403,7 @@ EnumType -> {
 
 AnonymousEnumType -> {
     /**
-     * @var array{TokenInterface, Type\Type, Type\EnumType\EnumeratorList}
+     * @var array{TokenInterface, Type\TypeInterface, Type\EnumType\EnumeratorList}
      *     |array{TokenInterface, Type\EnumType\EnumeratorList} $children
      */
     if ($children[1] instanceof Type\EnumType\EnumeratorList) {
@@ -432,7 +432,7 @@ EnumeratorList -> {
   ;
 
 Enumerator -> {
-    /** @var array{Node\Identifier, 1?: Expression\Expression} $children */
+    /** @var array{Node\Identifier, 1?: Expression\ExpressionInterface} $children */
     return new Type\EnumType\Enumerator($children[0], $children[1] ?? null, $offset);
 }
   : Identifier() (::T_ASSIGN:: ConditionalExpression())?
@@ -445,28 +445,28 @@ Enumerator -> {
 //
 
 TypeOfTypeType -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\TypeOfTypeType($children[1], $offset);
 }
   : <T_TYPEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 TypeOfType -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\TypeOfType($children[1], $offset);
 }
   : <T_TYPEOF> ::T_LPAREN:: Expression() ::T_RPAREN::
   ;
 
 TypeOfUnqualTypeType -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\TypeOfUnqualTypeType($children[1], $offset);
 }
   : <T_TYPEOF_UNQUAL> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 TypeOfUnqualType -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\TypeOfUnqualType($children[1], $offset);
 }
   : <T_TYPEOF_UNQUAL> ::T_LPAREN:: Expression() ::T_RPAREN::
@@ -531,14 +531,14 @@ AlignmentSpecifier
   ;
 
 AlignAsTypeSpecifier -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Specifier\AlignmentSpecifier\AlignAsTypeSpecifier($children[1], $offset);
 }
   : <T_ALIGNAS> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
   ;
 
 AlignAsSpecifier -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Specifier\AlignmentSpecifier\AlignAsSpecifier($children[1], $offset);
 }
   : <T_ALIGNAS> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::

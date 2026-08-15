@@ -24,7 +24,7 @@ final class FunctionType extends Type
          * The return type, {@see null} in case of the specifiers give no
          * type, such as in `static f(void);`
          */
-        public readonly ?Type $returnType,
+        public readonly ?TypeInterface $returnType,
         /**
          * The parameters in the order written, empty in case of `f()` and
          * `f(...)`

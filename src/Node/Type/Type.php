@@ -15,4 +15,5 @@ use FFI\Parser\Node\Node;
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.7 Declarators
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.8 Type names
  */
-abstract class Type extends Node {}
+abstract class Type extends Node implements
+    TypeInterface {}

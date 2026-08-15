@@ -4185,7 +4185,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var array{
          *     TokenInterface,
-         *     Expression\Expression,
+         *     Expression\ExpressionInterface,
          *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
          * } $children
          */
@@ -4198,10 +4198,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var array{Expression\Expression}|array{
-         *     Expression\Expression,
-         *     Expression\Expression,
-         *     Expression\Expression
+         * @var array{Expression\ExpressionInterface}|array{
+         *     Expression\ExpressionInterface,
+         *     Expression\ExpressionInterface,
+         *     Expression\ExpressionInterface
          * } $children
          */
         if (\count($children) === 1) {
@@ -4216,7 +4216,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -4231,7 +4231,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -4246,7 +4246,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -4261,7 +4261,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -4276,7 +4276,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -4292,8 +4292,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -4316,8 +4316,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -4344,8 +4344,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -4368,8 +4368,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -4392,8 +4392,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -4417,13 +4417,13 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type, Expression\Expression} $children */
+        /** @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface} $children */
         return new Expression\CastExpression($children[1], $children[2], $offset);
     }
 
     private static function reduceTypeName(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        /** @var array{Type\Type, 1?: \Closure(Type\Type|null): (Type\Type|null)} $children */
+        /** @var array{Type\TypeInterface, 1?: \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)} $children */
         if (!isset($children[1])) {
             return $children[0];
         }
@@ -4440,7 +4440,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+        /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
         if ($children[1]->items === []) {
             // Without the other specifiers at least one type specifier or
             // qualifier is written
@@ -4459,10 +4459,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         /**
          * @var (non-empty-list<
-         *     Type\Type
+         *     Type\TypeInterface
          *     |Type\ModifiedType\TypeModifier
          *     |Type\QualifiedType\TypeQualifier
-         *     |Specifier\Specifier
+         *     |Specifier\SpecifierInterface
          * >) $children
          */
         $type = null;
@@ -4475,7 +4475,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 $modifiers[] = $child;
             } elseif ($child instanceof Type\QualifiedType\TypeQualifier) {
                 $qualifiers[] = $child;
-            } elseif ($child instanceof Specifier\Specifier) {
+            } elseif ($child instanceof Specifier\SpecifierInterface) {
                 $specifiers[] = $child;
             } else {
                 $type = $child;
@@ -4590,7 +4590,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Specifier\AlignmentSpecifier\AlignAsTypeSpecifier($children[1], $offset);
     }
 
@@ -4599,7 +4599,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Specifier\AlignmentSpecifier\AlignAsSpecifier($children[1], $offset);
     }
 
@@ -4729,7 +4729,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Type\BuiltinType\BitIntType($children[1], $offset);
     }
 
@@ -4738,7 +4738,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Type\AtomicType($children[1], $offset);
     }
 
@@ -4767,7 +4767,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         /**
          * @var list{
-         *     Type\Type|null,
+         *     Type\TypeInterface|null,
          *     Specifier\SpecifierList,
          *     ...<\Closure(Type\RecordType\MemberDeclaration): Type\RecordType\MemberDeclaration>
          * } $children
@@ -4787,8 +4787,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var array{
          *     Node\Identifier,
-         *     \Closure(Type\Type|null): (Type\Type|null),
-         *     2?: Expression\Expression
+         *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+         *     2?: Expression\ExpressionInterface
          * } $children
          */
         return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
@@ -4805,12 +4805,12 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     {
         /**
          * @var array{
-         *     \Closure(Type\Type|null): Type\Type,
+         *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
          *     Node\Identifier,
-         *     \Closure(Type\Type|null): (Type\Type|null)
+         *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
          * } $children
          */
-        return [$children[1], static fn(?Type\Type $type): ?Type\Type => $children[2]($children[0]($type))];
+        return [$children[1], static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[2]($children[0]($type))];
     }
 
     private static function reducePointer(\Phplrt\Parser\Context $ctx, mixed $children): mixed
@@ -4826,10 +4826,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         }
 
         if ($qualifiers === []) {
-            return static fn(?Type\Type $type): Type\Type => new Type\PointerType($type, $offset);
+            return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\PointerType($type, $offset);
         }
 
-        return static fn(?Type\Type $type): Type\Type => new Type\QualifiedType(
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
             $qualifiers,
             new Type\PointerType($type, $offset),
             $offset,
@@ -4838,8 +4838,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
     private static function reduceDirectDeclarator(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        /** @var list{Node\Identifier, ...<\Closure(Type\Type|null): (Type\Type|null)>} $children */
-        return [$children[0], static function (?Type\Type $type) use ($children): ?Type\Type {
+        /** @var list{Node\Identifier, ...<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>} $children */
+        return [$children[0], static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
             for ($i = \count($children) - 1; $i > 0; --$i) {
                 $type = $children[$i]($type);
             }
@@ -4856,7 +4856,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var list{
          *     TokenInterface,
-         *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\Expression>
+         *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\ExpressionInterface>
          * } $children
          */
         $qualifiers = [];
@@ -4872,9 +4872,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         }
 
         // The size ends the rule
-        \assert($children[$last] instanceof Expression\Expression);
+        \assert($children[$last] instanceof Expression\ExpressionInterface);
 
-        return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\SizedArrayType(
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\SizedArrayType(
             $type,
             $children[$last],
             $isStatic,
@@ -4895,7 +4895,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             $qualifiers[] = $children[$i];
         }
 
-        return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\UnspecifiedSizeArrayType(
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\UnspecifiedSizeArrayType(
             $type,
             $qualifiers,
             $offset,
@@ -4914,7 +4914,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             $qualifiers[] = $children[$i];
         }
 
-        return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\IncompleteArrayType(
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\IncompleteArrayType(
             $type,
             $qualifiers,
             $offset,
@@ -4940,7 +4940,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         $list = new Type\FunctionType\ParameterList($parameters, $parameters[0]->offset ?? $offset);
 
-        return static fn(?Type\Type $type): Type\Type => new Type\FunctionType($type, $list, $isVariadic, $offset);
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\FunctionType($type, $list, $isVariadic, $offset);
     }
 
     private static function reduceParameter(\Phplrt\Parser\Context $ctx, mixed $children): mixed
@@ -4949,9 +4949,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var array{Type\Type|null, Specifier\SpecifierList}
-         *     |array{Type\Type|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\Type|null): (Type\Type|null)}
-         *     |array{Type\Type|null, Specifier\SpecifierList, \Closure(Type\Type|null): (Type\Type|null)} $children
+         * @var array{Type\TypeInterface|null, Specifier\SpecifierList}
+         *     |array{Type\TypeInterface|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)}
+         *     |array{Type\TypeInterface|null, Specifier\SpecifierList, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)} $children
          */
         if (!isset($children[2])) {
             return new Type\FunctionType\Parameter($children[0], null, $children[1], $offset);
@@ -4968,21 +4968,21 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     {
         /**
          * @var array{
-         *     \Closure(Type\Type|null): Type\Type,
-         *     1?: \Closure(Type\Type|null): (Type\Type|null)
+         *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
+         *     1?: \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
          * } $children
          */
         if (!isset($children[1])) {
             return $children[0];
         }
 
-        return static fn(?Type\Type $type): ?Type\Type => $children[1]($children[0]($type));
+        return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[1]($children[0]($type));
     }
 
     private static function reduceDirectAbstractDeclarator(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        /** @var non-empty-list<\Closure(Type\Type|null): (Type\Type|null)> $children */
-        return static function (?Type\Type $type) use ($children): ?Type\Type {
+        /** @var non-empty-list<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)> $children */
+        return static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
             for ($i = \count($children) - 1; $i >= 0; --$i) {
                 $type = $children[$i]($type);
             }
@@ -4993,7 +4993,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
     private static function reduceUnnamedBitFieldDeclarator(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        /** @var array{Expression\Expression} $children */
+        /** @var array{Expression\ExpressionInterface} $children */
         return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
             => new Type\RecordType\MemberDeclaration(
                 $member->type,
@@ -5038,8 +5038,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         /**
          * @var array{TokenInterface, Node\Identifier}
-         *     |array{TokenInterface, Node\Identifier, Type\Type|Type\EnumType\EnumeratorList}
-         *     |array{TokenInterface, Node\Identifier, Type\Type, Type\EnumType\EnumeratorList} $children
+         *     |array{TokenInterface, Node\Identifier, Type\TypeInterface|Type\EnumType\EnumeratorList}
+         *     |array{TokenInterface, Node\Identifier, Type\TypeInterface, Type\EnumType\EnumeratorList} $children
          */
         if (!isset($children[2])) {
             return new Type\EnumType($children[1], null, null, $offset);
@@ -5066,7 +5066,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{Node\Identifier, 1?: Expression\Expression} $children */
+        /** @var array{Node\Identifier, 1?: Expression\ExpressionInterface} $children */
         return new Type\EnumType\Enumerator($children[0], $children[1] ?? null, $offset);
     }
 
@@ -5076,7 +5076,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var array{TokenInterface, Type\Type, Type\EnumType\EnumeratorList}
+         * @var array{TokenInterface, Type\TypeInterface, Type\EnumType\EnumeratorList}
          *     |array{TokenInterface, Type\EnumType\EnumeratorList} $children
          */
         if ($children[1] instanceof Type\EnumType\EnumeratorList) {
@@ -5091,7 +5091,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Type\TypeOfTypeType($children[1], $offset);
     }
 
@@ -5100,7 +5100,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Type\TypeOfType($children[1], $offset);
     }
 
@@ -5109,7 +5109,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var non-empty-list<Expression\Expression> $children */
+        /** @var non-empty-list<Expression\ExpressionInterface> $children */
         $result = $children[0];
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -5124,7 +5124,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Type\TypeOfUnqualTypeType($children[1], $offset);
     }
 
@@ -5133,7 +5133,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Type\TypeOfUnqualType($children[1], $offset);
     }
 
@@ -5142,7 +5142,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\PlusExpression($children[1], $offset);
     }
 
@@ -5151,7 +5151,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\MinusExpression($children[1], $offset);
     }
 
@@ -5160,7 +5160,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\LogicalNotExpression($children[1], $offset);
     }
 
@@ -5169,7 +5169,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
     }
 
@@ -5178,7 +5178,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\DereferenceExpression($children[1], $offset);
     }
 
@@ -5187,7 +5187,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new UnaryExpression\AddressOfExpression($children[1], $offset);
     }
 
@@ -5196,7 +5196,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Expression\SizeOfTypeExpression($children[1], $offset);
     }
 
@@ -5205,7 +5205,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Expression\SizeOfExpression($children[1], $offset);
     }
 
@@ -5214,7 +5214,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Type\Type} $children */
+        /** @var array{TokenInterface, Type\TypeInterface} $children */
         return new Expression\AlignOfTypeExpression($children[1], $offset);
     }
 
@@ -5224,8 +5224,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $offset = $ctx->begin;
 
         /**
-         * @var non-empty-list<Expression\Expression|Node\Identifier|TokenInterface> $children
-         * @var Expression\Expression $result
+         * @var non-empty-list<Expression\ExpressionInterface|Node\Identifier|TokenInterface> $children
+         * @var Expression\ExpressionInterface $result
          */
         $result = $children[0];
 
@@ -5378,7 +5378,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
     private static function reduceParenthesizedExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
-        /** @var array{TokenInterface, Expression\Expression} $children */
+        /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return $children[1];
     }
 
@@ -5387,7 +5387,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+        /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
         if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
             return new Declaration\SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
         }

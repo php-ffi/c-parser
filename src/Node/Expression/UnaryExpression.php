@@ -20,7 +20,7 @@ abstract class UnaryExpression extends Expression
         /**
          * The expression the operator is applied to
          */
-        public readonly Expression $operand,
+        public readonly ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

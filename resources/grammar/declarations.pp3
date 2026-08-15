@@ -14,7 +14,7 @@ ExternalDeclaration
 // enumeration declares its tag, anything else declares nothing, which is
 // still syntactically valid: int;
 Declaration -> {
-    /** @var array{Type\Type|null, Specifier\SpecifierList} $children */
+    /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
     if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
         return new Declaration\SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
     }
@@ -30,7 +30,7 @@ StaticAssertDeclaration -> {
     /**
      * @var array{
      *     TokenInterface,
-     *     Expression\Expression,
+     *     Expression\ExpressionInterface,
      *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
      * } $children
      */

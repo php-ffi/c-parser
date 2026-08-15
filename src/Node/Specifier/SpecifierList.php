@@ -12,7 +12,7 @@ use FFI\Parser\Node\NodeList;
  * `static inline int`. They are not checked: `static extern` gives a list as
  * well. An empty list starts where the declaration does.
  *
- * @template-extends NodeList<Specifier>
+ * @template-extends NodeList<SpecifierInterface>
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */

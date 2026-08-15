@@ -27,7 +27,7 @@ final class SpecifiedType extends Type
          * The type of the specifiers, {@see null} in case of no type
          * specifier and no qualifier is written, such as in `alignas(8)`
          */
-        public readonly ?Type $type,
+        public readonly ?TypeInterface $type,
         /**
          * The storage-class, function and alignment specifiers in the order
          * written

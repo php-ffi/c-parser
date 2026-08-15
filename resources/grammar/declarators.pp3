@@ -19,12 +19,12 @@ Declarator
 PointerDeclarator -> {
     /**
      * @var array{
-     *     \Closure(Type\Type|null): Type\Type,
+     *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
      *     Node\Identifier,
-     *     \Closure(Type\Type|null): (Type\Type|null)
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
      * } $children
      */
-    return [$children[1], static fn(?Type\Type $type): ?Type\Type => $children[2]($children[0]($type))];
+    return [$children[1], static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[2]($children[0]($type))];
 }
   : Pointer() Declarator()
   ;
@@ -34,8 +34,8 @@ PointerDeclarator -> {
 // arrays of three. The parenthesized declarator applies last of all, so
 // "(*f)(int)" is a pointer to a function.
 DirectDeclarator -> {
-    /** @var list{Node\Identifier, ...<\Closure(Type\Type|null): (Type\Type|null)>} $children */
-    return [$children[0], static function (?Type\Type $type) use ($children): ?Type\Type {
+    /** @var list{Node\Identifier, ...<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>} $children */
+    return [$children[0], static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
         for ($i = \count($children) - 1; $i > 0; --$i) {
             $type = $children[$i]($type);
         }
@@ -55,15 +55,15 @@ AbstractDeclarator
 AbstractPointerDeclarator -> {
     /**
      * @var array{
-     *     \Closure(Type\Type|null): Type\Type,
-     *     1?: \Closure(Type\Type|null): (Type\Type|null)
+     *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
+     *     1?: \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
      * } $children
      */
     if (!isset($children[1])) {
         return $children[0];
     }
 
-    return static fn(?Type\Type $type): ?Type\Type => $children[1]($children[0]($type));
+    return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[1]($children[0]($type));
 }
   : Pointer() AbstractDeclarator()?
   ;
@@ -73,8 +73,8 @@ AbstractPointerDeclarator -> {
 // the parenthesized declarator applies first and the arrays and the
 // functions after it, in the same order as in DirectDeclarator.
 DirectAbstractDeclarator -> {
-    /** @var non-empty-list<\Closure(Type\Type|null): (Type\Type|null)> $children */
-    return static function (?Type\Type $type) use ($children): ?Type\Type {
+    /** @var non-empty-list<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)> $children */
+    return static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
         for ($i = \count($children) - 1; $i >= 0; --$i) {
             $type = $children[$i]($type);
         }
@@ -96,10 +96,10 @@ Pointer -> {
     }
 
     if ($qualifiers === []) {
-        return static fn(?Type\Type $type): Type\Type => new Type\PointerType($type, $offset);
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\PointerType($type, $offset);
     }
 
-    return static fn(?Type\Type $type): Type\Type => new Type\QualifiedType(
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
         $qualifiers,
         new Type\PointerType($type, $offset),
         $offset,
@@ -130,7 +130,7 @@ SizedArrayDeclarator -> {
     /**
      * @var list{
      *     TokenInterface,
-     *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\Expression>
+     *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\ExpressionInterface>
      * } $children
      */
     $qualifiers = [];
@@ -146,9 +146,9 @@ SizedArrayDeclarator -> {
     }
 
     // The size ends the rule
-    \assert($children[$last] instanceof Expression\Expression);
+    \assert($children[$last] instanceof Expression\ExpressionInterface);
 
-    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\SizedArrayType(
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\SizedArrayType(
         $type,
         $children[$last],
         $isStatic,
@@ -172,7 +172,7 @@ UnspecifiedSizeArrayDeclarator -> {
         $qualifiers[] = $children[$i];
     }
 
-    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\UnspecifiedSizeArrayType(
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\UnspecifiedSizeArrayType(
         $type,
         $qualifiers,
         $offset,
@@ -190,7 +190,7 @@ IncompleteArrayDeclarator -> {
         $qualifiers[] = $children[$i];
     }
 
-    return static fn(?Type\Type $type): Type\Type => new Type\ArrayType\IncompleteArrayType(
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\IncompleteArrayType(
         $type,
         $qualifiers,
         $offset,
@@ -220,7 +220,7 @@ FunctionDeclarator -> {
 
     $list = new Type\FunctionType\ParameterList($parameters, $parameters[0]->offset ?? $offset);
 
-    return static fn(?Type\Type $type): Type\Type => new Type\FunctionType($type, $list, $isVariadic, $offset);
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\FunctionType($type, $list, $isVariadic, $offset);
 }
   : <T_LPAREN> ParameterTypeList()? ::T_RPAREN::
   ;
@@ -235,9 +235,9 @@ ParameterTypeList
 // abstract one parses only the pointers and the parentheses once again.
 Parameter -> {
     /**
-     * @var array{Type\Type|null, Specifier\SpecifierList}
-     *     |array{Type\Type|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\Type|null): (Type\Type|null)}
-     *     |array{Type\Type|null, Specifier\SpecifierList, \Closure(Type\Type|null): (Type\Type|null)} $children
+     * @var array{Type\TypeInterface|null, Specifier\SpecifierList}
+     *     |array{Type\TypeInterface|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)}
+     *     |array{Type\TypeInterface|null, Specifier\SpecifierList, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)} $children
      */
     if (!isset($children[2])) {
         return new Type\FunctionType\Parameter($children[0], null, $children[1], $offset);
@@ -255,7 +255,7 @@ Parameter -> {
 // 6.7.8 Type names, the type in a cast, sizeof, alignof, alignas, typeof
 // and _Atomic(T): the specifiers and an abstract declarator
 TypeName -> {
-    /** @var array{Type\Type, 1?: \Closure(Type\Type|null): (Type\Type|null)} $children */
+    /** @var array{Type\TypeInterface, 1?: \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)} $children */
     if (!isset($children[1])) {
         return $children[0];
     }

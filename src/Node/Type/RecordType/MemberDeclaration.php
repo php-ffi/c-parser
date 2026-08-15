@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Type\RecordType;
 
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
-use FFI\Parser\Node\Expression\Expression;
+use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Specifier\SpecifierList;
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Member of a structure or a union, such as `int *a;` or the bit-field
@@ -33,7 +33,7 @@ final class MemberDeclaration extends SpecifiedDeclaration
          * qualifier and no pointer, array or function is written, such as
          * in `static a;`
          */
-        public readonly ?Type $type,
+        public readonly ?TypeInterface $type,
         /**
          * The name, {@see null} in case of the member declaration has no
          * declarator (an anonymous structure or union, or a declaration of
@@ -44,7 +44,7 @@ final class MemberDeclaration extends SpecifiedDeclaration
          * The constant expression of the width of a bit-field, {@see null}
          * in case of the member is not a bit-field
          */
-        public readonly ?Expression $width = null,
+        public readonly ?ExpressionInterface $width = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

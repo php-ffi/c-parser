@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type\ArrayType;
 
-use FFI\Parser\Node\Expression\Expression;
+use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Type\ArrayType;
 use FFI\Parser\Node\Type\QualifiedType\TypeQualifier;
-use FFI\Parser\Node\Type\Type;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Array with a size, `int a[3]` or `int a[static 3]` in a parameter. Whether
@@ -23,11 +23,11 @@ final class SizedArrayType extends ArrayType
      * @param int<0, max> $offset
      */
     public function __construct(
-        ?Type $type,
+        ?TypeInterface $type,
         /**
          * The expression of the size
          */
-        public readonly Expression $size,
+        public readonly ExpressionInterface $size,
         /**
          * Whether `static` is written in the brackets: the parameter points
          * to at least the given number of elements. C allows it only in the

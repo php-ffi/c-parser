@@ -16,7 +16,7 @@
 // 6.5.18 Comma operator, only allowed in parentheses, in a subscript and
 // between "?" and ":"
 Expression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -34,10 +34,10 @@ Expression -> {
 // a ? b : (c ? d : e)
 ConditionalExpression -> {
     /**
-     * @var array{Expression\Expression}|array{
-     *     Expression\Expression,
-     *     Expression\Expression,
-     *     Expression\Expression
+     * @var array{Expression\ExpressionInterface}|array{
+     *     Expression\ExpressionInterface,
+     *     Expression\ExpressionInterface,
+     *     Expression\ExpressionInterface
      * } $children
      */
     if (\count($children) === 1) {
@@ -57,7 +57,7 @@ ConditionalExpression -> {
 
 // 6.5.15 Logical OR operator, a || b
 LogicalOrExpression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -73,7 +73,7 @@ LogicalOrExpression -> {
 
 // 6.5.14 Logical AND operator, a && b
 LogicalAndExpression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -89,7 +89,7 @@ LogicalAndExpression -> {
 
 // 6.5.13 Bitwise inclusive OR operator, a | b
 BitwiseOrExpression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -105,7 +105,7 @@ BitwiseOrExpression -> {
 
 // 6.5.12 Bitwise exclusive OR operator, a ^ b
 BitwiseXorExpression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -121,7 +121,7 @@ BitwiseXorExpression -> {
 
 // 6.5.11 Bitwise AND operator, a & b
 BitwiseAndExpression -> {
-    /** @var non-empty-list<Expression\Expression> $children */
+    /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -138,8 +138,8 @@ BitwiseAndExpression -> {
 // 6.5.10 Equality operators, a == b and a != b
 EqualityExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -163,8 +163,8 @@ EqualityExpression -> {
 // 6.5.9 Relational operators, a < b, a > b, a <= b and a >= b
 RelationalExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -192,8 +192,8 @@ RelationalExpression -> {
 // 6.5.8 Bitwise shift operators, a << b and a >> b
 ShiftExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -217,8 +217,8 @@ ShiftExpression -> {
 // 6.5.7 Additive operators, a + b and a - b
 AdditiveExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -242,8 +242,8 @@ AdditiveExpression -> {
 // 6.5.6 Multiplicative operators, a * b, a / b and a % b
 MultiplicativeExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -281,7 +281,7 @@ CastOrUnaryExpression
 // operand does not make the type name and the nested casts be parsed once
 // again.
 CastExpression -> {
-    /** @var array{TokenInterface, Type\Type, Expression\Expression} $children */
+    /** @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface} $children */
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
   : <T_LPAREN> (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN:: CastOrUnaryExpression()
@@ -319,7 +319,7 @@ UnaryExpression
 
 // +x
 PlusExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\PlusExpression($children[1], $offset);
 }
   : <T_PLUS> CastOrUnaryExpression()
@@ -327,7 +327,7 @@ PlusExpression -> {
 
 // -x
 MinusExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\MinusExpression($children[1], $offset);
 }
   : <T_MINUS> CastOrUnaryExpression()
@@ -335,7 +335,7 @@ MinusExpression -> {
 
 // !x
 LogicalNotExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\LogicalNotExpression($children[1], $offset);
 }
   : <T_EXCLAMATION> CastOrUnaryExpression()
@@ -343,7 +343,7 @@ LogicalNotExpression -> {
 
 // ~x
 BitwiseNotExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
 }
   : <T_TILDE> CastOrUnaryExpression()
@@ -351,7 +351,7 @@ BitwiseNotExpression -> {
 
 // *p
 DereferenceExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\DereferenceExpression($children[1], $offset);
 }
   : <T_ASTERISK> CastOrUnaryExpression()
@@ -359,7 +359,7 @@ DereferenceExpression -> {
 
 // &x
 AddressOfExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\AddressOfExpression($children[1], $offset);
 }
   : <T_AMPERSAND> CastOrUnaryExpression()
@@ -369,7 +369,7 @@ AddressOfExpression -> {
 // parentheses is read as a type unless a postfix operator follows it:
 // sizeof(x)[0] is sizeof((x)[0]).
 SizeOfTypeExpression -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Expression\SizeOfTypeExpression($children[1], $offset);
 }
   : <T_SIZEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: !PostfixOperatorStart()
@@ -377,7 +377,7 @@ SizeOfTypeExpression -> {
 
 // 6.5.4.4 The sizeof and alignof operators, sizeof x
 SizeOfExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Expression\SizeOfExpression($children[1], $offset);
 }
   : <T_SIZEOF> UnaryExpression()
@@ -385,7 +385,7 @@ SizeOfExpression -> {
 
 // 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled _Alignof
 AlignOfTypeExpression -> {
-    /** @var array{TokenInterface, Type\Type} $children */
+    /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Expression\AlignOfTypeExpression($children[1], $offset);
 }
   : <T_ALIGNOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
@@ -394,8 +394,8 @@ AlignOfTypeExpression -> {
 // 6.5.3 Postfix operators, a[i], s.member, p->member
 PostfixExpression -> {
     /**
-     * @var non-empty-list<Expression\Expression|Node\Identifier|TokenInterface> $children
-     * @var Expression\Expression $result
+     * @var non-empty-list<Expression\ExpressionInterface|Node\Identifier|TokenInterface> $children
+     * @var Expression\ExpressionInterface $result
      */
     $result = $children[0];
 
@@ -432,7 +432,7 @@ PrimaryExpression
   ;
 
 ParenthesizedExpression -> {
-    /** @var array{TokenInterface, Expression\Expression} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return $children[1];
 }
   : <T_LPAREN> Expression() ::T_RPAREN::

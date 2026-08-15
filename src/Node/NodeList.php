@@ -8,7 +8,7 @@ namespace FFI\Parser\Node;
  * Base of the nodes that hold a list of nodes of one kind, such as the
  * members of a structure. The list starts where its first node does.
  *
- * @template TNode of Node
+ * @template TNode of NodeInterface
  *
  * @template-implements \IteratorAggregate<int<0, max>, TNode>
  * @template-implements \ArrayAccess<int<0, max>, TNode>
@@ -57,21 +57,21 @@ abstract class NodeList extends Node implements
     /**
      * @return TNode|null
      */
-    public function first(): ?Node
+    public function first(): ?NodeInterface
     {
         $first = \array_first($this->items);
 
-        return $first instanceof Node ? $first : null;
+        return $first instanceof NodeInterface ? $first : null;
     }
 
     /**
      * @return TNode|null
      */
-    public function last(): ?Node
+    public function last(): ?NodeInterface
     {
         $last = \array_last($this->items);
 
-        return $last instanceof Node ? $last : null;
+        return $last instanceof NodeInterface ? $last : null;
     }
 
     public function offsetExists(mixed $offset): bool
@@ -82,7 +82,7 @@ abstract class NodeList extends Node implements
         return isset($this->items[$offset]);
     }
 
-    public function offsetGet(mixed $offset): ?Node
+    public function offsetGet(mixed $offset): ?NodeInterface
     {
         // @phpstan-ignore-next-line
         assert(\is_int($offset) && $offset >= 0);
@@ -95,7 +95,7 @@ abstract class NodeList extends Node implements
         // @phpstan-ignore-next-line
         assert(\is_int($offset) && $offset >= 0);
         // @phpstan-ignore-next-line
-        assert($value instanceof Node);
+        assert($value instanceof NodeInterface);
 
         throw new \RuntimeException('Cannot modify readonly ' . static::class);
     }

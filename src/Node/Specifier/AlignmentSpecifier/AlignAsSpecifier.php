@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Specifier\AlignmentSpecifier;
 
-use FFI\Parser\Node\Expression\Expression;
+use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Specifier\AlignmentSpecifier;
 
 /**
@@ -21,7 +21,7 @@ final class AlignAsSpecifier extends AlignmentSpecifier
         /**
          * The constant expression of the alignment
          */
-        public readonly Expression $operand,
+        public readonly ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

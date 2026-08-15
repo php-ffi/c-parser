@@ -6,7 +6,7 @@ namespace FFI\Parser\Tests;
 
 use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxException;
-use FFI\Parser\Node\Declaration\Declaration;
+use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
@@ -30,7 +30,7 @@ final class ParserTest extends TestCase
     #[DataProvider('validHeadersDataProvider')]
     public function testValidHeaderIsParsed(string $code): void
     {
-        self::assertContainsOnlyInstancesOf(Declaration::class, self::parse($code));
+        self::assertContainsOnlyInstancesOf(RootDeclarationInterface::class, self::parse($code));
     }
 
     /**
