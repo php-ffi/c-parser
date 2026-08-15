@@ -19,7 +19,7 @@ parameters:
   fileExtensions:
     - php
   tmpDir: vendor/.cache.phpstan
-  reportUnmatchedIgnoredErrors: false
+  reportUnmatchedIgnoredErrors: true
   ignoreErrors:
     # Every generated reducer receives $ctx and $children, whether the
     # grammar uses them or not. The rest of the reducer code is analysed.
