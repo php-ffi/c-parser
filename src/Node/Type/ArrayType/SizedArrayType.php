@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type\ArrayType;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Type\ArrayType;
 use FFI\Parser\Node\Type\QualifiedType\TypeQualifier;
@@ -36,8 +37,9 @@ final class SizedArrayType extends ArrayType
          */
         public readonly bool $isStatic = false,
         array $qualifiers = [],
+        ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
-        parent::__construct($type, $qualifiers, $offset);
+        parent::__construct($type, $qualifiers, $attributes, $offset);
     }
 }

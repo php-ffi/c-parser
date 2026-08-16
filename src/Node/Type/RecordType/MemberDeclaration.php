@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type\RecordType;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
@@ -45,6 +46,13 @@ final class MemberDeclaration extends SpecifiedDeclaration
          * in case of the member is not a bit-field
          */
         public readonly ?ExpressionInterface $width = null,
+        /**
+         * The attributes of the declarator: written before it (GCC allows
+         * them before any declarator but the first), after its name and
+         * after the whole of it, the width of a bit-field included,
+         * {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

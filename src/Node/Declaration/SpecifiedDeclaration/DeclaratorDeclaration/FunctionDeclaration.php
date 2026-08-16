@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration;
 use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
@@ -28,10 +29,12 @@ final class FunctionDeclaration extends DeclaratorDeclaration
          */
         public readonly FunctionType $type,
         Identifier $name,
+        ?AttributeList $attributes = null,
+        ?AsmLabel $asmLabel = null,
         ExpressionInterface|InitializerList|null $initializer = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {
-        parent::__construct($name, $initializer, $specifiers, $offset);
+        parent::__construct($name, $attributes, $asmLabel, $initializer, $specifiers, $offset);
     }
 }

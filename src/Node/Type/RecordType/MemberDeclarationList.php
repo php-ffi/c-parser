@@ -9,7 +9,8 @@ use FFI\Parser\Node\NodeList;
 
 /**
  * Members of a structure or a union, the body between the braces. C23
- * requires at least one member.
+ * requires at least one member, but GCC allows an empty body, and so does
+ * the parser. An empty list starts where the brace does.
  *
  * @template-extends NodeList<MemberDeclaration|StaticAssertDeclaration>
  *

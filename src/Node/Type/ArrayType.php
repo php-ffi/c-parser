@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Type\QualifiedType\TypeQualifier;
 
 /**
@@ -33,6 +34,11 @@ abstract class ArrayType extends Type
          * @var list<TypeQualifier>
          */
         public readonly array $qualifiers = [],
+        /**
+         * The C23 attributes written after the brackets, `[3] [[x]]`,
+         * {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

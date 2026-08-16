@@ -17,11 +17,12 @@
 // the list.
 DeclarationSpecifiers -> {
     /**
-     * @var (non-empty-list<
+     * @var (list<
      *     Type\TypeInterface
      *     |Type\ModifiedType\TypeModifier
      *     |Type\QualifiedType\TypeQualifier
      *     |Specifier\SpecifierInterface
+     *     |Attribute\AttributeInterface
      * >) $children
      */
     $type = null;
@@ -34,7 +35,7 @@ DeclarationSpecifiers -> {
             $modifiers[] = $child;
         } elseif ($child instanceof Type\QualifiedType\TypeQualifier) {
             $qualifiers[] = $child;
-        } elseif ($child instanceof Specifier\SpecifierInterface) {
+        } elseif ($child instanceof Specifier\SpecifierInterface || $child instanceof Attribute\AttributeInterface) {
             $specifiers[] = $child;
         } else {
             $type = $child;
@@ -60,16 +61,21 @@ DeclarationSpecifiers -> {
 // start with different tokens, so that none of them parses the specifiers
 // written before it once again.
 TypeSpecifiers
-  : NamedType() (TypeModifier() | NonTypeSpecifier())*
-  | TypeModifier() (TypeModifier() | NonTypeSpecifier())* (BaseType() (TypeModifier() | NonTypeSpecifier())*)?
-  | BaseType() (TypeModifier() | NonTypeSpecifier())*
+  : NamedType() ((TypeModifier() | NonTypeSpecifier())+)?
+  | TypeModifier() ((TypeModifier() | NonTypeSpecifier())+)? (BaseType() ((TypeModifier() | NonTypeSpecifier())+)?)?
+  | BaseType() ((TypeModifier() | NonTypeSpecifier())+)?
   ;
 
+// The attributes are not specifiers in C, which allows them only before
+// all the specifiers and after them (6.7.1), but GCC allows them anywhere
+// among the specifiers, and the parser keeps them along with the
+// specifiers in the order written
 NonTypeSpecifier
   : StorageClassSpecifier()
   | FunctionSpecifier()
   | TypeQualifier()
   | AlignmentSpecifier()
+  | AttributeSpecifier()
   ;
 
 // 6.7.8 The specifiers of a type name, and of the underlying type of an
@@ -189,13 +195,15 @@ BaseType
   | Decimal64Type()
   | Decimal128Type()
   | BitIntType()
+  | Int8Type()
+  | Int16Type()
+  | Int32Type()
+  | Int64Type()
+  | Int128Type()
   | AtomicType()
   | StructType()
-  | AnonymousStructType()
   | UnionType()
-  | AnonymousUnionType()
   | EnumType()
-  | AnonymousEnumType()
   | TypeOfTypeType()
   | TypeOfType()
   | TypeOfUnqualTypeType()
@@ -245,6 +253,28 @@ BitIntType -> {
   : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
   ;
 
+// The integer types of MSVC
+Int8Type -> { return new Type\BuiltinType\Int8Type($offset); }
+  : <T_INT8>
+  ;
+
+Int16Type -> { return new Type\BuiltinType\Int16Type($offset); }
+  : <T_INT16>
+  ;
+
+Int32Type -> { return new Type\BuiltinType\Int32Type($offset); }
+  : <T_INT32>
+  ;
+
+Int64Type -> { return new Type\BuiltinType\Int64Type($offset); }
+  : <T_INT64>
+  ;
+
+// The 128-bit integer type of GCC
+Int128Type -> { return new Type\BuiltinType\Int128Type($offset); }
+  : <T_INT128>
+  ;
+
 // 6.7.3.5 Atomic type specifiers, _Atomic(T)
 AtomicType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
@@ -258,10 +288,14 @@ AtomicType -> {
 // whose type is inferred (6.7.10), "static x = 1;" and "constexpr auto n = 1;":
 // no declarator starts with "=".
 NamedType -> {
-    /** @var array{Node\Identifier} $children */
-    return new Type\NamedType($children[0], $offset);
+    /** @var array{TokenInterface} $children */
+    // The name is read here rather than by Identifier(): every typedef name
+    // would build it in a rule of its own, which costs a trace entry and a
+    // reducer call per name
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Type\NamedType(new Node\Identifier($children[0]->value, $offset), $offset);
 }
-  : Identifier() !InitializerStart()
+  : <T_IDENTIFIER> !InitializerStart()
   ;
 
 InitializerStart
@@ -272,49 +306,102 @@ InitializerStart
 // 6.7.3.2 Structure and union specifiers
 //
 
+// A tag, a body or both, with the attributes after the keyword and after
+// the body. The tag and the body are alternatives of one rule, so that the
+// attributes are parsed once.
 StructType -> {
-    /** @var array{TokenInterface, Node\Identifier, 2?: Type\RecordType\MemberDeclarationList} $children */
-    return new Type\RecordType\StructType($children[1], $children[2] ?? null, $offset);
-}
-  : <T_STRUCT> Identifier() RecordBody()?
-  ;
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList>
+     * } $children
+     */
+    $name = null;
+    $members = null;
+    $attributes = [];
 
-AnonymousStructType -> {
-    /** @var array{TokenInterface, Type\RecordType\MemberDeclarationList} $children */
-    return new Type\RecordType\StructType(null, $children[1], $offset);
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof Type\RecordType\MemberDeclarationList) {
+            $members = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    return new Type\RecordType\StructType(
+        $name,
+        $members,
+        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+        $offset,
+    );
 }
-  : <T_STRUCT> RecordBody()
+  : <T_STRUCT> (AttributeSpecifier()+)? (Identifier() RecordBody()? | RecordBody())
   ;
 
 UnionType -> {
-    /** @var array{TokenInterface, Node\Identifier, 2?: Type\RecordType\MemberDeclarationList} $children */
-    return new Type\RecordType\UnionType($children[1], $children[2] ?? null, $offset);
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList>
+     * } $children
+     */
+    $name = null;
+    $members = null;
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof Type\RecordType\MemberDeclarationList) {
+            $members = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    return new Type\RecordType\UnionType(
+        $name,
+        $members,
+        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+        $offset,
+    );
 }
-  : <T_UNION> Identifier() RecordBody()?
+  : <T_UNION> (AttributeSpecifier()+)? (Identifier() RecordBody()? | RecordBody())
   ;
 
-AnonymousUnionType -> {
-    /** @var array{TokenInterface, Type\RecordType\MemberDeclarationList} $children */
-    return new Type\RecordType\UnionType(null, $children[1], $offset);
-}
-  : <T_UNION> RecordBody()
-  ;
-
+// The members and the attributes GCC allows after the body
 RecordBody
-  : ::T_LBRACE:: MemberDeclarationList() ::T_RBRACE::
+  : MemberDeclarationList() (AttributeSpecifier()+)?
   ;
 
-// C23 requires at least one member
+// C23 requires at least one member, but GCC allows an empty body. The brace
+// is kept, so that an empty list starts where it is written.
 MemberDeclarationList -> {
-    /** @var non-empty-list<Type\RecordType\MemberDeclaration|Declaration\StaticAssertDeclaration> $children */
-    return new Type\RecordType\MemberDeclarationList($children, $offset);
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<Type\RecordType\MemberDeclaration|Declaration\StaticAssertDeclaration>
+     * } $children
+     */
+    $members = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $members[] = $children[$i];
+    }
+
+    return new Type\RecordType\MemberDeclarationList($members, $members[0]->offset ?? $offset);
 }
-  : RecordMember()+
+  : <T_LBRACE> (RecordMember()+)? ::T_RBRACE::
   ;
 
+// A lone ";" among the members is not valid C, but GCC and Clang accept it
+// as they do at file scope, so it is skipped
 RecordMember
   : MemberDeclarations()
   | StaticAssertDeclaration()
+  | ::T_SEMICOLON::
   ;
 
 // A member declaration gives a node for each of its declarators, and a
@@ -326,107 +413,172 @@ MemberDeclarations -> {
      * @var list{
      *     Type\TypeInterface|null,
      *     Specifier\SpecifierList,
-     *     ...<\Closure(Type\RecordType\MemberDeclaration): Type\RecordType\MemberDeclaration>
+     *     ...<\Closure(
+     *         Type\TypeInterface|null,
+     *         Specifier\SpecifierList,
+     *         int<0, max>
+     *     ): Type\RecordType\MemberDeclaration>
      * } $children
      */
-    $member = new Type\RecordType\MemberDeclaration($children[0], specifiers: $children[1], offset: $offset);
+    if (\count($children) === 2) {
+        return new Type\RecordType\MemberDeclaration($children[0], specifiers: $children[1], offset: $offset);
+    }
+
     $members = [];
 
     for ($i = 2, $count = \count($children); $i < $count; ++$i) {
-        $members[] = $children[$i]($member);
+        $members[] = $children[$i]($children[0], $children[1], $offset);
     }
 
-    return $members === [] ? $member : $members;
+    return $members;
 }
-  : DeclarationSpecifiers() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)? ::T_SEMICOLON::
+  : DeclarationSpecifiers() (MemberDeclarator() ((::T_COMMA:: MemberDeclarator())+)?)? ::T_SEMICOLON::
   ;
 
-// The declarator of a member is a function from the member without a
-// declarator, which holds the specifiers, to the declared one
+// The declarator of a member is a function from the type and the other
+// specifiers of the member declaration and its start to the declared one
 MemberDeclarator
   : NamedMemberDeclarator()
   | UnnamedBitFieldDeclarator()
   ;
 
+// A declarator, the width of a bit-field and the attributes GCC allows
+// before the declarator (other than the first one of the member
+// declaration, whose attributes go to the specifiers), after it and after
+// the width
 NamedMemberDeclarator -> {
     /**
-     * @var array{
-     *     Node\Identifier,
-     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
-     *     2?: Expression\ExpressionInterface
-     * } $children
+     * @var list<
+     *     Attribute\AttributeInterface
+     *     |Node\Identifier
+     *     |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
+     *     |Expression\ExpressionInterface
+     * > $children
      */
-    return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
-        => new Type\RecordType\MemberDeclaration(
-            $children[1]($member->type),
-            $children[0],
-            $children[2] ?? null,
-            $member->specifiers,
-            $member->offset,
+    $name = null;
+    $declarator = null;
+    $width = null;
+    $attributes = [];
+
+    for ($i = 0, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof \Closure) {
+            $declarator = $children[$i];
+        } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        } else {
+            $width = $children[$i];
+        }
+    }
+
+    // A declarator gives its name and its function
+    \assert($name !== null && $declarator !== null);
+
+    return static function (
+        ?Type\TypeInterface $type,
+        Specifier\SpecifierList $specifiers,
+        int $start,
+    ) use ($declarator, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
+        // The start of a declaration is a byte offset
+        \assert($start >= 0);
+
+        return new Type\RecordType\MemberDeclaration(
+            $declarator($type),
+            $name,
+            $width,
+            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+            $specifiers,
+            $start,
         );
+    };
 }
-  : Declarator() (::T_COLON:: ConditionalExpression())?
+  : (AttributeSpecifier()+)? Declarator() (::T_COLON:: ConditionalExpression())? (AttributeSpecifier()+)?
   ;
 
 UnnamedBitFieldDeclarator -> {
-    /** @var array{Expression\ExpressionInterface} $children */
-    return static fn(Type\RecordType\MemberDeclaration $member): Type\RecordType\MemberDeclaration
-        => new Type\RecordType\MemberDeclaration(
-            $member->type,
+    /** @var list{Expression\ExpressionInterface, ...<Attribute\AttributeInterface>} $children */
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $attributes[] = $children[$i];
+    }
+
+    return static function (
+        ?Type\TypeInterface $type,
+        Specifier\SpecifierList $specifiers,
+        int $start,
+    ) use ($children, $attributes): Type\RecordType\MemberDeclaration {
+        // The start of a declaration is a byte offset
+        \assert($start >= 0);
+
+        return new Type\RecordType\MemberDeclaration(
+            $type,
             null,
             $children[0],
-            $member->specifiers,
-            $member->offset,
+            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+            $specifiers,
+            $start,
         );
+    };
 }
-  : ::T_COLON:: ConditionalExpression()
+  : ::T_COLON:: ConditionalExpression() (AttributeSpecifier()+)?
   ;
 
 //
 // 6.7.3.3 Enumeration specifiers
 //
 
-// An enumeration with a name: a reference to it, its declaration with the
-// underlying type only (enum E : int;) or its definition
+// An enumeration with a tag (a reference to it, its declaration with the
+// underlying type only, "enum E : int;", or its definition) or an anonymous
+// one, with the attributes after the keyword and after the body. The tag
+// and the body are alternatives of one rule, so that the attributes are
+// parsed once.
 EnumType -> {
     /**
-     * @var array{TokenInterface, Node\Identifier}
-     *     |array{TokenInterface, Node\Identifier, Type\TypeInterface|Type\EnumType\EnumeratorList}
-     *     |array{TokenInterface, Node\Identifier, Type\TypeInterface, Type\EnumType\EnumeratorList} $children
+     * @var list{
+     *     TokenInterface,
+     *     ...<Attribute\AttributeInterface|Node\Identifier|Type\TypeInterface|Type\EnumType\EnumeratorList>
+     * } $children
      */
-    if (!isset($children[2])) {
-        return new Type\EnumType($children[1], null, null, $offset);
+    $name = null;
+    $underlyingType = null;
+    $enumerators = null;
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof Type\EnumType\EnumeratorList) {
+            $enumerators = $children[$i];
+        } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        } else {
+            $underlyingType = $children[$i];
+        }
     }
 
-    if ($children[2] instanceof Type\EnumType\EnumeratorList) {
-        return new Type\EnumType($children[1], null, $children[2], $offset);
-    }
-
-    return new Type\EnumType($children[1], $children[2], $children[3] ?? null, $offset);
+    return new Type\EnumType(
+        $name,
+        $underlyingType,
+        $enumerators,
+        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+        $offset,
+    );
 }
-  : <T_ENUM> Identifier() EnumUnderlyingType()? EnumBody()?
-  ;
-
-AnonymousEnumType -> {
-    /**
-     * @var array{TokenInterface, Type\TypeInterface, Type\EnumType\EnumeratorList}
-     *     |array{TokenInterface, Type\EnumType\EnumeratorList} $children
-     */
-    if ($children[1] instanceof Type\EnumType\EnumeratorList) {
-        return new Type\EnumType(null, null, $children[1], $offset);
-    }
-
-    return new Type\EnumType(null, $children[1], $children[2], $offset);
-}
-  : <T_ENUM> EnumUnderlyingType()? EnumBody()
+  : <T_ENUM> (AttributeSpecifier()+)? (
+        Identifier() EnumUnderlyingType()? EnumBody()?
+      | EnumUnderlyingType()? EnumBody()
+    )
   ;
 
 EnumUnderlyingType
   : ::T_COLON:: TypeNameSpecifiers()
   ;
 
+// The enumerators and the attributes GCC allows after the body
 EnumBody
-  : ::T_LBRACE:: EnumeratorList() ::T_RBRACE::
+  : ::T_LBRACE:: EnumeratorList() ::T_RBRACE:: (AttributeSpecifier()+)?
   ;
 
 // C23 requires at least one enumerator, a trailing comma is allowed
@@ -434,14 +586,31 @@ EnumeratorList -> {
     /** @var non-empty-list<Type\EnumType\Enumerator> $children */
     return new Type\EnumType\EnumeratorList($children, $offset);
 }
-  : Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
+  : Enumerator() ((::T_COMMA:: Enumerator())+)? ::T_COMMA::?
   ;
 
+// A name, the attributes after it and the value: A [[deprecated]] = 1
 Enumerator -> {
-    /** @var array{Node\Identifier, 1?: Expression\ExpressionInterface} $children */
-    return new Type\EnumType\Enumerator($children[0], $children[1] ?? null, $offset);
+    /** @var list{Node\Identifier, ...<Attribute\AttributeInterface|Expression\ExpressionInterface>} $children */
+    $value = null;
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        } else {
+            $value = $children[$i];
+        }
+    }
+
+    return new Type\EnumType\Enumerator(
+        $children[0],
+        $value,
+        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+        $offset,
+    );
 }
-  : Identifier() (::T_ASSIGN:: ConditionalExpression())?
+  : Identifier() (AttributeSpecifier()+)? (::T_ASSIGN:: ConditionalExpression())?
   ;
 
 //

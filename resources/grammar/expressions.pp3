@@ -25,9 +25,9 @@ Expression -> {
 
     return $result;
 }
-  : ConditionalExpression() (
+  : ConditionalExpression() ((
         ::T_COMMA:: ConditionalExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
@@ -66,9 +66,9 @@ LogicalOrExpression -> {
 
     return $result;
 }
-  : LogicalAndExpression() (
+  : LogicalAndExpression() ((
         ::T_LOGICAL_OR:: LogicalAndExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.14 Logical AND operator, a && b
@@ -82,9 +82,9 @@ LogicalAndExpression -> {
 
     return $result;
 }
-  : BitwiseOrExpression() (
+  : BitwiseOrExpression() ((
         ::T_LOGICAL_AND:: BitwiseOrExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.13 Bitwise inclusive OR operator, a | b
@@ -98,9 +98,9 @@ BitwiseOrExpression -> {
 
     return $result;
 }
-  : BitwiseXorExpression() (
+  : BitwiseXorExpression() ((
         ::T_PIPE:: BitwiseXorExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.12 Bitwise exclusive OR operator, a ^ b
@@ -114,9 +114,9 @@ BitwiseXorExpression -> {
 
     return $result;
 }
-  : BitwiseAndExpression() (
+  : BitwiseAndExpression() ((
         ::T_CARET:: BitwiseAndExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.11 Bitwise AND operator, a & b
@@ -130,9 +130,9 @@ BitwiseAndExpression -> {
 
     return $result;
 }
-  : EqualityExpression() (
+  : EqualityExpression() ((
         ::T_AMPERSAND:: EqualityExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.10 Equality operators, a == b and a != b
@@ -155,9 +155,9 @@ EqualityExpression -> {
 
     return $result;
 }
-  : RelationalExpression() (
+  : RelationalExpression() ((
         (<T_EQUAL> | <T_NOT_EQUAL>) RelationalExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.9 Relational operators, a < b, a > b, a <= b and a >= b
@@ -184,9 +184,9 @@ RelationalExpression -> {
 
     return $result;
 }
-  : ShiftExpression() (
+  : ShiftExpression() ((
         (<T_LESS> | <T_GREATER> | <T_LESS_EQUAL> | <T_GREATER_EQUAL>) ShiftExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.8 Bitwise shift operators, a << b and a >> b
@@ -209,9 +209,9 @@ ShiftExpression -> {
 
     return $result;
 }
-  : AdditiveExpression() (
+  : AdditiveExpression() ((
         (<T_SHL> | <T_SHR>) AdditiveExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.7 Additive operators, a + b and a - b
@@ -234,9 +234,9 @@ AdditiveExpression -> {
 
     return $result;
 }
-  : MultiplicativeExpression() (
+  : MultiplicativeExpression() ((
         (<T_PLUS> | <T_MINUS>) MultiplicativeExpression()
-    )*
+    )+)?
   ;
 
 // 6.5.6 Multiplicative operators, a * b, a / b and a % b
@@ -261,9 +261,9 @@ MultiplicativeExpression -> {
 
     return $result;
 }
-  : CastOrUnaryExpression() (
+  : CastOrUnaryExpression() ((
         (<T_ASTERISK> | <T_SLASH> | <T_PERCENT>) CastOrUnaryExpression()
-    )*
+    )+)?
   ;
 
 CastOrUnaryExpression
@@ -314,7 +314,7 @@ CastStart
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
-  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_LBRACE>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_OFFSETOF> | <T_LBRACE>
   ;
 
 // The braces of a compound literal after its type name, and the postfix
@@ -340,7 +340,7 @@ CompoundLiteral -> {
         return $result;
     };
 }
-  : InitializerList() PostfixOperator()*
+  : InitializerList() (PostfixOperator()+)?
   ;
 
 // 6.5.4 Unary operators
@@ -354,6 +354,7 @@ UnaryExpression
   | SizeOfTypeExpression()
   | SizeOfExpression()
   | AlignOfTypeExpression()
+  | AlignOfExpression()
   | PostfixExpression()
   ;
 
@@ -438,12 +439,35 @@ SizeOfExpression -> {
   : <T_SIZEOF> UnaryExpression()
   ;
 
-// 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled _Alignof
+// 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled
+// _Alignof and __alignof__. GCC allows an expression as the operand as
+// well, so the type name is read as in sizeof.
 AlignOfTypeExpression -> {
-    /** @var array{TokenInterface, Type\TypeInterface} $children */
-    return new Expression\AlignOfTypeExpression($children[1], $offset);
+    /**
+     * @var array{TokenInterface, TokenInterface, Type\TypeInterface}
+     *     |array{
+     *         TokenInterface,
+     *         TokenInterface,
+     *         Type\TypeInterface,
+     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
+     *     } $children
+     */
+    if (isset($children[3])) {
+        return new Expression\AlignOfExpression($children[3]($children[1], $children[2]), $offset);
+    }
+
+    return new Expression\AlignOfTypeExpression($children[2], $offset);
 }
-  : <T_ALIGNOF> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_ALIGNOF> <T_LPAREN> !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
+        (CompoundLiteral() | !PostfixOperatorStart())
+  ;
+
+// GCC: __alignof__ x
+AlignOfExpression -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    return new Expression\AlignOfExpression($children[1], $offset);
+}
+  : <T_ALIGNOF> UnaryExpression()
   ;
 
 // 6.5.3 Postfix operators, a[i], s.member, p->member. Every node of the
@@ -463,7 +487,7 @@ PostfixExpression -> {
 
     return $result;
 }
-  : PrimaryExpression() PostfixOperator()*
+  : PrimaryExpression() (PostfixOperator()+)?
   ;
 
 // A postfix operator is a function from its operand and the start of the
@@ -521,6 +545,34 @@ PrimaryExpression
   | Constant()
   | ConcatenatedStringLiteral()
   | ParenthesizedExpression()
+  | OffsetOfExpression()
+  ;
+
+// GCC: __builtin_offsetof(struct S, a.b[2]), what the offsetof macro of
+// <stddef.h> expands to. The first member of the path is written without
+// a dot, it starts the designators as if it had one.
+OffsetOfExpression -> {
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     Type\TypeInterface,
+     *     Node\Identifier,
+     *     ...<DesignatedInitializer\Designator>
+     * } $children
+     */
+    $designators = [new DesignatedInitializer\Designator\MemberDesignator($children[2], $children[2]->offset)];
+
+    for ($i = 3, $count = \count($children); $i < $count; ++$i) {
+        $designators[] = $children[$i];
+    }
+
+    return new Expression\OffsetOfExpression(
+        $children[1],
+        new DesignatedInitializer\DesignatorList($designators, $children[2]->offset),
+        $offset,
+    );
+}
+  : <T_BUILTIN_OFFSETOF> ::T_LPAREN:: TypeName() ::T_COMMA:: Identifier() (Designator()+)? ::T_RPAREN::
   ;
 
 ParenthesizedExpression -> {

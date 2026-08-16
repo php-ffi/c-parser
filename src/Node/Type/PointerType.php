@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Attribute\AttributeList;
+
 /**
  * Pointer type, written by the `*` of a declarator: `int *p`. The qualifiers
  * of the pointer itself (`int *const p`) go to a {@see QualifiedType} around
@@ -22,6 +24,11 @@ final class PointerType extends Type
          * type, such as in `static *p;`
          */
         public readonly ?TypeInterface $type,
+        /**
+         * The attributes written after the `*`, `*[[x]]` or `*_Nonnull`,
+         * {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

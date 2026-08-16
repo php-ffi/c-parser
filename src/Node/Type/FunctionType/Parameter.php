@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type\FunctionType;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Specifier\SpecifierList;
@@ -36,6 +37,11 @@ final class Parameter extends SpecifiedDeclaration
          * there is none
          */
         public readonly ?Identifier $name = null,
+        /**
+         * The attributes after the name of the declarator and after the
+         * whole of it, {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

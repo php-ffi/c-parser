@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type\EnumType;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\Declaration;
 use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
@@ -28,6 +29,11 @@ final class Enumerator extends Declaration
          * is not written, i.e. the value follows the previous one
          */
         public readonly ?ExpressionInterface $value = null,
+        /**
+         * The attributes after the name, `A [[deprecated]] = 1`,
+         * {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

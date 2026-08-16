@@ -101,54 +101,82 @@
 %token T_CHAR_LITERAL       (?:u8|[uUL])?'(?:[^'\\\n]|(?&ESCAPE))++'
 %token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
 
+// A number of the preprocessor (6.4.8) that is no constant, such as "08",
+// "1.2.3" or "0x1p": a single token, so that an error points at all of it.
+// It is only valid in the arguments of an attribute, where the versions
+// of availability(macos, introduced=10.13.4) are written so.
+%token T_PP_NUMBER          \.?[0-9](?:[eEpP][+-]|'[A-Za-z0-9_\x80-\xFF]|[A-Za-z0-9_.\x80-\xFF]|(?&UCN))*+
+
 //
 // Keywords, 6.4.1
 //
 // Alternative spellings of the same keyword (bool and _Bool) share a
-// token, the exact spelling is kept by the value of the token.
+// token, the exact spelling is kept by the value of the token. The
+// spellings of GCC (__const__, __inline, __typeof__, __thread...) are
+// alternative spellings as well.
 //
 
 %token T_ALIGNAS            (?:alignas|_Alignas)(?&KEYWORD_END)
-%token T_ALIGNOF            (?:alignof|_Alignof)(?&KEYWORD_END)
+%token T_ALIGNOF            (?:alignof|_Alignof|__alignof__|__alignof)(?&KEYWORD_END)
 %token T_AUTO               auto(?&KEYWORD_END)
 %token T_BOOL               (?:bool|_Bool)(?&KEYWORD_END)
 %token T_CHAR               char(?&KEYWORD_END)
-%token T_CONST              const(?&KEYWORD_END)
+%token T_CONST              (?:const|__const__|__const)(?&KEYWORD_END)
 %token T_CONSTEXPR          constexpr(?&KEYWORD_END)
 %token T_DOUBLE             double(?&KEYWORD_END)
 %token T_ENUM               enum(?&KEYWORD_END)
 %token T_EXTERN             extern(?&KEYWORD_END)
 %token T_FALSE              false(?&KEYWORD_END)
 %token T_FLOAT              float(?&KEYWORD_END)
-%token T_INLINE             inline(?&KEYWORD_END)
+%token T_INLINE             (?:inline|__inline__|__inline)(?&KEYWORD_END)
 %token T_INT                int(?&KEYWORD_END)
 %token T_LONG               long(?&KEYWORD_END)
 %token T_NULLPTR            nullptr(?&KEYWORD_END)
 %token T_REGISTER           register(?&KEYWORD_END)
-%token T_RESTRICT           restrict(?&KEYWORD_END)
+%token T_RESTRICT           (?:restrict|__restrict__|__restrict)(?&KEYWORD_END)
 %token T_SHORT              short(?&KEYWORD_END)
-%token T_SIGNED             signed(?&KEYWORD_END)
+%token T_SIGNED             (?:signed|__signed__|__signed)(?&KEYWORD_END)
 %token T_SIZEOF             sizeof(?&KEYWORD_END)
 %token T_STATIC_ASSERT      (?:static_assert|_Static_assert)(?&KEYWORD_END)
 %token T_STATIC             static(?&KEYWORD_END)
 %token T_STRUCT             struct(?&KEYWORD_END)
-%token T_THREAD_LOCAL       (?:thread_local|_Thread_local)(?&KEYWORD_END)
+%token T_THREAD_LOCAL       (?:thread_local|_Thread_local|__thread)(?&KEYWORD_END)
 %token T_TRUE               true(?&KEYWORD_END)
 %token T_TYPEDEF            typedef(?&KEYWORD_END)
 %token T_TYPEOF_UNQUAL      typeof_unqual(?&KEYWORD_END)
-%token T_TYPEOF             typeof(?&KEYWORD_END)
+%token T_TYPEOF             (?:typeof|__typeof__|__typeof)(?&KEYWORD_END)
 %token T_UNION              union(?&KEYWORD_END)
 %token T_UNSIGNED           unsigned(?&KEYWORD_END)
 %token T_VOID               void(?&KEYWORD_END)
-%token T_VOLATILE           volatile(?&KEYWORD_END)
+%token T_VOLATILE           (?:volatile|__volatile__|__volatile)(?&KEYWORD_END)
 %token T_ATOMIC             _Atomic(?&KEYWORD_END)
 %token T_BITINT             _BitInt(?&KEYWORD_END)
-%token T_COMPLEX            _Complex(?&KEYWORD_END)
+%token T_COMPLEX            (?:_Complex|__complex__|__complex)(?&KEYWORD_END)
 %token T_DECIMAL128         _Decimal128(?&KEYWORD_END)
 %token T_DECIMAL32          _Decimal32(?&KEYWORD_END)
 %token T_DECIMAL64          _Decimal64(?&KEYWORD_END)
 %token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
+
+// Keywords of the compiler extensions: GCC attributes, assembler labels
+// and offsetof, the integer types of GCC and MSVC, MSVC attributes
+%token T_ATTRIBUTE          (?:__attribute__|__attribute)(?&KEYWORD_END)
+%token T_ASM                (?:__asm__|__asm)(?&KEYWORD_END)
+%token T_BUILTIN_OFFSETOF   __builtin_offsetof(?&KEYWORD_END)
+%token T_DECLSPEC           __declspec(?&KEYWORD_END)
+%token T_INT128             __int128(?&KEYWORD_END)
+%token T_INT16              __int16(?&KEYWORD_END)
+%token T_INT32              __int32(?&KEYWORD_END)
+%token T_INT64              __int64(?&KEYWORD_END)
+%token T_INT8               __int8(?&KEYWORD_END)
+
+// Attributes spelled by a keyword alone: the calling conventions of MSVC,
+// its pointer sizes and the nullability of Clang
+%token T_KEYWORD_ATTRIBUTE  (?:__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__ptr32|__ptr64|_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)(?&KEYWORD_END)
+
+// The marker of GCC that silences the warnings about the extensions in what
+// follows. It has no meaning of its own and is skipped wherever it is.
+%skip T_EXTENSION           __extension__(?&KEYWORD_END)
 
 // Keywords of statements and of _Generic. Statements are not parsed and
 // _Generic is not supported yet, but they are still reserved and may not be

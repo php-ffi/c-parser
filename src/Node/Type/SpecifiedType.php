@@ -29,8 +29,8 @@ final class SpecifiedType extends Type
          */
         public readonly ?TypeInterface $type,
         /**
-         * The storage-class, function and alignment specifiers in the order
-         * written
+         * The storage-class, function and alignment specifiers and the
+         * attributes among them, in the order written
          */
         public readonly SpecifierList $specifiers,
         int $offset = 0,

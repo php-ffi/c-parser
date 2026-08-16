@@ -1,0 +1,190 @@
+//
+// Attributes, 6.7.13, and the attributes of the compiler extensions.
+//
+// An attribute specifier has no node of its own and gives the attributes
+// it holds to its parent, which keeps them in the order written. The
+// syntax of the specifier is the class of each attribute, and a specifier
+// without attributes ("[[]]") gives nothing, since it has no effect
+// (6.7.13.2p3). The first token of a specifier is kept, so that the
+// parent starts where the specifier does, and dropped here.
+//
+
+AttributeSpecifier
+  : BracketedAttributeSpecifier()
+  | KeywordAttribute()
+  ;
+
+// A specifier with the attributes in brackets or parentheses
+BracketedAttributeSpecifier -> {
+    /** @var list<TokenInterface|Attribute\AttributeInterface> $children */
+    $attributes = [];
+
+    for ($i = 0, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    return $attributes;
+}
+  : StandardAttributeSpecifier()
+  | GnuAttributeSpecifier()
+  | DeclSpecAttributeSpecifier()
+  ;
+
+// 6.7.13.2 [[a, ns::b(1, 2)]], an empty attribute in the list is allowed:
+// [[a, , b]]. No "[" can follow another one outside of an attribute in
+// C23, so "[[" always starts an attribute.
+StandardAttributeSpecifier
+  : <T_LBRACKET> ::T_LBRACKET::
+        StandardAttribute()? ((::T_COMMA:: StandardAttribute()?)+)?
+    ::T_RBRACKET:: ::T_RBRACKET::
+  ;
+
+StandardAttribute
+  : PrefixedStandardAttribute()
+  | UnprefixedStandardAttribute()
+  ;
+
+// gnu::aligned(8)
+PrefixedStandardAttribute -> {
+    /**
+     * @var array{
+     *     Node\Identifier,
+     *     Node\Identifier,
+     *     2?: Attribute\Attribute\ArgumentList
+     * } $children
+     */
+    return new Attribute\StandardAttribute($children[0], $children[1], $children[2] ?? null, $offset);
+}
+  : AttributeName() ::T_DOUBLE_COLON:: AttributeName() AttributeArgumentList()?
+  ;
+
+// deprecated("use g")
+UnprefixedStandardAttribute -> {
+    /** @var array{Node\Identifier, 1?: Attribute\Attribute\ArgumentList} $children */
+    return new Attribute\StandardAttribute(null, $children[0], $children[1] ?? null, $offset);
+}
+  : AttributeName() AttributeArgumentList()?
+  ;
+
+// GCC: __attribute__((a, b(1))), also spelled __attribute. An empty
+// attribute in the list is allowed: __attribute__((a, , b)).
+GnuAttributeSpecifier
+  : <T_ATTRIBUTE> ::T_LPAREN:: ::T_LPAREN::
+        GnuAttribute()? ((::T_COMMA:: GnuAttribute()?)+)?
+    ::T_RPAREN:: ::T_RPAREN::
+  ;
+
+GnuAttribute -> {
+    /** @var array{Node\Identifier, 1?: Attribute\Attribute\ArgumentList} $children */
+    return new Attribute\GnuAttribute($children[0], $children[1] ?? null, $offset);
+}
+  : AttributeName() AttributeArgumentList()?
+  ;
+
+// MSVC: __declspec(dllimport align(16)), the attributes are separated by
+// spaces
+DeclSpecAttributeSpecifier
+  : <T_DECLSPEC> ::T_LPAREN:: (DeclSpecAttribute()+)? ::T_RPAREN::
+  ;
+
+DeclSpecAttribute -> {
+    /** @var array{Node\Identifier, 1?: Attribute\Attribute\ArgumentList} $children */
+    return new Attribute\DeclSpecAttribute($children[0], $children[1] ?? null, $offset);
+}
+  : AttributeName() AttributeArgumentList()?
+  ;
+
+// A keyword that is an attribute by itself: __stdcall, __ptr64, _Nonnull
+KeywordAttribute -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), $offset);
+}
+  : <T_KEYWORD_ATTRIBUTE>
+  ;
+
+// The name and the prefix of an attribute. A keyword of C is an identifier
+// there (6.7.13.2p3), and GCC writes __attribute__((const)). The keywords of
+// the extensions are left out, no attribute is named by them.
+AttributeName -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Node\Identifier($children->value, $offset);
+}
+  : <T_IDENTIFIER>
+  | <T_ALIGNAS> | <T_ALIGNOF> | <T_AUTO> | <T_BOOL> | <T_CHAR> | <T_CONST> | <T_CONSTEXPR> | <T_DOUBLE>
+  | <T_ENUM> | <T_EXTERN> | <T_FALSE> | <T_FLOAT> | <T_INLINE> | <T_INT> | <T_LONG> | <T_NULLPTR>
+  | <T_REGISTER> | <T_RESTRICT> | <T_SHORT> | <T_SIGNED> | <T_SIZEOF> | <T_STATIC_ASSERT> | <T_STATIC>
+  | <T_STRUCT> | <T_THREAD_LOCAL> | <T_TRUE> | <T_TYPEDEF> | <T_TYPEOF_UNQUAL> | <T_TYPEOF> | <T_UNION>
+  | <T_UNSIGNED> | <T_VOID> | <T_VOLATILE> | <T_ATOMIC> | <T_BITINT> | <T_COMPLEX> | <T_DECIMAL128>
+  | <T_DECIMAL32> | <T_DECIMAL64> | <T_IMAGINARY> | <T_NORETURN> | <T_RESERVED_KEYWORD>
+  ;
+
+//
+// Arguments of an attribute. C23 allows any sequence of tokens with
+// balanced parentheses, brackets and braces there, the arguments of GCC
+// are expressions as a rule. The list is split at the commas outside of
+// nested brackets: an argument that is a constant expression gives its
+// node, any other balanced sequence its text, introduced=10.4 in
+// availability(macos, introduced=10.4).
+//
+
+// (), (8) or (printf, 1, 2). The parenthesis is kept, so that an empty list
+// starts where it is written.
+AttributeArgumentList -> {
+    /**
+     * @var list{
+     *     TokenInterface,
+     *     ...<Expression\ExpressionInterface|Attribute\Attribute\ArgumentList\BalancedTokenSequence>
+     * } $children
+     */
+    $arguments = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $arguments[] = $children[$i];
+    }
+
+    return new Attribute\Attribute\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
+}
+  : <T_LPAREN> (AttributeArgument() ((::T_COMMA:: AttributeArgument())+)?)? ::T_RPAREN::
+  ;
+
+AttributeArgument
+  : ConditionalExpression() &AttributeArgumentEnd()
+  | BalancedTokenSequence()
+  ;
+
+AttributeArgumentEnd
+  : <T_COMMA>
+  | <T_RPAREN>
+  ;
+
+// The text of the tokens, with the whitespace and the comments between them
+BalancedTokenSequence -> {
+    $raw = \substr($content, $offset, $length);
+    // The sequence holds at least one token, and no token is empty
+    \assert($raw !== '');
+
+    return new Attribute\Attribute\ArgumentList\BalancedTokenSequence($raw, $offset);
+}
+  : BalancedToken()+
+  ;
+
+// A token other than a comma, or a sequence in brackets, where the commas
+// do not split the arguments
+BalancedToken
+  : <T_LPAREN> ((BalancedToken() | <T_COMMA>)+)? <T_RPAREN>
+  | <T_LBRACKET> ((BalancedToken() | <T_COMMA>)+)? <T_RBRACKET>
+  | <T_LBRACE> ((BalancedToken() | <T_COMMA>)+)? <T_RBRACE>
+  | AttributeName()
+  | <T_HEX_FLOAT_LITERAL> | <T_DEC_FLOAT_LITERAL> | <T_HEX_INT_LITERAL> | <T_BIN_INT_LITERAL>
+  | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL> | <T_PP_NUMBER>
+  | <T_ELLIPSIS> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT> | <T_SHL_ASSIGN> | <T_SHR_ASSIGN> | <T_SHL>
+  | <T_SHR> | <T_LESS_EQUAL> | <T_GREATER_EQUAL> | <T_EQUAL> | <T_NOT_EQUAL> | <T_LOGICAL_AND>
+  | <T_LOGICAL_OR> | <T_MUL_ASSIGN> | <T_DIV_ASSIGN> | <T_MOD_ASSIGN> | <T_ADD_ASSIGN> | <T_SUB_ASSIGN>
+  | <T_AND_ASSIGN> | <T_XOR_ASSIGN> | <T_OR_ASSIGN> | <T_DOUBLE_COLON> | <T_DOT> | <T_AMPERSAND>
+  | <T_ASTERISK> | <T_PLUS> | <T_MINUS> | <T_TILDE> | <T_EXCLAMATION> | <T_SLASH> | <T_PERCENT> | <T_LESS>
+  | <T_GREATER> | <T_CARET> | <T_PIPE> | <T_QUESTION> | <T_COLON> | <T_SEMICOLON> | <T_ASSIGN>
+  ;

@@ -6,8 +6,9 @@
 // to the declared type, which the reducer of the declaration applies. The
 // closures are composed so that the parts nearest to the name apply last:
 // in "*a[3]" the pointer applies to the base, the array to the pointer. A
-// concrete declarator gives two children to its parent, the name and the
-// function, an abstract one gives the function alone.
+// concrete declarator gives its parent the name, the function and the
+// attributes written after the name, which belong to the declaration, an
+// abstract one gives the function alone.
 //
 
 // 6.7.7.1 General, a declarator with a name
@@ -16,34 +17,122 @@ Declarator
   | DirectDeclarator()
   ;
 
+// A pointer, or the attributes at the start of a parenthesized declarator,
+// before the rest of the declarator. Both wrap the type the declarator
+// receives.
 PointerDeclarator -> {
     /**
-     * @var array{
-     *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
+     * @var list{
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
      *     Node\Identifier,
-     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+     *     ...<Attribute\AttributeInterface>
      * } $children
      */
-    return [$children[1], static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[2]($children[0]($type))];
+    $result = [
+        $children[1],
+        static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[2]($children[0]($type)),
+    ];
+
+    for ($i = 3, $count = \count($children); $i < $count; ++$i) {
+        $result[] = $children[$i];
+    }
+
+    return $result;
 }
-  : Pointer() Declarator()
+  : (Pointer() | DeclaratorAttributes()) Declarator()
   ;
 
-// The name or a parenthesized declarator, followed by the arrays and the
-// functions, which apply in reverse order: "a[2][3]" is an array of two
-// arrays of three. The parenthesized declarator applies last of all, so
-// "(*f)(int)" is a pointer to a function.
-DirectDeclarator -> {
-    /** @var list{Node\Identifier, ...<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>} $children */
-    return [$children[0], static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
-        for ($i = \count($children) - 1; $i > 0; --$i) {
-            $type = $children[$i]($type);
+// The attributes at the start of a parenthesized declarator apply to the
+// type it receives, as GCC has them: in "(__stdcall *f)(int)" they apply to
+// the function. Elsewhere the attributes before a declarator are taken by
+// the specifiers or by the declaration first, and the ones after "*" by the
+// pointer.
+DeclaratorAttributes -> {
+    /** @var list<Attribute\AttributeInterface> $children */
+    if ($children === []) {
+        return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $type;
+    }
+
+    $attributes = new Attribute\AttributeList($children, $children[0]->offset);
+
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\AttributedType(
+        $attributes,
+        $type,
+        $offset,
+    );
+}
+  : AttributeSpecifier()+
+  ;
+
+DirectDeclarator
+  : NameDeclarator()
+  | NestedDeclarator()
+  ;
+
+// The name, its attributes and the arrays and the functions after it,
+// which apply in reverse order: "a[2][3]" is an array of two arrays of
+// three
+NameDeclarator -> {
+    /**
+     * @var list{
+     *     Node\Identifier,
+     *     ...<Attribute\AttributeInterface|\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>
+     * } $children
+     */
+    $attributes = [];
+    $suffixes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof \Closure) {
+            $suffixes[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    return [$children[0], static function (?Type\TypeInterface $type) use ($suffixes): ?Type\TypeInterface {
+        for ($i = \count($suffixes) - 1; $i >= 0; --$i) {
+            $type = $suffixes[$i]($type);
         }
 
         return $type;
-    }];
+    }, ...$attributes];
 }
-  : (Identifier() | ::T_LPAREN:: Declarator() ::T_RPAREN::) DeclaratorSuffix()*
+  : Identifier() (AttributeSpecifier()+)? (DeclaratorSuffix()+)?
+  ;
+
+// A parenthesized declarator followed by the arrays and the functions. The
+// parenthesized declarator applies last of all, so "(*f)(int)" is a
+// pointer to a function.
+NestedDeclarator -> {
+    /**
+     * @var list{
+     *     Node\Identifier,
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+     *     ...<Attribute\AttributeInterface|\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>
+     * } $children
+     */
+    $attributes = [];
+    $suffixes = [];
+
+    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof \Closure) {
+            $suffixes[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    return [$children[0], static function (?Type\TypeInterface $type) use ($children, $suffixes): ?Type\TypeInterface {
+        for ($i = \count($suffixes) - 1; $i >= 0; --$i) {
+            $type = $suffixes[$i]($type);
+        }
+
+        return $children[1]($type);
+    }, ...$attributes];
+}
+  : ::T_LPAREN:: Declarator() ::T_RPAREN:: (DeclaratorSuffix()+)?
   ;
 
 // 6.7.8 Type names, a declarator without a name
@@ -52,10 +141,12 @@ AbstractDeclarator
   | DirectAbstractDeclarator()
   ;
 
+// A pointer, or the attributes at the start of a parenthesized declarator,
+// as in a declarator with a name. The attributes alone are no declarator.
 AbstractPointerDeclarator -> {
     /**
      * @var array{
-     *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
      *     1?: \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
      * } $children
      */
@@ -66,12 +157,14 @@ AbstractPointerDeclarator -> {
     return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[1]($children[0]($type));
 }
   : Pointer() AbstractDeclarator()?
+  | DeclaratorAttributes() AbstractDeclarator()
   ;
 
 // The parenthesized declarator is tried before the parameters of a
-// function: "(*)" starts with a token no parameter does. Without a name
+// function: "(*)" and "(__stdcall *)" start with a token no parameter
+// does, or fail at the first token after the attributes. Without a name
 // the parenthesized declarator applies first and the arrays and the
-// functions after it, in the same order as in DirectDeclarator.
+// functions after it, in the same order as in a declarator with a name.
 DirectAbstractDeclarator -> {
     /** @var non-empty-list<\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)> $children */
     return static function (?Type\TypeInterface $type) use ($children): ?Type\TypeInterface {
@@ -82,35 +175,71 @@ DirectAbstractDeclarator -> {
         return $type;
     };
 }
-  : ::T_LPAREN:: AbstractDeclarator() ::T_RPAREN:: DeclaratorSuffix()*
+  : ::T_LPAREN:: AbstractDeclarator() ::T_RPAREN:: (DeclaratorSuffix()+)?
   | DeclaratorSuffix()+
   ;
 
-// 6.7.7.2 Pointer declarators. The qualifiers of the pointer wrap it.
+// 6.7.7.2 Pointer declarators. The qualifiers of the pointer wrap it, and
+// its attributes wrap them, written before the qualifiers in C23 and
+// anywhere among them in GCC.
 Pointer -> {
-    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
     $qualifiers = [];
+    $attributes = [];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        $qualifiers[] = $children[$i];
+        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
     }
 
+    $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
+
     if ($qualifiers === []) {
-        return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\PointerType($type, $offset);
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface
+            => new Type\PointerType($type, $attributeList, $offset);
     }
 
     return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
         $qualifiers,
-        new Type\PointerType($type, $offset),
+        new Type\PointerType($type, $attributeList, $offset),
         $offset,
     );
 }
-  : <T_ASTERISK> TypeQualifier()*
+  : <T_ASTERISK> ((TypeQualifier() | AttributeSpecifier())+)?
   ;
 
-DeclaratorSuffix
-  : ArrayDeclarator()
-  | FunctionDeclarator()
+// An array or a function and the C23 attributes after it, which apply to it
+// (6.7.7.3, 6.7.7.4). The attributes of GCC and MSVC are not taken: after
+// the whole declarator they belong to the declaration, as GCC has them in
+// "void exit(int) __attribute__((noreturn));".
+DeclaratorSuffix -> {
+    /**
+     * @var list{
+     *     \Closure(Type\TypeInterface|null, Attribute\AttributeList|null=): Type\TypeInterface,
+     *     ...<TokenInterface|Attribute\AttributeInterface>
+     * } $children
+     */
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        // The first bracket of each specifier is kept for the offsets
+        if ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    if ($attributes === []) {
+        return $children[0];
+    }
+
+    $attributeList = new Attribute\AttributeList($attributes, $attributes[0]->offset);
+
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => $children[0]($type, $attributeList);
+}
+  : (ArrayDeclarator() | FunctionDeclarator()) (StandardAttributeSpecifier()+)?
   ;
 
 //
@@ -148,16 +277,20 @@ SizedArrayDeclarator -> {
     // The size ends the rule
     \assert($children[$last] instanceof Expression\ExpressionInterface);
 
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\SizedArrayType(
+    return static fn(
+        ?Type\TypeInterface $type,
+        ?Attribute\AttributeList $attributes = null,
+    ): Type\TypeInterface => new Type\ArrayType\SizedArrayType(
         $type,
         $children[$last],
         $isStatic,
         $qualifiers,
+        $attributes,
         $offset,
     );
 }
   : <T_LBRACKET>
-        (<T_STATIC> TypeQualifier()* | TypeQualifier()* <T_STATIC>?)
+        (<T_STATIC> (TypeQualifier()+)? | (TypeQualifier()+)? <T_STATIC>?)
         ConditionalExpression()
     ::T_RBRACKET::
   ;
@@ -172,13 +305,17 @@ UnspecifiedSizeArrayDeclarator -> {
         $qualifiers[] = $children[$i];
     }
 
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\UnspecifiedSizeArrayType(
+    return static fn(
+        ?Type\TypeInterface $type,
+        ?Attribute\AttributeList $attributes = null,
+    ): Type\TypeInterface => new Type\ArrayType\UnspecifiedSizeArrayType(
         $type,
         $qualifiers,
+        $attributes,
         $offset,
     );
 }
-  : <T_LBRACKET> TypeQualifier()* ::T_ASTERISK:: ::T_RBRACKET::
+  : <T_LBRACKET> (TypeQualifier()+)? ::T_ASTERISK:: ::T_RBRACKET::
   ;
 
 // [] and [const]
@@ -190,13 +327,17 @@ IncompleteArrayDeclarator -> {
         $qualifiers[] = $children[$i];
     }
 
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\ArrayType\IncompleteArrayType(
+    return static fn(
+        ?Type\TypeInterface $type,
+        ?Attribute\AttributeList $attributes = null,
+    ): Type\TypeInterface => new Type\ArrayType\IncompleteArrayType(
         $type,
         $qualifiers,
+        $attributes,
         $offset,
     );
 }
-  : <T_LBRACKET> TypeQualifier()* ::T_RBRACKET::
+  : <T_LBRACKET> (TypeQualifier()+)? ::T_RBRACKET::
   ;
 
 //
@@ -220,36 +361,58 @@ FunctionDeclarator -> {
 
     $list = new Type\FunctionType\ParameterList($parameters, $parameters[0]->offset ?? $offset);
 
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\FunctionType($type, $list, $isVariadic, $offset);
+    return static fn(
+        ?Type\TypeInterface $type,
+        ?Attribute\AttributeList $attributes = null,
+    ): Type\TypeInterface => new Type\FunctionType($type, $list, $isVariadic, $attributes, $offset);
 }
   : <T_LPAREN> ParameterTypeList()? ::T_RPAREN::
   ;
 
 ParameterTypeList
-  : Parameter() (::T_COMMA:: Parameter())* (::T_COMMA:: <T_ELLIPSIS>)?
+  : Parameter() ((::T_COMMA:: Parameter())+)? (::T_COMMA:: <T_ELLIPSIS>)?
   | <T_ELLIPSIS>
   ;
 
-// A parameter with a name, an abstract declarator or none. A declarator
+// A parameter with a name, an abstract declarator or none, and the
+// attributes after the name and after the whole declarator. A declarator
 // fails before its arrays and functions, at the place of the name, so an
 // abstract one parses only the pointers and the parentheses once again.
 Parameter -> {
     /**
-     * @var array{Type\TypeInterface|null, Specifier\SpecifierList}
-     *     |array{Type\TypeInterface|null, Specifier\SpecifierList, Node\Identifier, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)}
-     *     |array{Type\TypeInterface|null, Specifier\SpecifierList, \Closure(Type\TypeInterface|null): (Type\TypeInterface|null)} $children
+     * @var list{
+     *     Type\TypeInterface|null,
+     *     Specifier\SpecifierList,
+     *     ...<
+     *         Node\Identifier
+     *         |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
+     *         |Attribute\AttributeInterface
+     *     >
+     * } $children
      */
-    if (!isset($children[2])) {
-        return new Type\FunctionType\Parameter($children[0], null, $children[1], $offset);
+    $name = null;
+    $type = $children[0];
+    $attributes = [];
+
+    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof \Closure) {
+            $type = $children[$i]($children[0]);
+        } else {
+            $attributes[] = $children[$i];
+        }
     }
 
-    if ($children[2] instanceof Node\Identifier) {
-        return new Type\FunctionType\Parameter($children[3]($children[0]), $children[2], $children[1], $offset);
-    }
-
-    return new Type\FunctionType\Parameter($children[2]($children[0]), null, $children[1], $offset);
+    return new Type\FunctionType\Parameter(
+        $type,
+        $name,
+        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+        $children[1],
+        $offset,
+    );
 }
-  : DeclarationSpecifiers() (Declarator() | AbstractDeclarator())?
+  : DeclarationSpecifiers() (Declarator() | AbstractDeclarator())? (AttributeSpecifier()+)?
   ;
 
 // 6.7.8 Type names, the type in a cast, sizeof, alignof, alignas, typeof

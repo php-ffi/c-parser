@@ -7,7 +7,10 @@ namespace FFI\Parser\Node\Expression;
 use FFI\Parser\Node\Type\TypeInterface;
 
 /**
- * The `alignof` operator, also spelled `_Alignof`: `alignof(T)`.
+ * The `alignof` operator, also spelled `_Alignof`, `__alignof__` and
+ * `__alignof`: `alignof(T)`. A single name in parentheses is read as a
+ * type, so `__alignof__(x)` gives this node with a
+ * {@see \FFI\Parser\Node\Type\NamedType}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.4.4 The sizeof and alignof operators
  */

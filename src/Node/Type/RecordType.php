@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\DeclarationInterface;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Type\RecordType\MemberDeclarationList;
@@ -31,6 +32,13 @@ abstract class RecordType extends Type implements DeclarationInterface
          * `struct S;`
          */
         public readonly ?MemberDeclarationList $members = null,
+        /**
+         * The attributes after `struct` or `union` and, as GCC allows,
+         * after the body, `struct [[a]] S { int x; } __attribute__((b))`.
+         * The ones after a tag without a body, `struct S [[a]];`, are among
+         * the specifiers. {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

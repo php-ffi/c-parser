@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Type;
 
+use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\DeclarationInterface;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Type\EnumType\EnumeratorList;
@@ -35,6 +36,13 @@ final class EnumType extends Type implements DeclarationInterface
          * such as `enum E : int;`
          */
         public readonly ?EnumeratorList $enumerators = null,
+        /**
+         * The attributes after `enum` and, as GCC allows, after the body,
+         * `enum [[a]] E { A } __attribute__((b))`. The ones after a tag
+         * without a body, `enum E [[a]];`, are among the specifiers.
+         * {@see null} in case of none is written
+         */
+        public readonly ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

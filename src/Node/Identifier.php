@@ -6,8 +6,8 @@ namespace FFI\Parser\Node;
 
 /**
  * Name as written in the source: of a tag, a typedef, a member, an
- * enumerator or whatever a primary expression refers to. It is not an
- * expression by itself.
+ * enumerator, an attribute or its prefix (a keyword included) or whatever
+ * a primary expression refers to. It is not an expression by itself.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.2 Identifiers
  */

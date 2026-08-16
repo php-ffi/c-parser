@@ -19,8 +19,8 @@ abstract class SpecifiedDeclaration extends Declaration
      */
     public function __construct(
         /**
-         * The storage-class, function and alignment specifiers in the order
-         * written
+         * The storage-class, function and alignment specifiers and the
+         * attributes among them, in the order written
          */
         public readonly SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,

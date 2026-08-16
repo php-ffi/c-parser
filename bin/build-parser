@@ -18,18 +18,23 @@ use Phplrt\Compiler\Compiler;
 use Phplrt\Compiler\Generator\ClassModifier;
 use Phplrt\Compiler\Generator\TargetPhpVersion;
 use Phplrt\Source\FileSource;
+use Symfony\Component\Console\Logger\ConsoleLogger;
+use Symfony\Component\Console\Output\StreamOutput;
 
 require __DIR__ . '/../vendor/autoload.php';
 
 const GRAMMAR_PATHNAME = __DIR__ . '/../resources/grammar.pp3';
 const OUTPUT_PATHNAME = __DIR__ . '/../src/Parser/CompiledParserExecutor.php';
 
-(new Compiler())
+$compiler = new Compiler();
+$compiler->setLogger(new ConsoleLogger(new StreamOutput(\STDOUT, StreamOutput::VERBOSITY_DEBUG)));
+$compiler
     ->load(FileSource::createFromPathname(GRAMMAR_PATHNAME))
     ->generate()
     // The reducers refer to the nodes relative to these namespaces,
     // e.g. Node\Identifier, Literal\IntLiteral\DecIntLiteral or BinaryExpression\AddExpression
     ->withClassImport('FFI\Parser\Node')
+    ->withClassImport('FFI\Parser\Node\Attribute')
     ->withClassImport('FFI\Parser\Node\Declaration')
     ->withClassImport('FFI\Parser\Node\Declaration\SpecifiedDeclaration')
     ->withClassImport('FFI\Parser\Node\Expression')

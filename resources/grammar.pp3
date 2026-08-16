@@ -5,6 +5,12 @@
 // anyway, and a header in a legacy encoding (Latin-1, CP1251) must not break
 // PCRE.
 //
+// A repetition inside a sequence is written "(X()+)?" rather than "X()*":
+// both read the same, but the parser checks an optional element against
+// the tokens it may start with in place, while it enters a repetition at
+// every position, since a repetition may read nothing. On vulkan.h this is
+// a third of the rules entered.
+//
 
 %pragma root TranslationUnit
 %pragma lexer.pcre.disable Utf8
@@ -15,6 +21,7 @@
 %include grammar/specifiers
 %include grammar/declarators
 %include grammar/declarations
+%include grammar/attributes
 
 // A sequence of external declarations
 TranslationUnit

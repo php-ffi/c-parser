@@ -12,16 +12,21 @@ ExternalDeclaration
 
 // 6.7.1 Declarations. A declaration gives a node for each of its
 // declarators. Without declarators a bare structure, union or enumeration
-// is the declaration of its tag (6.7.3.4p11), anything else is a
-// declaration of the specifiers alone, which is still syntactically valid:
-// "int;", "const struct S;". Both forms are one rule, so that the
-// specifiers, which may hold a nested body, are parsed only once.
+// is the declaration of its tag (6.7.3.4p11), attributes alone are an
+// attribute declaration, "[[deprecated]];", anything else is a declaration
+// of the specifiers alone, which is still syntactically valid: "int;",
+// "const struct S;". All the forms are one rule, so that the specifiers,
+// which may hold a nested body, are parsed only once.
 Declaration -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
      *     Specifier\SpecifierList,
-     *     ...<\Closure(SpecifiedDeclaration\TypeDeclaration): SpecifiedDeclaration\DeclaratorDeclaration>
+     *     ...<\Closure(
+     *         Type\TypeInterface|null,
+     *         Specifier\SpecifierList,
+     *         int<0, max>
+     *     ): SpecifiedDeclaration\DeclaratorDeclaration>
      * } $children
      */
     if (\count($children) === 2
@@ -30,44 +35,101 @@ Declaration -> {
         return new SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
     }
 
-    $declaration = new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
+    if (\count($children) === 2 && $children[0] === null) {
+        $attributes = [];
+
+        foreach ($children[1] as $specifier) {
+            if ($specifier instanceof Attribute\AttributeInterface) {
+                $attributes[] = $specifier;
+            }
+        }
+
+        if (\count($attributes) === \count($children[1])) {
+            return new Declaration\AttributeDeclaration(
+                new Attribute\AttributeList($attributes, $children[1]->offset),
+                $offset,
+            );
+        }
+    }
+
+    if (\count($children) === 2) {
+        return new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
+    }
+
     $declarations = [];
 
     for ($i = 2, $count = \count($children); $i < $count; ++$i) {
-        $declarations[] = $children[$i]($declaration);
+        $declarations[] = $children[$i]($children[0], $children[1], $offset);
     }
 
-    return $declarations === [] ? $declaration : $declarations;
+    return $declarations;
 }
-  : DeclarationSpecifiers() (InitDeclarator() (::T_COMMA:: InitDeclarator())*)? ::T_SEMICOLON::
+  : DeclarationSpecifiers() (InitDeclarator() ((::T_COMMA:: InitDeclarator())+)?)? ::T_SEMICOLON::
   ;
 
-// The declarator of a declaration is a function from the declaration
-// without declarators, which holds the specifiers, to the declared one.
+// The declarator of a declaration is a function from the type and the
+// other specifiers of the declaration and its start to the declared one.
 // "typedef" among the specifiers gives a typedef name, a function type a
 // function, anything else an object, and each keeps the initializer, even
-// where C allows none.
+// where C allows none. GCC allows attributes before the declarator (other
+// than the first one of the declaration, whose attributes go to the
+// specifiers) and after it, around the assembler label.
 InitDeclarator -> {
     /**
-     * @var array{
-     *     Node\Identifier,
-     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
-     *     2?: Expression\ExpressionInterface|Initializer\InitializerList
-     * } $children
+     * @var list<
+     *     Attribute\AttributeInterface
+     *     |Node\Identifier
+     *     |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
+     *     |SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel
+     *     |Expression\ExpressionInterface
+     *     |Initializer\InitializerList
+     * > $children
      */
-    return static function (
-        SpecifiedDeclaration\TypeDeclaration $declaration,
-    ) use ($children): SpecifiedDeclaration\DeclaratorDeclaration {
-        $type = $children[1]($declaration->type);
+    $name = null;
+    $declarator = null;
+    $asmLabel = null;
+    $initializer = null;
+    $attributes = [];
 
-        foreach ($declaration->specifiers as $specifier) {
+    for ($i = 0, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Node\Identifier) {
+            $name = $children[$i];
+        } elseif ($children[$i] instanceof \Closure) {
+            $declarator = $children[$i];
+        } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
+        } elseif ($children[$i] instanceof SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel) {
+            $asmLabel = $children[$i];
+        } else {
+            $initializer = $children[$i];
+        }
+    }
+
+    // A declarator gives its name and its function
+    \assert($name !== null && $declarator !== null);
+
+    $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
+
+    return static function (
+        ?Type\TypeInterface $type,
+        Specifier\SpecifierList $specifiers,
+        int $start,
+    ) use ($name, $declarator, $asmLabel, $initializer, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
+        // The start of a declaration is a byte offset
+        \assert($start >= 0);
+
+        $type = $declarator($type);
+
+        foreach ($specifiers as $specifier) {
             if ($specifier instanceof Specifier\StorageClassSpecifier\TypeDefSpecifier) {
                 return new SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration(
                     $type,
-                    $children[0],
-                    $children[2] ?? null,
-                    $declaration->specifiers,
-                    $declaration->offset,
+                    $name,
+                    $attributeList,
+                    $asmLabel,
+                    $initializer,
+                    $specifiers,
+                    $start,
                 );
             }
         }
@@ -75,23 +137,37 @@ InitDeclarator -> {
         if ($type instanceof Type\FunctionType) {
             return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration(
                 $type,
-                $children[0],
-                $children[2] ?? null,
-                $declaration->specifiers,
-                $declaration->offset,
+                $name,
+                $attributeList,
+                $asmLabel,
+                $initializer,
+                $specifiers,
+                $start,
             );
         }
 
         return new SpecifiedDeclaration\DeclaratorDeclaration\VariableDeclaration(
             $type,
-            $children[0],
-            $children[2] ?? null,
-            $declaration->specifiers,
-            $declaration->offset,
+            $name,
+            $attributeList,
+            $asmLabel,
+            $initializer,
+            $specifiers,
+            $start,
         );
     };
 }
-  : Declarator() (::T_ASSIGN:: Initializer())?
+  : (AttributeSpecifier()+)? Declarator() (AttributeSpecifier()+)? (AsmLabel() (AttributeSpecifier()+)?)?
+        (::T_ASSIGN:: Initializer())?
+  ;
+
+// GCC: the name of the symbol in the object file, __asm__("_f"), also
+// spelled __asm
+AsmLabel -> {
+    /** @var array{TokenInterface, Literal\StringLiteral|Literal\ConcatenatedStringLiteral} $children */
+    return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
+}
+  : <T_ASM> ::T_LPAREN:: ConcatenatedStringLiteral() ::T_RPAREN::
   ;
 
 //
@@ -125,7 +201,7 @@ InitializerList -> {
     return new Initializer\InitializerList($items, $offset);
 }
   : <T_LBRACE>
-        (InitializerListItem() (::T_COMMA:: InitializerListItem())* ::T_COMMA::?)?
+        (InitializerListItem() ((::T_COMMA:: InitializerListItem())+)? ::T_COMMA::?)?
     ::T_RBRACE::
   ;
 
@@ -168,11 +244,17 @@ MemberDesignator -> {
   : <T_DOT> Identifier()
   ;
 
+// [2] and the range of GCC [0 ... 3]. Both are one rule, so that the first
+// index is parsed once.
 IndexDesignator -> {
-    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    /** @var array{TokenInterface, Expression\ExpressionInterface, 2?: Expression\ExpressionInterface} $children */
+    if (isset($children[2])) {
+        return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[2], $offset);
+    }
+
     return new DesignatedInitializer\Designator\IndexDesignator($children[1], $offset);
 }
-  : <T_LBRACKET> ConditionalExpression() ::T_RBRACKET::
+  : <T_LBRACKET> ConditionalExpression() (::T_ELLIPSIS:: ConditionalExpression())? ::T_RBRACKET::
   ;
 
 // 6.7.12 Static assertions, static_assert(condition, "message"), the message
