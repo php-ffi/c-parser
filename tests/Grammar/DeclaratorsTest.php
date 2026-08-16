@@ -230,6 +230,7 @@ final class DeclaratorsTest extends TestCase
         yield 'sizeof of an array of a typedef name' => ['sizeof(T[3])', '(sizeof ([] T 3))'];
         yield 'sizeof of a product' => ['sizeof(a * (b))', '(sizeof (* a b))'];
         yield 'sizeof of a product of a dereference' => ['sizeof(a ** (b))', '(sizeof (* a (*u b)))'];
+        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof ([] T 3))'];
     }
 
     /**
@@ -263,7 +264,7 @@ final class DeclaratorsTest extends TestCase
             '(sizeof (fn (ptr T) ((ptr U))))',
         ];
         yield 'sizeof of a function with a named parameter' => ['sizeof(T *(U x))', '(sizeof (fn (ptr T) (U x)))'];
-        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof (array T 3))'];
+        yield 'atomic array of a typedef name' => ['sizeof(_Atomic(T[3]))', '(sizeof _Atomic((array T 3)))'];
     }
 
     /**
@@ -353,7 +354,9 @@ final class DeclaratorsTest extends TestCase
         yield 'abstract pointer to a function member' => ['struct S { int (*)(void); };', 17, ')'];
         yield 'unclosed parameters' => ['struct S { int f(int; };', 20, ';'];
         yield 'unclosed parenthesized declarator' => ['struct S { int (*p; };', 18, ';'];
-        yield 'array before the name' => ['struct S { int [3] x; };', 15, '['];
+        // The error is reported after "[", where an attribute would need
+        // the second "["
+        yield 'array before the name' => ['struct S { int [3] x; };', 16, '3'];
         yield 'static without a size' => ['struct S { int a[static]; };', 23, ']'];
         yield 'static with an unspecified size' => ['struct S { int a[static *]; };', 25, ']'];
         yield 'two static' => ['struct S { int a[static const static 3]; };', 30, 'static'];

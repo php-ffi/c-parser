@@ -33,46 +33,59 @@ final class LexemesTest extends TestCase
     {
         $keywords = [
             'T_ALIGNAS' => ['alignas', '_Alignas'],
-            'T_ALIGNOF' => ['alignof', '_Alignof'],
+            'T_ALIGNOF' => ['alignof', '_Alignof', '__alignof__', '__alignof'],
             'T_AUTO' => ['auto'],
             'T_BOOL' => ['bool', '_Bool'],
             'T_CHAR' => ['char'],
-            'T_CONST' => ['const'],
+            'T_CONST' => ['const', '__const__', '__const'],
             'T_CONSTEXPR' => ['constexpr'],
             'T_DOUBLE' => ['double'],
             'T_ENUM' => ['enum'],
             'T_EXTERN' => ['extern'],
             'T_FALSE' => ['false'],
             'T_FLOAT' => ['float'],
-            'T_INLINE' => ['inline'],
+            'T_INLINE' => ['inline', '__inline__', '__inline'],
             'T_INT' => ['int'],
             'T_LONG' => ['long'],
             'T_NULLPTR' => ['nullptr'],
             'T_REGISTER' => ['register'],
-            'T_RESTRICT' => ['restrict'],
+            'T_RESTRICT' => ['restrict', '__restrict__', '__restrict'],
             'T_SHORT' => ['short'],
-            'T_SIGNED' => ['signed'],
+            'T_SIGNED' => ['signed', '__signed__', '__signed'],
             'T_SIZEOF' => ['sizeof'],
             'T_STATIC_ASSERT' => ['static_assert', '_Static_assert'],
             'T_STATIC' => ['static'],
             'T_STRUCT' => ['struct'],
-            'T_THREAD_LOCAL' => ['thread_local', '_Thread_local'],
+            'T_THREAD_LOCAL' => ['thread_local', '_Thread_local', '__thread'],
             'T_TRUE' => ['true'],
             'T_TYPEDEF' => ['typedef'],
             'T_TYPEOF_UNQUAL' => ['typeof_unqual'],
-            'T_TYPEOF' => ['typeof'],
+            'T_TYPEOF' => ['typeof', '__typeof__', '__typeof'],
             'T_UNION' => ['union'],
             'T_UNSIGNED' => ['unsigned'],
             'T_VOID' => ['void'],
-            'T_VOLATILE' => ['volatile'],
+            'T_VOLATILE' => ['volatile', '__volatile__', '__volatile'],
             'T_ATOMIC' => ['_Atomic'],
             'T_BITINT' => ['_BitInt'],
-            'T_COMPLEX' => ['_Complex'],
+            'T_COMPLEX' => ['_Complex', '__complex__', '__complex'],
             'T_DECIMAL128' => ['_Decimal128'],
             'T_DECIMAL32' => ['_Decimal32'],
             'T_DECIMAL64' => ['_Decimal64'],
             'T_IMAGINARY' => ['_Imaginary'],
             'T_NORETURN' => ['_Noreturn'],
+            'T_ATTRIBUTE' => ['__attribute__', '__attribute'],
+            'T_ASM' => ['__asm__', '__asm'],
+            'T_BUILTIN_OFFSETOF' => ['__builtin_offsetof'],
+            'T_DECLSPEC' => ['__declspec'],
+            'T_INT128' => ['__int128'],
+            'T_INT16' => ['__int16'],
+            'T_INT32' => ['__int32'],
+            'T_INT64' => ['__int64'],
+            'T_INT8' => ['__int8'],
+            'T_KEYWORD_ATTRIBUTE' => [
+                '__cdecl', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__ptr32', '__ptr64',
+                '_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified',
+            ],
             'T_RESERVED_KEYWORD' => [
                 'break', 'case', 'continue', 'default', 'do', 'else', 'for',
                 'goto', 'if', 'return', 'switch', 'while', '_Generic',
@@ -111,7 +124,13 @@ final class LexemesTest extends TestCase
         yield 'identifier of universal character names' => ['\\u00E9t\\U0001F600', [
             ['T_IDENTIFIER', '\\u00E9t\\U0001F600'],
         ]];
-        yield 'compiler extension keyword' => ['__attribute__', [['T_IDENTIFIER', '__attribute__']]];
+        yield 'longer spelling of a keyword' => ['__int128_t __constant __attribute__x', [
+            ['T_IDENTIFIER', '__int128_t'], ['T_IDENTIFIER', '__constant'], ['T_IDENTIFIER', '__attribute__x'],
+        ]];
+        yield 'marker of the extensions is skipped' => ['__extension__ x __extension__', [['T_IDENTIFIER', 'x']]];
+        yield 'name that starts like the marker of the extensions' => ['__extension__x', [
+            ['T_IDENTIFIER', '__extension__x'],
+        ]];
 
         $constants = [
             'T_DEC_INT_LITERAL' => [
@@ -249,10 +268,20 @@ final class LexemesTest extends TestCase
         ];
         yield 'lone hash at the beginning of a line is a directive' => ['#', [['T_DIRECTIVE', '#']]];
 
+        // A number of the preprocessor that is no constant is a single token
         foreach ([
-            '08', '09', '0b2', '0b', '0x', "1''0", "1'", "'1", '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b',
-            '1.5ff', '1.5fl', '1.5dF', '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8',
-            "''", "'a", '"text',
+            '08', '09', '0b2', '0b', '0x', '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b', '1.5ff', '1.5fl', '1.5dF',
+            '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8', '0xE+1', '10.13.4', '.5.5',
+            "1'a",
+        ] as $number) {
+            yield 'number of the preprocessor ' . $number => [$number, [['T_PP_NUMBER', $number]]];
+        }
+
+        yield 'doubled digit separator' => ["1''0", [['T_PP_NUMBER', '1'], ['Unknown', "''0"]]];
+        yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['Unknown', "'"]]];
+
+        foreach ([
+            "'1", "''", "'a", '"text',
             '"\\q"', "'\\q'", '"\\x"', '"\\u12"', '@', '$', '`',
         ] as $fragment) {
             yield 'not a lexeme ' . $fragment => [$fragment, [['Unknown', $fragment]]];

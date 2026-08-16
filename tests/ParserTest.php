@@ -90,8 +90,9 @@ final class ParserTest extends TestCase
         yield 'octal constant with 8' => ['08', 0, '08'];
         yield 'binary constant with 2' => ['0b2', 0, '0b2'];
         yield 'hexadecimal prefix without digits' => ['0x', 0, '0x'];
-        yield 'doubled digit separator' => ["1''0", 0, "1''0"];
-        yield 'trailing digit separator' => ["1'", 0, "1'"];
+        yield 'doubled digit separator' => ["1''0", 0, '1'];
+        yield 'trailing digit separator' => ["1'", 0, '1'];
+        yield 'number with two dots' => ['static_assert(1.2.3);', 14, '1.2.3'];
         yield 'invalid integer suffix' => ['1lul', 0, '1lul'];
         yield 'unclosed string' => ['"text', 0, '"text'];
         yield 'unclosed character constant' => ["'a", 0, "'a"];

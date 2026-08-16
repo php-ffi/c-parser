@@ -41,6 +41,8 @@ final class DeclarationsTest extends TestCase
         yield 'tag declaration' => ['static struct S;', ['(tag static@0 struct S@7)@0']];
         yield 'type declaration' => ['const T;', ['(type [const T@6]@0)@0']];
         yield 'variable' => ['int a = 1;', ['(variable int@0 a@4 = 1@8)@0']];
+        yield 'attribute declaration' => ['[[a]]; int x;', ['(attributes [[a@2]]@2)@0', '(variable int@7 x@11)@7']];
+        yield 'attributes and a storage class' => ['[[a]] static;', ['(type [[a@2]]@2 static@6 _)@0']];
         yield 'static assertion and a variable' => [
             'static_assert(1); int x;',
             ['(static_assert 1@14)@0', '(variable int@18 x@22)@18'],
@@ -178,6 +180,23 @@ final class DeclarationsTest extends TestCase
             '(variable int x = (compound {static int} {1}))',
         ]];
 
+        // Extensions of GCC
+        yield 'assembler label' => ['int f(void) __asm__("_f");', ['(function (fn int (void)) f asm("_f"))']];
+        yield 'assembler label of adjacent strings' => ['extern int x __asm("_" "x") = 1;', [
+            '(variable extern int x asm((concat "_" "x")) = 1)',
+        ]];
+        yield 'assembler labels of several declarators' => ['int a __asm__("a"), b __asm__("b");', [
+            '(variable int a asm("a"))',
+            '(variable int b asm("b"))',
+        ]];
+        yield 'assembler label of a typedef' => ['typedef int T __asm__("t");', ['(typedef typedef int T asm("t"))']];
+        yield 'range designator' => ['int a[] = {[0 ... 3] = 1, [4 ... 5].x = 2};', [
+            '(variable (array int) a = {[0 ... 3]=1, [4 ... 5].x=2})',
+        ]];
+        yield 'marker of the extensions before a declaration' => ['__extension__ typedef long long T;', [
+            '(typedef typedef (long long _) T)',
+        ]];
+
         // Semantically invalid, but syntactically valid
         yield 'typedef with an initializer' => ['typedef int x = 1;', ['(typedef typedef int x = 1)']];
         yield 'typedef with another storage class' => ['typedef static int x = 1;', [
@@ -232,12 +251,16 @@ final class DeclarationsTest extends TestCase
             'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'CompoundLiteralExpression@8',
             'IncompleteArrayType@12', 'IntType@9', 'InitializerList@15', 'DecIntLiteral@16', 'IntType@0',
         ]];
+        yield 'assembler label and a range designator' => ['int a[] __asm__("x") = {[0 ... 1] = 2};', [
+            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'AsmLabel@8', 'StringLiteral@16',
+            'InitializerList@23', 'DesignatedInitializer@24', 'DesignatorList@24', 'RangeDesignator@24',
+            'OctIntLiteral@25', 'DecIntLiteral@31', 'DecIntLiteral@36', 'IncompleteArrayType@5', 'IntType@0',
+        ]];
         yield 'initializer list' => ['int a[] = {[0] = 1, .b.c = {}};', [
             'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'InitializerList@10',
             'DesignatedInitializer@11', 'DesignatorList@11', 'IndexDesignator@11', 'OctIntLiteral@12',
-            'DecIntLiteral@17', 'DesignatedInitializer@20', 'DesignatorList@20', 'MemberDesignator@20',
-            'Identifier@21', 'MemberDesignator@22', 'Identifier@23', 'InitializerList@27', 'IncompleteArrayType@5',
-            'IntType@0',
+            'DecIntLiteral@17', 'DesignatedInitializer@20', 'DesignatorList@20', 'MemberDesignator@20', 'Identifier@21',
+            'MemberDesignator@22', 'Identifier@23', 'InitializerList@27', 'IncompleteArrayType@5', 'IntType@0',
         ]];
     }
 
@@ -283,7 +306,11 @@ final class DeclarationsTest extends TestCase
         yield 'unclosed compound literal' => ['int x = (int){1;', 15, ';'];
         yield 'designator without an initializer' => ['int a = {[1]};', 12, '}'];
         yield 'designator without an equals sign' => ['int a = {.a 1};', 12, '1'];
-        yield 'name without a type specifier before an array' => ['static x[3];', 8, '['];
+        yield 'range without the last index' => ['int a[] = {[0 ...] = 1};', 17, ']'];
+        yield 'range of three indices' => ['int a[] = {[0 ... 1 ... 2] = 1};', 20, '...'];
+        // The error is reported after "[", where an attribute would need
+        // the second "["
+        yield 'name without a type specifier before an array' => ['static x[3];', 9, '3'];
     }
 
     /**

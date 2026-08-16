@@ -135,6 +135,27 @@ final class ExpressionsTest extends TestCase
         yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof T@21)@14 1@26)@14'];
         yield 'alignof' => ['alignof(T)', '(alignof T@22)@14'];
         yield '_Alignof' => ['_Alignof(T)', '(alignof T@23)@14'];
+        yield '__alignof__' => ['__alignof__(T)', '(alignof T@26)@14'];
+        yield 'alignof of an expression' => ['__alignof__ x', '(alignof x@26)@14'];
+        yield 'alignof of a subscript in parentheses' => ['__alignof__(x)[0]', '(alignof ([] x@26 0@29)@25)@14'];
+        yield 'alignof of an expression that reads as a type' => [
+            '__alignof__(x[0])',
+            '(alignof ([] x@26 0@28)@26)@14',
+        ];
+        yield 'alignof of a compound literal' => ['alignof(int){1}', '(alignof (compound int@22 {1@27}@26)@21)@14'];
+
+        // offsetof of GCC
+        yield 'offsetof' => ['__builtin_offsetof(struct S, a)', '(offsetof struct S@33 .a@43@43)@14'];
+        yield 'offsetof of a nested member and an element' => [
+            '__builtin_offsetof(T, a.b[2].c)',
+            '(offsetof T@33 .a@36@36.b@38@37[2@40]@39.c@43@42)@14',
+        ];
+        yield 'offsetof of a range of elements' => [
+            '__builtin_offsetof(T, a[0 ... 1])',
+            '(offsetof T@33 .a@36@36[0@38 ... 1@44]@37)@14',
+        ];
+        yield 'offsetof in a sum' => ['1 + __builtin_offsetof(T, a)', '(+ 1@14 (offsetof T@37 .a@40@40)@18)@14'];
+        yield 'cast of offsetof' => ['(T)__builtin_offsetof(U, a)', '(cast T@15 (offsetof U@36 .a@39@39)@17)@14'];
 
         // Every operator
         foreach (NodePrinter::BINARY_OPERATORS as $operator) {
@@ -235,7 +256,6 @@ final class ExpressionsTest extends TestCase
         yield 'function call' => ['f(1)', 15, '('];
         yield 'increment' => ['a++', 15, '++'];
         yield 'sizeof without an operand' => ['sizeof', 20, ')'];
-        yield 'alignof of an expression' => ['alignof x', 22, 'x'];
         yield 'cast without an operand' => ['(T)~', 18, ')'];
         yield 'unclosed subscript' => ['a[1', 17, ')'];
         yield 'member without a name' => ['a.', 16, ')'];
@@ -243,7 +263,11 @@ final class ExpressionsTest extends TestCase
         yield 'empty parentheses' => ['()', 15, ')'];
         yield 'operand after sizeof of a type' => ['sizeof(T)x', 23, 'x'];
         yield 'comma outside parentheses' => ['a, b', 17, 'b'];
-        yield 'sign after a hexadecimal constant ending with E' => ['0xE+1', 14, '0xE+1);'];
+        yield 'sign after a hexadecimal constant ending with E' => ['0xE+1', 14, '0xE+1'];
+        yield 'alignof without an operand' => ['alignof', 21, ')'];
+        yield 'offsetof without a member' => ['__builtin_offsetof(T)', 34, ')'];
+        yield 'offsetof of a member written with a dot' => ['__builtin_offsetof(T, .a)', 36, '.'];
+        yield 'offsetof without a type' => ['__builtin_offsetof(, a)', 33, ','];
     }
 
     /**

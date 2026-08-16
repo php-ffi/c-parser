@@ -102,6 +102,21 @@ final class SpecifiersTest extends TestCase
         yield 'long long long' => ['long long long', '(long long long _)'];
         yield 'signed unsigned int' => ['signed unsigned int', '(signed unsigned int)'];
         yield 'short double' => ['short double', '(short double)'];
+
+        // Compiler extensions
+        yield '__int128' => ['__int128', '__int128'];
+        yield 'unsigned __int128' => ['unsigned __int128', '(unsigned __int128)'];
+        yield '__int8' => ['__int8', '__int8'];
+        yield '__int16' => ['__int16', '__int16'];
+        yield '__int32' => ['__int32', '__int32'];
+        yield 'unsigned __int64' => ['unsigned __int64', '(unsigned __int64)'];
+        yield 'spellings of GCC' => [
+            '__const __volatile__ __signed__ __complex__ double',
+            '[const volatile (signed _Complex double)]',
+        ];
+        yield '__typeof__' => ['__typeof__(int)', 'typeof(int)'];
+        yield 'type names of GCC are typedef names' => ['__builtin_va_list', '__builtin_va_list'];
+        yield 'floating types of TS 18661 are typedef names' => ['_Float128', '_Float128'];
     }
 
     #[DataProvider('typesDataProvider')]
@@ -166,6 +181,16 @@ final class SpecifiersTest extends TestCase
             '(tag struct S { static inline alignas(4) [const int] a })',
         ];
         yield 'storage class of a tag' => ['static struct S { int a; };', '(tag static struct S { int a })'];
+        yield 'empty structure of GCC' => ['struct S {};', '(tag struct S {  })'];
+        yield 'empty anonymous union of GCC' => ['union {};', '(tag union _ {  })'];
+        yield 'extra semicolons among the members' => [
+            'struct S { ; int a;; static_assert(1);; };',
+            '(tag struct S { int a; (static_assert 1) })',
+        ];
+        yield 'marker of the extensions before a member' => [
+            'struct S { __extension__ union { int a; }; };',
+            '(tag struct S { union _ { int a } _ })',
+        ];
         yield 'enumeration reference' => ['enum E;', '(tag enum E)'];
         yield 'enumeration' => ['enum E { A, B = 2 };', '(tag enum E { A, B=2 })'];
         yield 'trailing comma' => ['enum E { A, };', '(tag enum E { A })'];
@@ -272,7 +297,6 @@ final class SpecifiersTest extends TestCase
         yield 'underlying type missing' => ['enum E : ;', 9, ';'];
         yield 'two different bases' => ['char double;', 5, 'double'];
         yield 'member without a semicolon' => ['struct { int a };', 15, '}'];
-        yield 'empty structure' => ['struct S {};', 10, '}'];
         yield 'empty enumeration' => ['enum E {};', 8, '}'];
         yield 'structure without a name and a body' => ['struct;', 6, ';'];
         yield 'union without a name and a body' => ['union;', 5, ';'];
