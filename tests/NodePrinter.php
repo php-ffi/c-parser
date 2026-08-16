@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests;
 
+use FFI\Parser\Node\Attribute\Attribute;
+use FFI\Parser\Node\Attribute\Attribute\ArgumentList\BalancedTokenSequence;
+use FFI\Parser\Node\Attribute\DeclSpecAttribute;
+use FFI\Parser\Node\Attribute\GnuAttribute;
+use FFI\Parser\Node\Attribute\KeywordAttribute;
+use FFI\Parser\Node\Attribute\StandardAttribute;
+use FFI\Parser\Node\Declaration\AttributeDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
+use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel;
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
+use FFI\Parser\Node\Expression\AlignOfExpression;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
 use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\CastExpression;
@@ -14,6 +23,7 @@ use FFI\Parser\Node\Expression\ConditionalExpression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
+use FFI\Parser\Node\Expression\OffsetOfExpression;
 use FFI\Parser\Node\Expression\SizeOfExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
@@ -23,6 +33,7 @@ use FFI\Parser\Node\Initializer\InitializerList;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\IndexDesignator;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\MemberDesignator;
+use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\RangeDesignator;
 use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Node;
@@ -33,6 +44,7 @@ use FFI\Parser\Node\Specifier\FunctionSpecifier;
 use FFI\Parser\Node\Specifier\StorageClassSpecifier;
 use FFI\Parser\Node\Type\ArrayType;
 use FFI\Parser\Node\Type\AtomicType;
+use FFI\Parser\Node\Type\AttributedType;
 use FFI\Parser\Node\Type\BuiltinType;
 use FFI\Parser\Node\Type\EnumType;
 use FFI\Parser\Node\Type\EnumType\Enumerator;
@@ -55,9 +67,16 @@ use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
  * tree with one string: `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
  * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. A declaration is
  * named by its kind, `(variable static int x = {1, .a=2, [3]={}})`,
- * `(function ...)`, `(typedef ...)`, `(tag ...)`, `(type ...)`. With the
- * offsets every node ends with its offset: `(+ 1@14 2@18)@14`. A missing
- * node is `_`.
+ * `(function ...)`, `(typedef ...)`, `(tag ...)`, `(type ...)`,
+ * `(attributes ...)`. An attribute is printed in its own syntax with one
+ * attribute per specifier, `[[gnu::aligned(8)]] __attribute__((packed))`,
+ * attributes in a declarator wrap the type, `(attr _Nonnull (ptr int))`,
+ * an argument that is no expression is `(tokens introduced=10.4)`. The
+ * attributes among the specifiers are printed before the type and the ones
+ * of a tag after its keyword wherever they are written, only the offsets
+ * tell the places apart.
+ * With the offsets every node ends with its offset: `(+ 1@14 2@18)@14`. A
+ * missing node is `_`.
  */
 final class NodePrinter
 {
@@ -117,6 +136,11 @@ final class NodePrinter
         BuiltinType\Decimal32Type::class => '_Decimal32',
         BuiltinType\Decimal64Type::class => '_Decimal64',
         BuiltinType\Decimal128Type::class => '_Decimal128',
+        BuiltinType\Int8Type::class => '__int8',
+        BuiltinType\Int16Type::class => '__int16',
+        BuiltinType\Int32Type::class => '__int32',
+        BuiltinType\Int64Type::class => '__int64',
+        BuiltinType\Int128Type::class => '__int128',
         StorageClassSpecifier\TypeDefSpecifier::class => 'typedef',
         StorageClassSpecifier\ExternSpecifier::class => 'extern',
         StorageClassSpecifier\StaticSpecifier::class => 'static',
@@ -189,6 +213,12 @@ final class NodePrinter
             ),
             $node instanceof SizeOfTypeExpression => '(sizeof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfTypeExpression => '(alignof ' . $this->format($node->type) . ')',
+            $node instanceof AlignOfExpression => '(alignof ' . $this->format($node->operand) . ')',
+            $node instanceof OffsetOfExpression => \sprintf(
+                '(offsetof %s %s)',
+                $this->format($node->type),
+                \implode('', \array_map($this->format(...), $node->path->items)),
+            ),
             $node instanceof SubscriptExpression => \sprintf(
                 '([] %s %s)',
                 $this->format($node->array),
@@ -227,7 +257,34 @@ final class NodePrinter
             ),
             $node instanceof AlignAsSpecifier => 'alignas(' . $this->format($node->operand) . ')',
             $node instanceof AlignAsTypeSpecifier => 'alignas(' . $this->format($node->type) . ')',
-            $node instanceof PointerType => '(ptr ' . $this->format($node->type) . ')',
+            $node instanceof PointerType => \sprintf(
+                '(ptr %s%s)',
+                $this->format($node->type),
+                $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
+            ),
+            $node instanceof AttributedType => \sprintf(
+                '(attr %s %s)',
+                $this->format($node->attributes),
+                $this->format($node->type),
+            ),
+            $node instanceof StandardAttribute => \sprintf(
+                '[[%s%s%s]]',
+                $node->prefix === null ? '' : $this->format($node->prefix) . '::',
+                $this->format($node->name),
+                $this->formatArguments($node),
+            ),
+            $node instanceof GnuAttribute => \sprintf(
+                '__attribute__((%s%s))',
+                $this->format($node->name),
+                $this->formatArguments($node),
+            ),
+            $node instanceof DeclSpecAttribute => \sprintf(
+                '__declspec(%s%s)',
+                $this->format($node->name),
+                $this->formatArguments($node),
+            ),
+            $node instanceof KeywordAttribute => $this->format($node->name),
+            $node instanceof BalancedTokenSequence => '(tokens ' . $node->raw . ')',
             $node instanceof ArrayType => \sprintf(
                 '(array %s)',
                 \implode(' ', [
@@ -239,24 +296,28 @@ final class NodePrinter
                         $node instanceof ArrayType\UnspecifiedSizeArrayType => ['*'],
                         default => [],
                     },
+                    ...($node->attributes === null ? [] : [$this->format($node->attributes)]),
                 ]),
             ),
             $node instanceof FunctionType => \sprintf(
-                '(fn %s (%s))',
+                '(fn %s (%s)%s)',
                 $this->format($node->returnType),
                 \implode(', ', [
                     ...\array_map($this->format(...), $node->parameters->items),
                     ...($node->isVariadic ? ['...'] : []),
                 ]),
+                $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
             ),
             $node instanceof Parameter => \implode(' ', \array_filter([
                 $this->format($node->specifiers),
                 $this->format($node->type),
                 $node->name === null ? '' : $this->format($node->name),
+                $node->attributes === null ? '' : $this->format($node->attributes),
             ])),
             $node instanceof RecordType => \sprintf(
-                '%s %s%s',
+                '%s %s%s%s',
                 $node instanceof RecordType\UnionType ? 'union' : 'struct',
+                $node->attributes === null ? '' : $this->format($node->attributes) . ' ',
                 $node->name->name ?? '_',
                 $node->members === null ? '' : ' { ' . \implode('; ', \array_map(
                     $this->format(...),
@@ -267,9 +328,11 @@ final class NodePrinter
                 $this->format($node->specifiers),
                 $this->format($node->type),
                 ($node->name->name ?? '_') . ($node->width === null ? '' : ':' . $this->format($node->width)),
+                $node->attributes === null ? '' : $this->format($node->attributes),
             ])),
             $node instanceof EnumType => \sprintf(
-                'enum %s%s%s',
+                'enum %s%s%s%s',
+                $node->attributes === null ? '' : $this->format($node->attributes) . ' ',
                 $node->name->name ?? '_',
                 $node->underlyingType === null ? '' : ' : ' . $this->format($node->underlyingType),
                 $node->enumerators === null ? '' : ' { ' . \implode(', ', \array_map(
@@ -278,6 +341,7 @@ final class NodePrinter
                 )) . ' }',
             ),
             $node instanceof Enumerator => $node->name->name
+                . ($node->attributes === null ? '' : ' ' . $this->format($node->attributes))
                 . ($node->value === null ? '' : '=' . $this->format($node->value)),
             $node instanceof StaticAssertDeclaration => \sprintf(
                 '(static_assert %s%s)',
@@ -301,9 +365,13 @@ final class NodePrinter
                     $this->format($node->specifiers),
                     $this->format($node->type ?? null),
                     $this->format($node->name),
+                    $node->attributes === null ? '' : $this->format($node->attributes),
+                    $node->asmLabel === null ? '' : $this->format($node->asmLabel),
                     $node->initializer === null ? '' : '= ' . $this->format($node->initializer),
                 ])),
             ),
+            $node instanceof AsmLabel => 'asm(' . $this->format($node->name) . ')',
+            $node instanceof AttributeDeclaration => '(attributes ' . $this->format($node->attributes) . ')',
             $node instanceof InitializerList => '{' . \implode(', ', \array_map(
                 $this->format(...),
                 $node->items,
@@ -314,9 +382,23 @@ final class NodePrinter
             )) . '=' . $this->format($node->initializer),
             $node instanceof MemberDesignator => '.' . $this->format($node->member),
             $node instanceof IndexDesignator => '[' . $this->format($node->index) . ']',
+            $node instanceof RangeDesignator => \sprintf(
+                '[%s ... %s]',
+                $this->format($node->first),
+                $this->format($node->last),
+            ),
             default => throw new \LogicException(\sprintf('%s cannot be printed', $node::class)),
         };
 
         return $this->withOffsets ? $body . '@' . $node->offset : $body;
+    }
+
+    private function formatArguments(Attribute $attribute): string
+    {
+        if ($attribute->arguments === null) {
+            return '';
+        }
+
+        return '(' . \implode(', ', \array_map($this->format(...), $attribute->arguments->items)) . ')';
     }
 }
