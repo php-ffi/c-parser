@@ -20,7 +20,7 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 #[CoversClass(GmpBaseConverter::class)]
 #[CoversClass(BcMathBaseConverter::class)]
 #[CoversClass(NativeBaseConverter::class)]
-final class BaseConverterTest extends TestCase
+final class BaseConverterInterfaceTest extends TestCase
 {
     /**
      * @return iterable<non-empty-string, array{non-empty-string, int<2, 36>, numeric-string}>

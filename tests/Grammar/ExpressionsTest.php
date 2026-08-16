@@ -7,6 +7,7 @@ namespace FFI\Parser\Tests\Grammar;
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\Expression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
+use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Literal\BoolLiteral;
 use FFI\Parser\Node\Literal\CharLiteral;
 use FFI\Parser\Node\Literal\FloatLiteral\DecFloatLiteral;
@@ -18,6 +19,7 @@ use FFI\Parser\Node\Literal\IntLiteral\OctIntLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Literal\NullptrLiteral;
 use FFI\Parser\Node\Literal\StringLiteral;
+use FFI\Parser\Node\Type\NamedType;
 use FFI\Parser\Tests\NodePrinter;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -98,6 +100,9 @@ final class ExpressionsTest extends TestCase
         yield 'subscript after parentheses' => ['(x)[0]', '([] x@15 0@18)@14'];
         yield 'member after parentheses' => ['(x).a', '(. x@15 a@18)@14'];
         yield 'minus after a keyword type is a cast' => ['(int)-1', '(cast int@15 (-u 1@20)@19)@14'];
+        yield 'octal zero after a typedef name is a cast' => ['(T)0', '(cast T@15 0@17)@14'];
+        yield 'hexadecimal constant after a typedef name is a cast' => ['(T)0x1', '(cast T@15 0x1@17)@14'];
+        yield 'sign after a hexadecimal constant with a space' => ['0xE +1', '(+ 0xE@14 1@19)@14'];
         yield 'cast to a modified type' => ['(unsigned long)x', '(cast (unsigned long _)@15 x@29)@14'];
         yield 'minus after a qualified typedef name is a cast' => [
             '(const T)-x',
@@ -116,11 +121,15 @@ final class ExpressionsTest extends TestCase
         yield 'chain of postfix operators' => ['p->m.n[2]', '([] (. (-> p@14 m@17)@14 n@19)@14 2@21)@14'];
         yield 'digraph subscript' => ['a<:1:>', '([] a@14 1@17)@14'];
         yield 'comma in a subscript' => ['a[1, 2]', '([] a@14 (, 1@16 2@19)@16)@14'];
+        yield 'subscript of a compound literal' => ['(T){1}[0]', '([] (compound T@15 {1@18}@17)@14 0@21)@14'];
 
         // sizeof and alignof
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
         yield 'sizeof of a type' => ['sizeof(T)', '(sizeof T@21)@14'];
         yield 'sizeof of a subscript in parentheses' => ['sizeof(x)[0]', '(sizeof ([] x@21 0@24)@20)@14'];
+        yield 'sizeof of a member in parentheses' => ['sizeof(x).a', '(sizeof (. x@21 a@24)@20)@14'];
+        yield 'sizeof of a pointer member in parentheses' => ['sizeof(x)->a', '(sizeof (-> x@21 a@25)@20)@14'];
+        yield 'sizeof of a nested product in parentheses' => ['sizeof(a * (b * (c)))', '(sizeof (* a@21 (* b@26 c@31)@26)@21)@14'];
         yield 'sizeof of a parenthesized expression' => ['sizeof(1 + 2)', '(sizeof (+ 1@21 2@25)@21)@14'];
         yield 'sizeof of sizeof' => ['sizeof sizeof x', '(sizeof (sizeof x@28)@21)@14'];
         yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof T@21)@14 1@26)@14'];
@@ -143,6 +152,18 @@ final class ExpressionsTest extends TestCase
     public function testExpressionIsParsed(string $expression, string $expected): void
     {
         self::assertSame($expected, NodePrinter::printWithOffsets(self::parseCondition($expression)));
+    }
+
+    /**
+     * The printer does not tell a type name from an expression, so the class
+     * is checked here.
+     */
+    public function testLoneNameInSizeofIsATypeName(): void
+    {
+        $node = self::parseCondition('sizeof(T)');
+
+        self::assertInstanceOf(SizeOfTypeExpression::class, $node);
+        self::assertInstanceOf(NamedType::class, $node->type);
     }
 
     /**
@@ -222,6 +243,7 @@ final class ExpressionsTest extends TestCase
         yield 'empty parentheses' => ['()', 15, ')'];
         yield 'operand after sizeof of a type' => ['sizeof(T)x', 23, 'x'];
         yield 'comma outside parentheses' => ['a, b', 17, 'b'];
+        yield 'sign after a hexadecimal constant ending with E' => ['0xE+1', 14, '0xE+1);'];
     }
 
     /**

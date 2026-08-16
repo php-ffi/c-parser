@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Node\Literal;
 
+use FFI\Parser\Node\Literal\EncodingPrefix;
 use FFI\Parser\Node\Literal\StringLiteral;
 use FFI\Parser\Node\Literal\StringLiteral\StringParser;
-use FFI\Parser\Node\Literal\EncodingPrefix;
+use FFI\Parser\Parser;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -118,14 +119,16 @@ final class StringLiteralTest extends TestCase
     }
 
     /**
-     * A literal built without the source text gets one that is parsed back
-     * into the same literal.
+     * A literal built without the source text gets one that the parser
+     * accepts and that is parsed back into the same literal.
      */
     #[DataProvider('builtLiteralsDataProvider')]
     public function testBuiltLiteralGetsValidSourceText(string $value, ?EncodingPrefix $prefix): void
     {
-        $literal = StringLiteral::parse((new StringLiteral($value, $prefix))->raw);
+        $raw = (new StringLiteral($value, $prefix))->raw;
+        $literal = StringLiteral::parse($raw);
 
+        self::assertTrue((new Parser())->validate('static_assert(1, ' . $raw . ');'));
         self::assertSame($value, $literal->value);
         self::assertSame($prefix, $literal->prefix);
     }

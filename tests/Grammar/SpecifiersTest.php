@@ -234,7 +234,18 @@ final class SpecifiersTest extends TestCase
             'Identifier@26', 'MemberDeclaration@11', 'SpecifierList@11', 'AlignAsSpecifier@11', 'DecIntLiteral@19',
             'IntType@22', 'Identifier@29', 'DecIntLiteral@33',
         ]];
-        yield 'bases' => ['_Bool;', [
+        yield 'typeof of an expression' => ['typeof(x + 1);', [
+            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfType@0', 'AddExpression@7', 'IdentifierExpression@7',
+            'Identifier@7', 'DecIntLiteral@11',
+        ]];
+        yield 'typeof_unqual of an expression' => ['typeof_unqual(x + 1);', [
+            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfUnqualType@0', 'AddExpression@14',
+            'IdentifierExpression@14', 'Identifier@14', 'DecIntLiteral@18',
+        ]];
+        yield 'typeof_unqual of a type' => ['typeof_unqual(int);', [
+            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfUnqualTypeType@0', 'IntType@14',
+        ]];
+        yield 'boolean base' => ['_Bool;', [
             'TypeDeclaration@0', 'SpecifierList@0', 'BoolType@0',
         ]];
     }
@@ -256,11 +267,10 @@ final class SpecifiersTest extends TestCase
     public static function invalidDeclarationsDataProvider(): iterable
     {
         yield 'two bases' => ['int int;', 4, 'int'];
+        yield 'alignment specifier without an operand' => ['alignas() int;', 8, ')'];
+        yield 'typeof_unqual without an operand' => ['typeof_unqual();', 14, ')'];
+        yield 'underlying type missing' => ['enum E : ;', 9, ';'];
         yield 'two different bases' => ['char double;', 5, 'double'];
-        yield 'typedef name after a type specifier' => ['unsigned T;', 9, 'T'];
-        yield 'two typedef names' => ['T T;', 2, 'T'];
-        yield 'typedef name after a base' => ['int T;', 4, 'T'];
-        yield 'typedef name after a modifier' => ['long T;', 5, 'T'];
         yield 'member without a semicolon' => ['struct { int a };', 15, '}'];
         yield 'empty structure' => ['struct S {};', 10, '}'];
         yield 'empty enumeration' => ['enum E {};', 8, '}'];

@@ -39,6 +39,23 @@ final class LibraryArchitectureTest
             ->because('the generated parser is an implementation detail of the public parser');
     }
 
+    public function testLibraryDoesNotDependOnTheDevelopmentPackages(): Rule
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('FFI\Parser'))
+            ->excluding(Selector::inNamespace('FFI\Parser\Tests'))
+            ->shouldNot()
+            ->dependOn()
+            ->classes(
+                Selector::inNamespace('Phplrt\Compiler'),
+                Selector::inNamespace('PHPUnit'),
+                Selector::inNamespace('PHPat'),
+                Selector::inNamespace('PhpCsFixer'),
+                Selector::inNamespace('Symfony\Component\VarDumper'),
+            )
+            ->because('the grammar is compiled at development time, the library needs the runtime packages only');
+    }
+
     public function testLiteralInternalsAreUsedByTheLiteralsOnly(): Rule
     {
         return PHPat::rule()

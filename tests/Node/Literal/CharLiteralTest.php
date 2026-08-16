@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Node\Literal;
 
 use FFI\Parser\Node\Literal\CharLiteral;
-use FFI\Parser\Node\Literal\StringLiteral\StringParser;
 use FFI\Parser\Node\Literal\EncodingPrefix;
+use FFI\Parser\Node\Literal\StringLiteral\StringParser;
+use FFI\Parser\Parser;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -53,13 +54,15 @@ final class CharLiteralTest extends TestCase
     }
 
     /**
-     * A constant built without the source text gets one that is parsed back
-     * into the same constant.
+     * A constant built without the source text gets one that the parser
+     * accepts and that is parsed back into the same constant.
      */
     public function testBuiltConstantGetsValidSourceText(): void
     {
-        $constant = CharLiteral::parse((new CharLiteral("'\\\n", EncodingPrefix::Wide))->raw);
+        $raw = (new CharLiteral("'\\\n", EncodingPrefix::Wide))->raw;
+        $constant = CharLiteral::parse($raw);
 
+        self::assertTrue((new Parser())->validate('static_assert(' . $raw . ');'));
         self::assertSame("'\\\n", $constant->value);
         self::assertSame(EncodingPrefix::Wide, $constant->prefix);
     }

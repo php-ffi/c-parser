@@ -9,6 +9,7 @@ use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
 use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\CastExpression;
+use FFI\Parser\Node\Expression\CompoundLiteralExpression;
 use FFI\Parser\Node\Expression\ConditionalExpression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
@@ -18,6 +19,10 @@ use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression;
 use FFI\Parser\Node\Identifier;
+use FFI\Parser\Node\Initializer\InitializerList;
+use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer;
+use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\IndexDesignator;
+use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\MemberDesignator;
 use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Node;
@@ -48,9 +53,11 @@ use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
 /**
  * Prints a syntax tree as an S-expression, so that a test compares the whole
  * tree with one string: `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
- * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. With the offsets
- * every node ends with its offset:
- * `(+ 1@14 2@18)@14`. A missing node is `_`.
+ * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. A declaration is
+ * named by its kind, `(variable static int x = {1, .a=2, [3]={}})`,
+ * `(function ...)`, `(typedef ...)`, `(tag ...)`, `(type ...)`. With the
+ * offsets every node ends with its offset: `(+ 1@14 2@18)@14`. A missing
+ * node is `_`.
  */
 final class NodePrinter
 {
@@ -143,7 +150,7 @@ final class NodePrinter
 
         // A list is not marked with its offset, which is the one of its
         // first node
-        if ($node instanceof NodeList) {
+        if ($node instanceof NodeList && !$node instanceof InitializerList) {
             return \implode(' ', \array_map($this->format(...), $node->items));
         }
 
@@ -175,6 +182,11 @@ final class NodePrinter
                 $this->format($node->operand),
             ),
             $node instanceof SizeOfExpression => '(sizeof ' . $this->format($node->operand) . ')',
+            $node instanceof CompoundLiteralExpression => \sprintf(
+                '(compound %s %s)',
+                $this->format($node->type),
+                $this->format($node->initializer),
+            ),
             $node instanceof SizeOfTypeExpression => '(sizeof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfTypeExpression => '(alignof ' . $this->format($node->type) . ')',
             $node instanceof SubscriptExpression => \sprintf(
@@ -278,6 +290,30 @@ final class NodePrinter
                 $node instanceof SpecifiedDeclaration\TagDeclaration ? 'tag' : 'type',
                 \implode(' ', \array_filter([$this->format($node->specifiers), $this->format($node->type)])),
             ),
+            $node instanceof SpecifiedDeclaration\DeclaratorDeclaration => \sprintf(
+                '(%s %s)',
+                match (true) {
+                    $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration => 'typedef',
+                    $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration => 'function',
+                    default => 'variable',
+                },
+                \implode(' ', \array_filter([
+                    $this->format($node->specifiers),
+                    $this->format($node->type ?? null),
+                    $this->format($node->name),
+                    $node->initializer === null ? '' : '= ' . $this->format($node->initializer),
+                ])),
+            ),
+            $node instanceof InitializerList => '{' . \implode(', ', \array_map(
+                $this->format(...),
+                $node->items,
+            )) . '}',
+            $node instanceof DesignatedInitializer => \implode('', \array_map(
+                $this->format(...),
+                $node->designators->items,
+            )) . '=' . $this->format($node->initializer),
+            $node instanceof MemberDesignator => '.' . $this->format($node->member),
+            $node instanceof IndexDesignator => '[' . $this->format($node->index) . ']',
             default => throw new \LogicException(\sprintf('%s cannot be printed', $node::class)),
         };
 

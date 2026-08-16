@@ -292,5 +292,4 @@ final class LexemesTest extends TestCase
 
         return $result;
     }
-
 }

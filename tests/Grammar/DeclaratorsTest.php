@@ -17,10 +17,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Checks the declarators and the type names of
- * `resources/grammar/declarators.pp3`. Until the declarations get their
- * declarators, a declarator is checked as a member of a structure, and a
- * type name as the operand of `sizeof`. The declared type is compared as an
- * S-expression: `(ptr (fn int (int)))` is a pointer to a function.
+ * `resources/grammar/declarators.pp3`. A declarator is checked as a member
+ * of a structure, which needs no other node around it, and a type name as
+ * the operand of `sizeof`. The declared type is compared as an S-expression:
+ * `(ptr (fn int (int)))` is a pointer to a function.
  */
 #[CoversNothing]
 final class DeclaratorsTest extends TestCase
@@ -58,6 +58,9 @@ final class DeclaratorsTest extends TestCase
         yield 'qualifiers and a size' => ['int a[const volatile 3];', '(array int const volatile 3) a'];
         yield 'qualifiers without a size' => ['int a[restrict];', '(array int restrict) a'];
         yield 'qualifiers and an unspecified size' => ['int a[const *];', '(array int const *) a'];
+        yield 'volatile size' => ['int a[volatile 1];', '(array int volatile 1) a'];
+        yield 'restrict without a size' => ['int a[restrict];', '(array int restrict) a'];
+        yield 'atomic unspecified size' => ['int a[_Atomic *];', '(array int _Atomic *) a'];
 
         // Functions
         yield 'function without parameters' => ['int f();', '(fn int ()) f'];
@@ -95,7 +98,10 @@ final class DeclaratorsTest extends TestCase
             '(fn int ((ptr (fn int ((ptr (fn int (char)))))))) f',
         ];
         yield 'parameter of a function type with a name' => ['int f(int g(int));', '(fn int ((fn int (int)) g)) f'];
-        yield 'non-ASCII names' => ['int f(Ä a, char *Ö);', '(fn int (Ä a, (ptr char) Ö)) f'];
+        yield 'non-ASCII names' => [
+            "int f(\xC3\x84 a, char *\xC3\x96);",
+            "(fn int (\xC3\x84 a, (ptr char) \xC3\x96)) f",
+        ];
 
         // Bit-fields
         yield 'bit-field' => ['int a : 3;', 'int a:3'];
