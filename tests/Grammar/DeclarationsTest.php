@@ -180,6 +180,30 @@ final class DeclarationsTest extends TestCase
             '(variable int x = (compound {static int} {1}))',
         ]];
 
+        // Function definitions, the body keeps its text
+        yield 'function definition' => ['int f(void) { return 0; }', [
+            '(definition (fn int (void)) f { return 0; })',
+        ]];
+        yield 'static inline function of glibc' => [
+            "static __inline __uint16_t\n__bswap_16 (__uint16_t __bsx)\n{\n  return __builtin_bswap16 (__bsx);\n}",
+            ['(definition static inline (fn __uint16_t (__uint16_t __bsx)) __bswap_16 '
+                . "{\n  return __builtin_bswap16 (__bsx);\n})"],
+        ];
+        yield 'nested braces, strings and assembler in a body' => [
+            'void f(void) { if (x) { g("}"); } __asm__ volatile ("nop"); }',
+            ['(definition (fn void (void)) f { if (x) { g("}"); } __asm__ volatile ("nop"); })'],
+        ];
+        yield 'empty body' => ['void f() {}', ['(definition (fn void ()) f {})']];
+        yield 'definition with attributes' => ['__attribute__((always_inline)) int f(int x) [[a]] { return x; }', [
+            '(definition __attribute__((always_inline)) (fn int (int x) [[a]]) f { return x; })',
+        ]];
+        yield 'definitions and declarations' => ['int f(void) { return 1; } int g(void);', [
+            '(definition (fn int (void)) f { return 1; })',
+            '(function (fn int (void)) g)',
+        ]];
+        yield 'body after a declarator of no function' => ['int x { 1 }', ['(definition int x { 1 })']];
+        yield 'body after an initializer' => ['int x = {1} {2}', ['(definition int x = {1} {2})']];
+
         // Extensions of GCC
         yield 'assembler label' => ['int f(void) __asm__("_f");', ['(function (fn int (void)) f asm("_f"))']];
         yield 'assembler label of adjacent strings' => ['extern int x __asm("_" "x") = 1;', [
@@ -256,6 +280,10 @@ final class DeclarationsTest extends TestCase
             'InitializerList@23', 'DesignatedInitializer@24', 'DesignatorList@24', 'RangeDesignator@24',
             'OctIntLiteral@25', 'DecIntLiteral@31', 'DecIntLiteral@36', 'IncompleteArrayType@5', 'IntType@0',
         ]];
+        yield 'function definition' => ['static int f() { }', [
+            'FunctionDefinition@0', 'SpecifierList@0', 'StaticSpecifier@0', 'Identifier@11', 'FunctionType@12',
+            'IntType@7', 'ParameterList@12', 'FunctionBody@15',
+        ]];
         yield 'initializer list' => ['int a[] = {[0] = 1, .b.c = {}};', [
             'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'InitializerList@10',
             'DesignatedInitializer@11', 'DesignatorList@11', 'IndexDesignator@11', 'OctIntLiteral@12',
@@ -289,7 +317,10 @@ final class DeclarationsTest extends TestCase
         yield 'missing parentheses' => ['static_assert a;', 14, 'a'];
 
         yield 'declaration without a semicolon' => ['int x', 5, ''];
-        yield 'function definition' => ['int f(void) { return 0; }', 12, '{'];
+        yield 'unclosed function body' => ['int f(void) { return 0;', 23, ''];
+        yield 'unbalanced function body' => ['int f(void) { g(); ) }', 19, ')'];
+        yield 'body after a declarator but the first' => ['int a, f(void) { }', 15, '{'];
+        yield 'body after a semicolon' => ['int f(void); { }', 13, '{'];
         yield 'missing initializer' => ['int x = ;', 8, ';'];
         yield 'missing initializer of a typedef' => ['typedef int T = ;', 16, ';'];
         yield 'unclosed initializer list' => ['int a[] = {1, 2;', 15, ';'];
@@ -300,7 +331,7 @@ final class DeclarationsTest extends TestCase
         yield 'assignment as an initializer' => ['int x = a = 1;', 10, '='];
         yield 'comma without a declarator' => ['int x, ;', 7, ';'];
         yield 'comma before the declarators' => ['int , x;', 4, ','];
-        yield 'two lists' => ['int x = {1} {2};', 12, '{'];
+        yield 'two lists' => ['int x = {1}, {2};', 13, '{'];
         yield 'designator of a number' => ['int x = {.1 = 2};', 12, '='];
         yield 'designator without an index' => ['int x = {[] = 2};', 10, ']'];
         yield 'unclosed compound literal' => ['int x = (int){1;', 15, ';'];

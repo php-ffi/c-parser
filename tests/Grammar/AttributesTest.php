@@ -114,6 +114,7 @@ final class AttributesTest extends TestCase
         yield 'nested brackets with commas' => ['a([1, 2] {3, (4, 5)})', '[[a((tokens [1, 2] {3, (4, 5)}))]]'];
         yield 'nested parentheses after a name' => ['a(b(c, d), e)', '[[a((tokens b(c, d)), e)]]'];
         yield 'whitespace and comments are kept' => ['a(x  /* y */ = 1)', '[[a((tokens x  /* y */ = 1))]]'];
+        yield 'keyword of the extensions as an argument' => ['a(__asm__)', '[[a((tokens __asm__))]]'];
         yield 'non-ASCII text' => ["a(\"\xC3\xA9\", \\u00E9)", "[[a(\"\xC3\xA9\", \\u00E9)]]"];
         yield 'invalid UTF-8 in a string' => ["a(\"\xFF\")", "[[a(\"\xFF\")]]"];
         yield 'deeply nested tokens' => [
@@ -416,7 +417,6 @@ final class AttributesTest extends TestCase
         yield 'attributes between the tag and the body' => ['struct S [[a]] { int a; };', 15, '{'];
         yield 'empty last argument' => ['[[a(1,)]];', 6, ')'];
         yield 'keyword of the extensions as a name' => ['__attribute__((__declspec));', 15, '__declspec'];
-        yield 'keyword of the extensions as an argument' => ['[[a(__asm__)]];', 4, '__asm__'];
         yield 'extra closing parenthesis of GCC' => ['__attribute__((a))) int x;', 18, ')'];
         yield 'empty assembler label' => ['int f(void) __asm__();', 20, ')'];
         yield 'two integer types' => ['__int128 __int128 x;', 9, '__int128'];

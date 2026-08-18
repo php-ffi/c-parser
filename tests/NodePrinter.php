@@ -13,6 +13,7 @@ use FFI\Parser\Node\Attribute\StandardAttribute;
 use FFI\Parser\Node\Declaration\AttributeDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel;
+use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody;
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\AlignOfExpression;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
@@ -359,6 +360,7 @@ final class NodePrinter
                 match (true) {
                     $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration => 'typedef',
                     $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration => 'function',
+                    $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition => 'definition',
                     default => 'variable',
                 },
                 \implode(' ', \array_filter([
@@ -368,8 +370,12 @@ final class NodePrinter
                     $node->attributes === null ? '' : $this->format($node->attributes),
                     $node->asmLabel === null ? '' : $this->format($node->asmLabel),
                     $node->initializer === null ? '' : '= ' . $this->format($node->initializer),
+                    $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition
+                        ? $this->format($node->body)
+                        : '',
                 ])),
             ),
+            $node instanceof FunctionBody => $node->raw,
             $node instanceof AsmLabel => 'asm(' . $this->format($node->name) . ')',
             $node instanceof AttributeDeclaration => '(attributes ' . $this->format($node->attributes) . ')',
             $node instanceof InitializerList => '{' . \implode(', ', \array_map(
