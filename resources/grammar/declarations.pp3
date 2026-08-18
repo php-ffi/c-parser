@@ -15,18 +15,24 @@ ExternalDeclaration
 // is the declaration of its tag (6.7.3.4p11), attributes alone are an
 // attribute declaration, "[[deprecated]];", anything else is a declaration
 // of the specifiers alone, which is still syntactically valid: "int;",
-// "const struct S;". All the forms are one rule, so that the specifiers,
-// which may hold a nested body, are parsed only once.
+// "const struct S;". A body after the first declarator makes the
+// declaration a function definition (6.9.1), whose statements are not
+// parsed. All the forms are one rule, so that the specifiers, which may
+// hold a nested body, are parsed only once.
 Declaration -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
      *     Specifier\SpecifierList,
-     *     ...<\Closure(
-     *         Type\TypeInterface|null,
-     *         Specifier\SpecifierList,
-     *         int<0, max>
-     *     ): SpecifiedDeclaration\DeclaratorDeclaration>
+     *     ...<
+     *         \Closure(
+     *             Type\TypeInterface|null,
+     *             Specifier\SpecifierList,
+     *             int<0, max>,
+     *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=
+     *         ): SpecifiedDeclaration\DeclaratorDeclaration
+     *         |SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody
+     *     >
      * } $children
      */
     if (\count($children) === 2
@@ -56,15 +62,28 @@ Declaration -> {
         return new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
     }
 
+    if (($children[3] ?? null) instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody) {
+        // The body follows the only declarator
+        \assert($children[2] instanceof \Closure);
+
+        return $children[2]($children[0], $children[1], $offset, $children[3]);
+    }
+
     $declarations = [];
 
     for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        // A declaration without a body is a list of declarators
+        \assert($children[$i] instanceof \Closure);
+
         $declarations[] = $children[$i]($children[0], $children[1], $offset);
     }
 
     return $declarations;
 }
-  : DeclarationSpecifiers() (InitDeclarator() ((::T_COMMA:: InitDeclarator())+)?)? ::T_SEMICOLON::
+  : DeclarationSpecifiers() (
+        InitDeclarator() (FunctionBody() | ((::T_COMMA:: InitDeclarator())+)? ::T_SEMICOLON::)
+      | ::T_SEMICOLON::
+    )
   ;
 
 // The declarator of a declaration is a function from the type and the
@@ -114,11 +133,25 @@ InitDeclarator -> {
         ?Type\TypeInterface $type,
         Specifier\SpecifierList $specifiers,
         int $start,
+        ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
     ) use ($name, $declarator, $asmLabel, $initializer, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
         // The start of a declaration is a byte offset
         \assert($start >= 0);
 
         $type = $declarator($type);
+
+        if ($body !== null) {
+            return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition(
+                $type,
+                $name,
+                $body,
+                $attributeList,
+                $asmLabel,
+                $initializer,
+                $specifiers,
+                $start,
+            );
+        }
 
         foreach ($specifiers as $specifier) {
             if ($specifier instanceof Specifier\StorageClassSpecifier\TypeDefSpecifier) {
@@ -159,6 +192,19 @@ InitDeclarator -> {
 }
   : (AttributeSpecifier()+)? Declarator() (AttributeSpecifier()+)? (AsmLabel() (AttributeSpecifier()+)?)?
         (::T_ASSIGN:: Initializer())?
+  ;
+
+// 6.9.1 The body of a function definition, the compound statement in braces.
+// Its statements are not parsed: the body is any sequence of tokens with
+// balanced brackets, and keeps its text.
+FunctionBody -> {
+    $raw = \substr($content, $offset, $length);
+    // The body holds at least its braces
+    \assert($raw !== '');
+
+    return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody($raw, $offset);
+}
+  : <T_LBRACE> ((BalancedToken() | <T_COMMA>)+)? <T_RBRACE>
   ;
 
 // GCC: the name of the symbol in the object file, __asm__("_f"), also
