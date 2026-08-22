@@ -14,7 +14,8 @@
 // 6.7.7.1 General, a declarator with a name
 Declarator
   : PointerDeclarator()
-  | DirectDeclarator()
+  | NameDeclarator()
+  | NestedDeclarator()
   ;
 
 // A pointer, or the attributes at the start of a parenthesized declarator,
@@ -65,21 +66,19 @@ DeclaratorAttributes -> {
   : AttributeSpecifier()+
   ;
 
-DirectDeclarator
-  : NameDeclarator()
-  | NestedDeclarator()
-  ;
-
 // The name, its attributes and the arrays and the functions after it,
 // which apply in reverse order: "a[2][3]" is an array of two arrays of
-// three
+// three. The name is read here rather than by Identifier(), as in
+// NamedType: every declarator would build it in a rule of its own.
 NameDeclarator -> {
     /**
      * @var list{
-     *     Node\Identifier,
+     *     TokenInterface,
      *     ...<Attribute\AttributeInterface|\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)>
      * } $children
      */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    $name = new Node\Identifier($children[0]->value, $offset);
     $attributes = [];
     $suffixes = [];
 
@@ -91,7 +90,7 @@ NameDeclarator -> {
         }
     }
 
-    return [$children[0], static function (?Type\TypeInterface $type) use ($suffixes): ?Type\TypeInterface {
+    return [$name, static function (?Type\TypeInterface $type) use ($suffixes): ?Type\TypeInterface {
         for ($i = \count($suffixes) - 1; $i >= 0; --$i) {
             $type = $suffixes[$i]($type);
         }
@@ -99,7 +98,7 @@ NameDeclarator -> {
         return $type;
     }, ...$attributes];
 }
-  : Identifier() (AttributeSpecifier()+)? (DeclaratorSuffix()+)?
+  : <T_IDENTIFIER> (AttributeSpecifier()+)? (DeclaratorSuffix()+)?
   ;
 
 // A parenthesized declarator followed by the arrays and the functions. The

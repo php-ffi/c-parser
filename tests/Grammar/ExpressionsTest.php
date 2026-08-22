@@ -123,6 +123,19 @@ final class ExpressionsTest extends TestCase
         yield 'comma in a subscript' => ['a[1, 2]', '([] a@14 (, 1@16 2@19)@16)@14'];
         yield 'subscript of a compound literal' => ['(T){1}[0]', '([] (compound T@15 {1@18}@17)@14 0@21)@14'];
 
+        // All the levels of precedence are one rule
+        yield 'every level of precedence' => [
+            'a || b && c | d ^ e & f == g < h << i + j * k',
+            '(|| a@14 (&& b@19 (| c@24 (^ d@28 (& e@32 (== f@36 (< g@41 (<< h@45 (+ i@50 (* j@54 k@58)@54)@50)@45)'
+                . '@41)@36)@32)@28)@24)@19)@14',
+        ];
+        yield 'left associativity after a tighter operator' => [
+            'a * b - c * d - e',
+            '(- (- (* a@14 b@18)@14 (* c@22 d@26)@22)@14 e@30)@14',
+        ];
+        yield 'operators of one level' => ['a < b == c > d', '(== (< a@14 b@18)@14 (> c@23 d@27)@23)@14'];
+        yield 'parenthesized operand inside the expression' => ['a + (b) * c', '(+ a@14 (* b@19 c@24)@19)@14'];
+
         // sizeof and alignof
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
         yield 'sizeof of a type' => ['sizeof(T)', '(sizeof T@21)@14'];

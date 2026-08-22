@@ -6,7 +6,10 @@ namespace FFI\Parser\Node\Expression;
 
 /**
  * Infix operator applied to two operands, such as `a + b`, `a << b` or
- * `a && b`. The operator is the class of the node.
+ * `a && b`. The operator is the class of the node. The node starts where
+ * its left operand does, a parenthesis included only in front of the
+ * leftmost operand of the whole expression: in `(a) + (b) * c` the sum
+ * starts at `(a`, the product at `b`.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5 Expressions
  */
