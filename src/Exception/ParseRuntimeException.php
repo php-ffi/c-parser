@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Exception;
 
+use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
+use Phplrt\Contracts\Source\FileInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Exception\ErrorPrinter;
+use Phplrt\Source\StringSource;
+use Phplrt\Source\VirtualSource;
 
 /**
  * Base of the failures caused by the parsed source itself, i.e. the ones
@@ -36,11 +40,28 @@ abstract class ParseRuntimeException extends ParserException
         parent::__construct($message);
     }
 
+    /**
+     * Prints the failure along with the snippet of the source that holds it,
+     * or as any other exception in case of the source cannot be read again.
+     */
     public function __toString(): string
     {
+        try {
+            $contents = $this->source->content;
+            // @phpstan-ignore-next-line the contract of the property tells it throws in its text only
+        } catch (SourceExceptionInterface) {
+            // A source that cannot be read again, such as a removed file
+            return parent::__toString();
+        }
+
+        // The snippet of the contents read above, with the name of the file
+        $snippet = $this->source instanceof FileInterface
+            ? VirtualSource::createFromString($this->source->pathname, $contents)
+            : new StringSource($contents);
+
         return (new ErrorPrinter())
             ->print($this)
-            ->withSource($this->source)
+            ->withSource($snippet)
             ->withMessage($this->message)
             ->withClass(static::class)
             ->withInterval($this->offset, (int) $this->length)

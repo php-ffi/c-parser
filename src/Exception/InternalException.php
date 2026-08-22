@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace FFI\Parser\Exception;
 
 /**
- * Occurs when the parser fails for a reason that is not a defect of the
- * parsed code, so there is no place in the source to point to.
+ * Occurs when the parser fails for a reason other than a defect of the
+ * parsed code, such as an unreadable source or a limit of PCRE.
  */
 final class InternalException extends ParserException
 {

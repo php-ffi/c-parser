@@ -8,11 +8,11 @@ use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser\ParserExecutor;
-use Phplrt\Contracts\Lexer\Exception\LexerExceptionInterface;
-use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
+use Phplrt\Parser\Exception\ParserException;
+use Phplrt\Parser\Exception\ParserSourceException;
 use Phplrt\Parser\Exception\UnexpectedTokenException;
 use Phplrt\Source\SourceFactory;
 
@@ -60,10 +60,10 @@ final class Parser
             return $this->parser->parse($source);
         } catch (UnexpectedTokenException $e) {
             throw SyntaxException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
-        } catch (LexerRuntimeExceptionInterface $e) {
-            throw InternalException::becauseSourceCannotBeAnalyzed($e);
-        } catch (LexerExceptionInterface $e) {
+        } catch (ParserSourceException $e) {
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+        } catch (ParserException $e) {
+            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
         }
     }
 
@@ -82,10 +82,10 @@ final class Parser
 
         try {
             return $this->parser->validate($source);
-        } catch (LexerRuntimeExceptionInterface $e) {
-            throw InternalException::becauseSourceCannotBeAnalyzed($e);
-        } catch (LexerExceptionInterface $e) {
+        } catch (ParserSourceException $e) {
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+        } catch (ParserException $e) {
+            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
         }
     }
 
