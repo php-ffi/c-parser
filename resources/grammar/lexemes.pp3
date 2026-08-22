@@ -1,37 +1,52 @@
-//
-// Lexemes of C23, see ISO/IEC 9899:2024, 6.4.
-//
-// The lexer works with bytes (see the root grammar), so a non-ASCII
-// character of an identifier is a sequence of bytes in \x80-\xFF and
-// keywords are guarded by a lookahead rather than by \b, which does not
-// consider such bytes to be word characters.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Lexemes of C23, see ISO/IEC 9899:2024, 6.4.
+ * -----------------------------------------------------------------------------
+ *
+ *  The lexer works with bytes (see the root grammar): a non-ASCII character
+ *  of an identifier is a sequence of bytes in \x80-\xFF, the end of a
+ *  keyword is a lookahead that covers such bytes.
+ */
 
-//
-// Fragments
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Fragments
+ * -----------------------------------------------------------------------------
+ */
 
-// A universal character name, 6.4.3
+/**
+ * A universal character name, 6.4.3
+ */
 %fragment UCN               \\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}
 %fragment ID_START          [A-Za-z_\x80-\xFF]|(?&UCN)
 %fragment ID_CONTINUE       [A-Za-z0-9_\x80-\xFF]|(?&UCN)
-// What may not directly follow a keyword, the rest of an identifier
+/**
+ * What may not directly follow a keyword, the rest of an identifier
+ */
 %fragment KEYWORD_END       (?![A-Za-z0-9_\x80-\xFF]|\\[uU])
-// What may not directly follow a number: a number of the preprocessor
-// (6.4.8) also takes a quote, a dot and a sign after "e" or "p", so "1.2.3"
-// is not two constants and "0xE+1" is not a sum
+/**
+ * What may not directly follow a number: the rest of a number of the
+ * preprocessor (6.4.8), a quote, a dot and a sign after "e" or "p". "1.2.3"
+ * is not two constants and "0xE+1" is not a sum.
+ */
 %fragment NUMBER_END        (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU]|(?<=[eEpP])[+-])
 
-// Digit sequences with optional digit separators, 6.4.4.2
+/**
+ * Digit sequences with optional digit separators, 6.4.4.2
+ */
 %fragment DEC_DIGITS        [0-9](?:'?[0-9])*+
 %fragment HEX_DIGITS        [0-9A-Fa-f](?:'?[0-9A-Fa-f])*+
 
-// Escape sequences, 6.4.4.5
+/**
+ * Escape sequences, 6.4.4.5
+ */
 %fragment SIMPLE_ESCAPE     ['"?\\abfnrtv]
 %fragment NUMERIC_ESCAPE    [0-7]{1,3}|x[0-9A-Fa-f]++
 %fragment ESCAPE            \\(?:(?&SIMPLE_ESCAPE)|(?&NUMERIC_ESCAPE))|(?&UCN)
 
-// Integer constants, 6.4.4.2
+/**
+ * Integer constants, 6.4.4.2
+ */
 %fragment HEX_INT           0[xX](?&HEX_DIGITS)
 %fragment BIN_INT           0[bB][01](?:'?[01])*+
 %fragment OCT_INT           0(?:'?[0-7])*+
@@ -39,7 +54,9 @@
 %fragment INT_SIZE          ll|LL|[lL]|wb|WB
 %fragment INT_SUFFIX        [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
 
-// Floating constants, 6.4.4.3
+/**
+ * Floating constants, 6.4.4.3
+ */
 %fragment DEC_FRACTION      (?&DEC_DIGITS)?\.(?&DEC_DIGITS)|(?&DEC_DIGITS)\.
 %fragment HEX_SIGNIFICAND   (?&HEX_DIGITS)?\.(?&HEX_DIGITS)|(?&HEX_DIGITS)\.?
 %fragment DEC_EXPONENT      [eE][+-]?(?&DEC_DIGITS)
@@ -49,48 +66,123 @@
 %fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
 %fragment FLOAT_SUFFIX      [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
 
-// Keywords of statements, 6.4.1
+/**
+ * Keywords of statements, 6.4.1
+ */
 %fragment STATEMENT_KEYWORD break|case|continue|default|do|else|for|goto|if|return|switch|while
 
-//
-// Preprocessing leftovers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Preprocessing leftovers
+ * -----------------------------------------------------------------------------
+ */
 
-// A line starting with "#" or its digraph "%:": line markers of "gcc -E"
-// (# 1 "file.h" 3), #pragma, #define of "gcc -dD". It is declared before
-// the whitespace, which would otherwise consume the indentation of the
-// line, and the newline is a separate token, so "^" (multiline mode) still
-// holds at the beginning of the next line. A backslash continues the
-// directive onto the next line, whether the line ends with LF or CRLF, and
-// the CR of a CRLF ending is not a part of the directive. The first line
-// may also start after the byte order mark. The vertical tab is written as
-// \x0B, since \v of PCRE matches any vertical whitespace, newlines included.
+/**
+ * A line starting with "#" or its digraph "%:": line markers of "gcc -E"
+ * (# 1 "file.h" 3), #pragma, #define of "gcc -dD", with the indentation of
+ * the line and without its newline. A backslash continues the directive
+ * onto the next line, whether the line ends with LF or CRLF, the CR of a
+ * CRLF ending is not a part of the directive. The first line may also
+ * start after the byte order mark. Must be declared before the whitespace.
+ */
 %fragment LINE_START       ^|(?<=\A\xEF\xBB\xBF)
 %fragment DIRECTIVE_BODY   (?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+
 %token T_DIRECTIVE          (?&LINE_START)[\x20\t\f\x0B]*+(?:\x23|%:)(?&DIRECTIVE_BODY) -> channel(Directive)
 
-//
-// Whitespace and comments
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Whitespace and comments
+ * -----------------------------------------------------------------------------
+ */
 
-// The byte order mark an editor may put at the beginning of the file
+/**
+ * The byte order mark an editor may put at the beginning of the file
+ */
 %skip T_BYTE_ORDER_MARK     \A\xEF\xBB\xBF
-// Comments, 6.4.9
+/**
+ * Comments, 6.4.9
+ */
 %skip T_COMMENT_LINE        //[^\n]*+
-// The block comment is matched without backtracking, so that a long one does
-// not exhaust the backtrack limit of PCRE
 %skip T_COMMENT_BLOCK       /\*(?:[^*]++|\*(?!/))*+\*/
 %skip T_NEWLINE             \n++
 %skip T_WHITESPACE          [\x20\t\r\f\x0B]++
 
-//
-// Literals, 6.4.4 and 6.4.5
-//
-// Declared before keywords and identifiers, since an encoding prefix
-// (u8"...") looks like an identifier, and before punctuators, since a
-// floating constant may start with a dot (.5). A constant of each base is
-// a token of its own, the base is the class of its node.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Punctuators, 6.4.6
+ * -----------------------------------------------------------------------------
+ *
+ *  The order of declaration is the order of the expected tokens in a syntax
+ *  error: the ones that end or separate something (";", ",", ")") go first.
+ *  A longer punctuator goes before the ones it starts with, the dot before a
+ *  digit is a floating constant (.5). Digraphs (<: :> <% %>) are spellings
+ *  of the brackets and braces and share their tokens. The "#" and "##"
+ *  punctuators and their digraphs (%: %:%:) are not tokens, "#" and "%:"
+ *  only start a directive (T_DIRECTIVE).
+ */
+
+%token T_SEMICOLON          ;
+%token T_COMMA              ,
+%token T_RPAREN             \)
+%token T_RBRACE             \}|%>
+%token T_RBRACKET           \]|:>
+%token T_LPAREN             \(
+%token T_LBRACE             \{|<%
+/**
+ * The start of an attribute specifier (6.7.13.2): two brackets with any
+ * whitespace between them
+ */
+%token T_ATTRIBUTE_START    (?:\[|<:)[\x20\t\r\n\f\x0B]*+(?:\[|<:)
+%token T_LBRACKET           \[|<:
+%token T_ELLIPSIS           \.\.\.
+%token T_DOT                \.(?![0-9])
+%token T_ARROW              ->
+%token T_INCREMENT          \+\+
+%token T_DECREMENT          --
+%token T_SHL_ASSIGN         <<=
+%token T_SHR_ASSIGN         >>=
+%token T_SHL                <<
+%token T_SHR                >>
+%token T_LESS_EQUAL         <=
+%token T_GREATER_EQUAL      >=
+%token T_EQUAL              ==
+%token T_NOT_EQUAL          !=
+%token T_LOGICAL_AND        &&
+%token T_LOGICAL_OR         \|\|
+%token T_MUL_ASSIGN         \*=
+%token T_DIV_ASSIGN         /=
+%token T_MOD_ASSIGN         %=
+%token T_ADD_ASSIGN         \+=
+%token T_SUB_ASSIGN         -=
+%token T_AND_ASSIGN         &=
+%token T_XOR_ASSIGN         \^=
+%token T_OR_ASSIGN          \|=
+%token T_DOUBLE_COLON       ::
+%token T_AMPERSAND          &
+%token T_ASTERISK           \*
+%token T_PLUS               \+
+%token T_MINUS              -
+%token T_TILDE              ~
+%token T_EXCLAMATION        !
+%token T_SLASH              /
+%token T_PERCENT            %
+%token T_LESS               <
+%token T_GREATER            >
+%token T_CARET              \^
+%token T_PIPE               \|
+%token T_QUESTION           \?
+%token T_COLON              :
+%token T_ASSIGN             =
+
+/**
+ * -----------------------------------------------------------------------------
+ *  Literals, 6.4.4 and 6.4.5
+ * -----------------------------------------------------------------------------
+ *
+ *  Declared before keywords and identifiers, with the encoding prefixes
+ *  (u8"..."). A constant of each base is a token of its own, the base is
+ *  the class of its node.
+ */
 
 %token T_HEX_FLOAT_LITERAL  (?&HEX_FLOAT)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
 %token T_DEC_FLOAT_LITERAL  (?&DEC_FLOAT)(?&FLOAT_SUFFIX)?(?&NUMBER_END)
@@ -101,20 +193,31 @@
 %token T_CHAR_LITERAL       (?:u8|[uUL])?'(?:[^'\\\n]|(?&ESCAPE))++'
 %token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
 
-// A number of the preprocessor (6.4.8) that is no constant, such as "08",
-// "1.2.3" or "0x1p": a single token, so that an error points at all of it.
-// It is only valid in the arguments of an attribute, where the versions
-// of availability(macos, introduced=10.13.4) are written so.
+/**
+ * A character constant or a string literal that is not closed on its line
+ * or holds an unknown escape sequence, "text or "\q": a single invalid
+ * token up to the closing quote or the end of the line
+ */
+%token T_INVALID_CHAR_LITERAL (?:u8|[uUL])?'(?:[^'\\\n]|\\[^\n]?)*+'?
+%token T_INVALID_STRING_LITERAL (?:u8|[uUL])?"(?:[^"\\\n]|\\[^\n]?)*+"?
+
+/**
+ * A number of the preprocessor (6.4.8) that is no constant, such as "08",
+ * "1.2.3" or "0x1p", as a single token. It is only valid in the arguments
+ * of an attribute: availability(macos, introduced=10.13.4).
+ */
 %token T_PP_NUMBER          \.?[0-9](?:[eEpP][+-]|'[A-Za-z0-9_\x80-\xFF]|[A-Za-z0-9_.\x80-\xFF]|(?&UCN))*+
 
-//
-// Keywords, 6.4.1
-//
-// Alternative spellings of the same keyword (bool and _Bool) share a
-// token, the exact spelling is kept by the value of the token. The
-// spellings of GCC (__const__, __inline, __typeof__, __thread...) are
-// alternative spellings as well.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Keywords, 6.4.1
+ * -----------------------------------------------------------------------------
+ *
+ *  Alternative spellings of the same keyword (bool and _Bool) share a
+ *  token, the exact spelling is kept by the value of the token. The
+ *  spellings of GCC (__const__, __inline, __typeof__, __thread...) are
+ *  alternative spellings as well.
+ */
 
 %token T_ALIGNAS            (?:alignas|_Alignas)(?&KEYWORD_END)
 %token T_ALIGNOF            (?:alignof|_Alignof|__alignof__|__alignof)(?&KEYWORD_END)
@@ -158,8 +261,10 @@
 %token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
-// Keywords of the compiler extensions: GCC attributes, assembler labels
-// and offsetof, the integer types of GCC and MSVC, MSVC attributes
+/**
+ * Keywords of the compiler extensions: GCC attributes, assembler labels
+ * and offsetof, the integer types of GCC and MSVC, MSVC attributes
+ */
 %token T_ATTRIBUTE          (?:__attribute__|__attribute)(?&KEYWORD_END)
 %token T_ASM                (?:__asm__|__asm)(?&KEYWORD_END)
 %token T_BUILTIN_OFFSETOF   __builtin_offsetof(?&KEYWORD_END)
@@ -170,78 +275,27 @@
 %token T_INT64              __int64(?&KEYWORD_END)
 %token T_INT8               __int8(?&KEYWORD_END)
 
-// Attributes spelled by a keyword alone: the calling conventions of MSVC,
-// its pointer sizes and the nullability of Clang
+/**
+ * Attributes spelled by a keyword alone: the calling conventions of MSVC,
+ * its pointer sizes and the nullability of Clang
+ */
 %token T_KEYWORD_ATTRIBUTE  (?:__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__ptr32|__ptr64|_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)(?&KEYWORD_END)
 
-// The marker of GCC that silences the warnings about the extensions in what
-// follows. It has no meaning of its own and is skipped wherever it is.
+/**
+ * The marker of GCC that silences the warnings about the extensions in what
+ * follows. It has no meaning of its own and is skipped wherever it is.
+ */
 %skip T_EXTENSION           __extension__(?&KEYWORD_END)
 
-// Keywords of statements and of _Generic. Statements are not parsed and
-// _Generic is not supported yet, but they are still reserved and may not be
-// used as identifiers.
+/**
+ * Keywords of statements and of _Generic: reserved, not identifiers
+ */
 %token T_RESERVED_KEYWORD   (?:(?&STATEMENT_KEYWORD)|_Generic)(?&KEYWORD_END)
 
-//
-// Identifiers, 6.4.2
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Identifiers, 6.4.2
+ * -----------------------------------------------------------------------------
+ */
 
 %token T_IDENTIFIER         (?&ID_START)(?&ID_CONTINUE)*+
-
-//
-// Punctuators, 6.4.6
-//
-// Longer punctuators go first. Digraphs (<: :> <% %>) are spellings of the
-// brackets and braces and share their tokens. The "#" and "##" punctuators
-// and their digraphs (%: %:%:) only exist in the preprocessor and are not
-// tokens, "#" and "%:" only start a directive (T_DIRECTIVE).
-//
-
-%token T_ELLIPSIS           \.\.\.
-%token T_ARROW              ->
-%token T_INCREMENT          \+\+
-%token T_DECREMENT          --
-%token T_SHL_ASSIGN         <<=
-%token T_SHR_ASSIGN         >>=
-%token T_LBRACKET           \[|<:
-%token T_RBRACKET           \]|:>
-%token T_LBRACE             \{|<%
-%token T_RBRACE             \}|%>
-%token T_SHL                <<
-%token T_SHR                >>
-%token T_LESS_EQUAL         <=
-%token T_GREATER_EQUAL      >=
-%token T_EQUAL              ==
-%token T_NOT_EQUAL          !=
-%token T_LOGICAL_AND        &&
-%token T_LOGICAL_OR         \|\|
-%token T_MUL_ASSIGN         \*=
-%token T_DIV_ASSIGN         /=
-%token T_MOD_ASSIGN         %=
-%token T_ADD_ASSIGN         \+=
-%token T_SUB_ASSIGN         -=
-%token T_AND_ASSIGN         &=
-%token T_XOR_ASSIGN         \^=
-%token T_OR_ASSIGN          \|=
-%token T_DOUBLE_COLON       ::
-%token T_LPAREN             \(
-%token T_RPAREN             \)
-%token T_DOT                \.
-%token T_AMPERSAND          &
-%token T_ASTERISK           \*
-%token T_PLUS               \+
-%token T_MINUS              -
-%token T_TILDE              ~
-%token T_EXCLAMATION        !
-%token T_SLASH              /
-%token T_PERCENT            %
-%token T_LESS               <
-%token T_GREATER            >
-%token T_CARET              \^
-%token T_PIPE               \|
-%token T_QUESTION           \?
-%token T_COLON              :
-%token T_SEMICOLON          ;
-%token T_ASSIGN             =
-%token T_COMMA              ,

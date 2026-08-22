@@ -1,8 +1,12 @@
-//
-// Constants and string literals, 6.4.4 and 6.4.5.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Constants and string literals, 6.4.4 and 6.4.5.
+ * -----------------------------------------------------------------------------
+ */
 
-// 6.4.4 Constants
+/**
+ * 6.4.4 Constants
+ */
 Constant
   : DecIntLiteral()
   | HexIntLiteral()
@@ -96,8 +100,10 @@ NullptrLiteral -> {
   : <T_NULLPTR>
   ;
 
-// 6.4.5 String literals, adjacent ones are joined by C: "a" "b". A lone one
-// is not wrapped.
+/**
+ * 6.4.5 String literals, adjacent ones are joined by C: "a" "b". A lone one
+ * is not wrapped.
+ */
 ConcatenatedStringLiteral -> {
     /** @var non-empty-list<Literal\StringLiteral> $children */
     if (\count($children) === 1) {

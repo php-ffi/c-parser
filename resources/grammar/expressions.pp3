@@ -1,21 +1,21 @@
-//
-// Constant expressions, 6.5 and 6.6.
-//
-// A constant expression may not contain an assignment, an increment, a
-// decrement, a function call or a comma outside of an operand that is not
-// evaluated (6.6p3). The function call is left out, so that "(T)(x)" is always
-// a cast. The assignment, the increment and the decrement are left out, since
-// headers do not use them. The comma is kept, since it is a part of every
-// parenthesized expression of C. _Generic (6.5.2.1) is not supported yet.
-//
-// A node starts where its rule does ($offset), so a parenthesized operand
-// keeps its "(" as a token: the parentheses belong to no node, but the node
-// that contains them starts at them. The binary operators are the exception,
-// see BinaryExpression.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Constant expressions, 6.5 and 6.6.
+ * -----------------------------------------------------------------------------
+ *
+ *  The constant expressions of 6.6p3 without the assignment, the increment,
+ *  the decrement and the function call: "(T)(x)" is always a cast. The comma
+ *  operator is included. _Generic (6.5.2.1) is not supported.
+ *
+ *  A node starts where its rule does ($offset): the parentheses belong to no
+ *  node, and the node that contains them starts at them. The binary
+ *  operators are the exception, see BinaryExpression.
+ */
 
-// 6.5.18 Comma operator, only allowed in parentheses, in a subscript and
-// between "?" and ":"
+/**
+ * 6.5.18 Comma operator, only allowed in parentheses, in a subscript and
+ * between "?" and ":"
+ */
 Expression -> {
     /** @var non-empty-list<Expression\ExpressionInterface> $children */
     $result = $children[0];
@@ -26,14 +26,16 @@ Expression -> {
 
     return $result;
 }
-  : ConditionalExpression() ((
+  : ConditionalExpression() (
         ::T_COMMA:: ConditionalExpression()
-    )+)?
+    )*
   ;
 
-// 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
-// a ? b : (c ? d : e)
-ConditionalExpression -> {
+/**
+ * 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
+ * a ? b : (c ? d : e)
+ */
+ConditionalExpression @error("Syntax error, unexpected {token} in the expression") -> {
     /**
      * @var array{Expression\ExpressionInterface}|array{
      *     Expression\ExpressionInterface,
@@ -53,16 +55,16 @@ ConditionalExpression -> {
     )?
   ;
 
-// 6.5.6 to 6.5.15 Binary operators, all the levels of precedence in one
-// rule: the operands and the operators are read as a flat sequence, and the
-// reducer builds the tree by precedence, every level left-associative:
-// a - b - c is (a - b) - c, a + b * c is a + (b * c). A rule per level
-// would enter ten rules and call ten reducers for every operand, an
-// operator or not.
-//
-// A node starts where its left operand does: the leftmost one at the start
-// of the rule, its parenthesis included, any other one at its own node, so
-// in "a + (b) * c" the product starts at "b".
+/**
+ * 6.5.6 to 6.5.15 Binary operators, all the levels of precedence in one
+ * rule: the operands and the operators are read as a flat sequence, and the
+ * reducer builds the tree by precedence, every level left-associative:
+ * a - b - c is (a - b) - c, a + b * c is a + (b * c).
+ *
+ * A node starts where its left operand does: the leftmost one at the start
+ * of the rule, its parenthesis included, any other one at its own node. In
+ * "a + (b) * c" the product starts at "b".
+ */
 BinaryExpression -> {
     /** @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children */
     if (\count($children) === 1) {
@@ -114,8 +116,7 @@ BinaryExpression -> {
 
     // The operands built so far with their starts, and the operators that
     // wait for their right operand, of an ascending precedence. Even
-    // children are the operands and odd ones the operators, a list type
-    // cannot express the alternation.
+    // children are the operands and odd ones the operators.
     /** @var non-empty-list<Expression\ExpressionInterface> $operands */
     $operands = [$children[0]];
     $starts = [$offset];
@@ -153,7 +154,7 @@ BinaryExpression -> {
 
     return $operands[0];
 }
-  : CastOrUnaryExpression() ((BinaryOperator() CastOrUnaryExpression())+)?
+  : CastOrUnaryExpression() (BinaryOperator() CastOrUnaryExpression())*
   ;
 
 BinaryOperator
@@ -162,22 +163,20 @@ BinaryOperator
   | <T_AMPERSAND> | <T_CARET> | <T_PIPE> | <T_LOGICAL_AND> | <T_LOGICAL_OR>
   ;
 
-CastOrUnaryExpression
+CastOrUnaryExpression @error("Syntax error, unexpected {token} in the expression")
   : CastExpression()
   | UnaryExpression()
   ;
 
-// 6.5.5 Cast operators, (T)x, and 6.5.3.6 Compound literals, (T){1}. Most
-// type names cannot be an expression, so "(int)-x" and "(T *)-x" are casts,
-// and the ones that read as an expression other than a lone identifier are
-// never a cast (see ExpressionLikeTypeName). Without a table of the declared
-// names "(T)" is a cast only when the next token can start an operand but
-// cannot continue a parenthesized expression (CastStart), so "(T)-x" is a
-// subtraction and "(x)[0]" is a subscript. The cast and the compound
-// literal are one rule, and the lone identifier cases one alternative, so
-// that the type name is parsed once: a type name may hold an expression
-// with the same construct (an array size, typeof), and parsing it again on
-// each level of the nesting would double the work on each of them.
+/**
+ * 6.5.5 Cast operators, (T)x, and 6.5.3.6 Compound literals, (T){1}. A type
+ * name that cannot be an expression makes a cast: "(int)-x", "(T *)-x". A
+ * type name that reads as an expression other than a lone identifier is
+ * never a cast (see ExpressionLikeTypeName). A lone identifier "(T)" is a
+ * cast only when the next token can start an operand but cannot continue a
+ * parenthesized expression (CastStart): "(T)-x" is a subtraction, "(x)[0]"
+ * is a subscript.
+ */
 CastExpression -> {
     /**
      * @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface}
@@ -213,9 +212,11 @@ CastStart
   | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_OFFSETOF> | <T_LBRACE>
   ;
 
-// The braces of a compound literal after its type name, and the postfix
-// operators applied to the literal: (struct S){1}.a. A function from the
-// parenthesis and the type name to the expression.
+/**
+ * The braces of a compound literal after its type name, and the postfix
+ * operators applied to the literal: (struct S){1}.a. A function from the
+ * parenthesis and the type name to the expression.
+ */
 CompoundLiteral -> {
     /**
      * @var list{
@@ -236,10 +237,12 @@ CompoundLiteral -> {
         return $result;
     };
 }
-  : InitializerList() (PostfixOperator()+)?
+  : InitializerList() PostfixOperator()*
   ;
 
-// 6.5.4 Unary operators
+/**
+ * 6.5.4 Unary operators
+ */
 UnaryExpression
   : PlusExpression()
   | MinusExpression()
@@ -254,7 +257,9 @@ UnaryExpression
   | PostfixExpression()
   ;
 
-// +x
+/**
+ * +x
+ */
 PlusExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\PlusExpression($children[1], $offset);
@@ -262,7 +267,9 @@ PlusExpression -> {
   : <T_PLUS> CastOrUnaryExpression()
   ;
 
-// -x
+/**
+ * -x
+ */
 MinusExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\MinusExpression($children[1], $offset);
@@ -270,7 +277,9 @@ MinusExpression -> {
   : <T_MINUS> CastOrUnaryExpression()
   ;
 
-// !x
+/**
+ * !x
+ */
 LogicalNotExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\LogicalNotExpression($children[1], $offset);
@@ -278,7 +287,9 @@ LogicalNotExpression -> {
   : <T_EXCLAMATION> CastOrUnaryExpression()
   ;
 
-// ~x
+/**
+ * ~x
+ */
 BitwiseNotExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\BitwiseNotExpression($children[1], $offset);
@@ -286,7 +297,9 @@ BitwiseNotExpression -> {
   : <T_TILDE> CastOrUnaryExpression()
   ;
 
-// *p
+/**
+ * *p
+ */
 DereferenceExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\DereferenceExpression($children[1], $offset);
@@ -294,7 +307,9 @@ DereferenceExpression -> {
   : <T_ASTERISK> CastOrUnaryExpression()
   ;
 
-// &x
+/**
+ * &x
+ */
 AddressOfExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new UnaryExpression\AddressOfExpression($children[1], $offset);
@@ -302,11 +317,12 @@ AddressOfExpression -> {
   : <T_AMPERSAND> CastOrUnaryExpression()
   ;
 
-// 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
-// parentheses is read as a type unless a postfix operator follows it:
-// sizeof(x)[0] is sizeof((x)[0]). A brace after the type name makes the
-// operand a compound literal, sizeof (int){1}, built by the same rule, so
-// that the type name is parsed once.
+/**
+ * 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
+ * parentheses is read as a type unless a postfix operator follows it:
+ * sizeof(x)[0] is sizeof((x)[0]). A brace after the type name makes the
+ * operand a compound literal, sizeof (int){1}.
+ */
 SizeOfTypeExpression -> {
     /**
      * @var array{TokenInterface, TokenInterface, Type\TypeInterface}
@@ -327,7 +343,9 @@ SizeOfTypeExpression -> {
         (CompoundLiteral() | !PostfixOperatorStart())
   ;
 
-// 6.5.4.4 The sizeof and alignof operators, sizeof x
+/**
+ * 6.5.4.4 The sizeof and alignof operators, sizeof x
+ */
 SizeOfExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Expression\SizeOfExpression($children[1], $offset);
@@ -335,9 +353,11 @@ SizeOfExpression -> {
   : <T_SIZEOF> UnaryExpression()
   ;
 
-// 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled
-// _Alignof and __alignof__. GCC allows an expression as the operand as
-// well, so the type name is read as in sizeof.
+/**
+ * 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled
+ * _Alignof and __alignof__. The operand is read as in sizeof, an
+ * expression is allowed as well, as GCC does.
+ */
 AlignOfTypeExpression -> {
     /**
      * @var array{TokenInterface, TokenInterface, Type\TypeInterface}
@@ -358,7 +378,9 @@ AlignOfTypeExpression -> {
         (CompoundLiteral() | !PostfixOperatorStart())
   ;
 
-// GCC: __alignof__ x
+/**
+ * GCC: __alignof__ x
+ */
 AlignOfExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Expression\AlignOfExpression($children[1], $offset);
@@ -366,8 +388,10 @@ AlignOfExpression -> {
   : <T_ALIGNOF> UnaryExpression()
   ;
 
-// 6.5.3 Postfix operators, a[i], s.member, p->member. Every node of the
-// chain starts where the whole expression does.
+/**
+ * 6.5.3 Postfix operators, a[i], s.member, p->member. Every node of the
+ * chain starts where the whole expression does.
+ */
 PostfixExpression -> {
     /**
      * @var list{
@@ -383,12 +407,14 @@ PostfixExpression -> {
 
     return $result;
 }
-  : PrimaryExpression() (PostfixOperator()+)?
+  : PrimaryExpression() PostfixOperator()*
   ;
 
-// A postfix operator is a function from its operand and the start of the
-// whole expression to the expression, so that a compound literal applies
-// the same operators
+/**
+ * A postfix operator is a function from its operand and the start of the
+ * whole expression to the expression, applied by a postfix expression and
+ * by a compound literal
+ */
 PostfixOperator
   : SubscriptOperator()
   | DirectMemberOperator()
@@ -435,7 +461,9 @@ PostfixOperatorStart
   : <T_LBRACKET> | <T_DOT> | <T_ARROW>
   ;
 
-// 6.5.2 Primary expressions
+/**
+ * 6.5.2 Primary expressions
+ */
 PrimaryExpression
   : IdentifierExpression()
   | Constant()
@@ -444,9 +472,11 @@ PrimaryExpression
   | OffsetOfExpression()
   ;
 
-// GCC: __builtin_offsetof(struct S, a.b[2]), what the offsetof macro of
-// <stddef.h> expands to. The first member of the path is written without
-// a dot, it starts the designators as if it had one.
+/**
+ * GCC: __builtin_offsetof(struct S, a.b[2]), what the offsetof macro of
+ * <stddef.h> expands to. The first member of the path, written without a
+ * dot, is the first member designator.
+ */
 OffsetOfExpression -> {
     /**
      * @var list{
@@ -468,7 +498,7 @@ OffsetOfExpression -> {
         $offset,
     );
 }
-  : <T_BUILTIN_OFFSETOF> ::T_LPAREN:: TypeName() ::T_COMMA:: Identifier() (Designator()+)? ::T_RPAREN::
+  : <T_BUILTIN_OFFSETOF> ::T_LPAREN:: TypeName() ::T_COMMA:: Identifier() Designator()* ::T_RPAREN::
   ;
 
 ParenthesizedExpression -> {
@@ -485,8 +515,10 @@ IdentifierExpression -> {
   : Identifier()
   ;
 
-// A name by itself, not an expression: it is also the member of a member
-// access and the name of a type
+/**
+ * A name by itself, not an expression: it is also the member of a member
+ * access and the name of a type
+ */
 Identifier -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string

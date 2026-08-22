@@ -1,24 +1,28 @@
-//
-// External declarations, 6.7 and 6.9.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  External declarations, 6.7 and 6.9.
+ * -----------------------------------------------------------------------------
+ */
 
-// A lone ";" at file scope is not valid C, but GCC and Clang accept it and
-// headers have it after macros that expand to nothing, so it is skipped
+/**
+ * A static assertion, a declaration, or a lone ";", which GCC and Clang
+ * accept at file scope and which gives nothing
+ */
 ExternalDeclaration
   : StaticAssertDeclaration()
   | Declaration()
   | ::T_SEMICOLON::
   ;
 
-// 6.7.1 Declarations. A declaration gives a node for each of its
-// declarators. Without declarators a bare structure, union or enumeration
-// is the declaration of its tag (6.7.3.4p11), attributes alone are an
-// attribute declaration, "[[deprecated]];", anything else is a declaration
-// of the specifiers alone, which is still syntactically valid: "int;",
-// "const struct S;". A body after the first declarator makes the
-// declaration a function definition (6.9.1), whose statements are not
-// parsed. All the forms are one rule, so that the specifiers, which may
-// hold a nested body, are parsed only once.
+/**
+ * 6.7.1 Declarations. A declaration gives a node for each of its
+ * declarators. Without declarators a bare structure, union or enumeration
+ * is the declaration of its tag (6.7.3.4p11), attributes alone are an
+ * attribute declaration, "[[deprecated]];", anything else is a declaration
+ * of the specifiers alone: "int;", "const struct S;". A body after the
+ * first declarator makes the declaration a function definition (6.9.1),
+ * whose statements are kept as text.
+ */
 Declaration -> {
     /**
      * @var list{
@@ -81,18 +85,22 @@ Declaration -> {
     return $declarations;
 }
   : DeclarationSpecifiers() (
-        InitDeclarator() (FunctionBody() | ((::T_COMMA:: InitDeclarator())+)? ::T_SEMICOLON::)
+        InitDeclarator() (FunctionBody() | (::T_COMMA:: InitDeclarator())* ::T_SEMICOLON::)
+            @error("Syntax error, unexpected {token} in the declaration, \";\" expected")
       | ::T_SEMICOLON::
     )
   ;
 
-// The declarator of a declaration is a function from the type and the
-// other specifiers of the declaration and its start to the declared one.
-// "typedef" among the specifiers gives a typedef name, a function type a
-// function, anything else an object, and each keeps the initializer, even
-// where C allows none. GCC allows attributes before the declarator (other
-// than the first one of the declaration, whose attributes go to the
-// specifiers) and after it, around the assembler label.
+/**
+ * The declarator of a declaration is a function from the type and the
+ * other specifiers of the declaration and its start to the declared one.
+ * "typedef" among the specifiers gives a typedef name, a function type a
+ * function, anything else an object, and each keeps the initializer, even
+ * where C allows none. The attributes of GCC before the declarator (other
+ * than the first one of the declaration, whose attributes go to the
+ * specifiers) and after it, around the assembler label, belong to the
+ * declared one.
+ */
 InitDeclarator -> {
     /**
      * @var list<
@@ -190,13 +198,14 @@ InitDeclarator -> {
         );
     };
 }
-  : (AttributeSpecifier()+)? Declarator() (AttributeSpecifier()+)? (AsmLabel() (AttributeSpecifier()+)?)?
+  : AttributeSpecifier()* Declarator() AttributeSpecifier()* (AsmLabel() AttributeSpecifier()*)?
         (::T_ASSIGN:: Initializer())?
   ;
 
-// 6.9.1 The body of a function definition, the compound statement in braces.
-// Its statements are not parsed: the body is any sequence of tokens with
-// balanced brackets, and keeps its text.
+/**
+ * 6.9.1 The body of a function definition, the compound statement in braces:
+ * any sequence of tokens with balanced brackets, kept as text
+ */
 FunctionBody -> {
     $raw = \substr($content, $offset, $length);
     // The body holds at least its braces
@@ -204,11 +213,13 @@ FunctionBody -> {
 
     return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody($raw, $offset);
 }
-  : <T_LBRACE> ((BalancedToken() | <T_COMMA>)+)? <T_RBRACE>
+  : <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   ;
 
-// GCC: the name of the symbol in the object file, __asm__("_f"), also
-// spelled __asm
+/**
+ * GCC: the name of the symbol in the object file, __asm__("_f"), also
+ * spelled __asm
+ */
 AsmLabel -> {
     /** @var array{TokenInterface, Literal\StringLiteral|Literal\ConcatenatedStringLiteral} $children */
     return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
@@ -216,21 +227,24 @@ AsmLabel -> {
   : <T_ASM> ::T_LPAREN:: ConcatenatedStringLiteral() ::T_RPAREN::
   ;
 
-//
-// 6.7.11 Initialization
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.11 Initialization
+ * -----------------------------------------------------------------------------
+ */
 
-// An expression or a list in braces. The expression is an assignment
-// expression in C, but the objects of a header have static storage, so
-// their initializers are constant (6.7.11p4), and a constant expression has
-// no assignment (6.6p3).
-Initializer
+/**
+ * A constant expression (6.7.11p4) or a list in braces
+ */
+Initializer @error("Syntax error, unexpected {token} in the initializer")
   : InitializerList()
   | ConditionalExpression()
   ;
 
-// {}, {1, 2}, {1, 2,} and {.a = 1, [2] = {3}}. The brace is kept, so that
-// the list starts where it is written.
+/**
+ * {}, {1, 2}, {1, 2,} and {.a = 1, [2] = {3}}. The brace marks the start of
+ * the list.
+ */
 InitializerList -> {
     /**
      * @var list{
@@ -247,18 +261,21 @@ InitializerList -> {
     return new Initializer\InitializerList($items, $offset);
 }
   : <T_LBRACE>
-        (InitializerListItem() ((::T_COMMA:: InitializerListItem())+)? ::T_COMMA::?)?
-    ::T_RBRACE::
+        (InitializerListItem() (::T_COMMA:: InitializerListItem())* ::T_COMMA::?)?
+    ::T_RBRACE:: @error("Syntax error, unexpected {token} in the initializer list, \",\" or \"}\" expected")
   ;
 
-// No expression starts with "." or "[", so the alternatives never parse the
-// same tokens
+/**
+ * An element of an initializer list, with or without designators
+ */
 InitializerListItem
   : DesignatedInitializer()
   | Initializer()
   ;
 
-// .a = 1, [2] = 3 and .a[2].b = 4
+/**
+ * .a = 1, [2] = 3 and .a[2].b = 4
+ */
 DesignatedInitializer -> {
     /**
      * @var array{
@@ -290,8 +307,9 @@ MemberDesignator -> {
   : <T_DOT> Identifier()
   ;
 
-// [2] and the range of GCC [0 ... 3]. Both are one rule, so that the first
-// index is parsed once.
+/**
+ * [2] and the range of GCC [0 ... 3]
+ */
 IndexDesignator -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface, 2?: Expression\ExpressionInterface} $children */
     if (isset($children[2])) {
@@ -303,8 +321,10 @@ IndexDesignator -> {
   : <T_LBRACKET> ConditionalExpression() (::T_ELLIPSIS:: ConditionalExpression())? ::T_RBRACKET::
   ;
 
-// 6.7.12 Static assertions, static_assert(condition, "message"), the message
-// is optional since C23
+/**
+ * 6.7.12 Static assertions, static_assert(condition, "message"), the message
+ * is optional
+ */
 StaticAssertDeclaration -> {
     /**
      * @var array{

@@ -1,20 +1,24 @@
-//
-// Declaration specifiers, 6.7.1 to 6.7.6.
-//
-// The specifiers go in any order (6.7.3.1p2), so the rules below only
-// collect them: the rule of a keyword gives its node or its case of an enum,
-// and DeclarationSpecifiers sorts them out. A keyword is kept as a token, so
-// that the specifiers start where it is written.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  Declaration specifiers, 6.7.1 to 6.7.6.
+ * -----------------------------------------------------------------------------
+ *
+ *  The specifiers go in any order (6.7.3.1p2): the rules below collect
+ *  them, the rule of a keyword gives its node or its case of an enum, and
+ *  DeclarationSpecifiers sorts them out. A keyword token marks the start of
+ *  the specifiers.
+ */
 
-// 6.7.1 Declaration specifiers. An identifier is a typedef name only while no
-// other type specifier is written, otherwise it is a declarator: "T x",
-// "unsigned T". No more than one base is written, "int int" is a syntax
-// error, the modifiers of the base are not checked: "long char" gives a
-// syntax tree. The type specifiers and the qualifiers build the type, the
-// other specifiers go to a list in the order written. Both are passed to
-// the parent as two children: the type, null in case of there is none, and
-// the list.
+/**
+ * 6.7.1 Declaration specifiers. An identifier is a typedef name only while no
+ * other type specifier is written, after one it is a declarator: "T x",
+ * "unsigned T". No more than one base is written, "int int" is a syntax
+ * error, the modifiers of the base are not checked: "long char" gives a
+ * syntax tree. The type specifiers and the qualifiers build the type, the
+ * other specifiers go to a list in the order written. Both are passed to
+ * the parent as two children: the type, null in case of there is none, and
+ * the list.
+ */
 DeclarationSpecifiers -> {
     /**
      * @var (list<
@@ -56,20 +60,22 @@ DeclarationSpecifiers -> {
   | TypeSpecifiers()
   ;
 
-// A typedef name or type specifiers with at most one base, intermixed with
-// the other specifiers. The alternatives here and in DeclarationSpecifiers
-// start with different tokens, so that none of them parses the specifiers
-// written before it once again.
+/**
+ * A typedef name or type specifiers with at most one base, intermixed with
+ * the other specifiers
+ */
 TypeSpecifiers
-  : NamedType() ((TypeModifier() | NonTypeSpecifier())+)?
-  | TypeModifier() ((TypeModifier() | NonTypeSpecifier())+)? (BaseType() ((TypeModifier() | NonTypeSpecifier())+)?)?
-  | BaseType() ((TypeModifier() | NonTypeSpecifier())+)?
+  : NamedType() (TypeModifier() | NonTypeSpecifier())*
+  | TypeModifier() (TypeModifier() | NonTypeSpecifier())* (BaseType() (TypeModifier() | NonTypeSpecifier())*)?
+  | BaseType() (TypeModifier() | NonTypeSpecifier())*
   ;
 
-// The attributes are not specifiers in C, which allows them only before
-// all the specifiers and after them (6.7.1), but GCC allows them anywhere
-// among the specifiers, and the parser keeps them along with the
-// specifiers in the order written
+/**
+ * A specifier other than a type specifier, or an attribute: attributes are
+ * accepted anywhere among the specifiers, as GCC does (C allows them only
+ * before and after all the specifiers, 6.7.1), and kept with the
+ * specifiers in the order written
+ */
 NonTypeSpecifier
   : StorageClassSpecifier()
   | FunctionSpecifier()
@@ -78,14 +84,16 @@ NonTypeSpecifier
   | AttributeSpecifier()
   ;
 
-// 6.7.8 The specifiers of a type name, and of the underlying type of an
-// enumeration, which has no declarator. C allows only type specifiers,
-// qualifiers and, in a compound literal, alignment specifiers in a type
-// name (6.7.6), and no storage-class or function specifier in a member
-// declaration either (6.7.3.2), but the parser accepts any specifier
-// everywhere, as Clang's parser does: the other specifiers of a type name are kept
-// by a SpecifiedType around the type of the specifiers, and the ones of a
-// member by the member itself.
+/**
+ * 6.7.8 The specifiers of a type name, and of the underlying type of an
+ * enumeration, which has no declarator. C allows only type specifiers,
+ * qualifiers and, in a compound literal, alignment specifiers in a type
+ * name (6.7.6), and no storage-class or function specifier in a member
+ * declaration either (6.7.3.2). Any specifier is accepted everywhere, as
+ * the parser of Clang does: the other specifiers of a type name are kept by
+ * a SpecifiedType around the type of the specifiers, and the ones of a
+ * member by the member itself.
+ */
 TypeNameSpecifiers -> {
     /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
     if ($children[1]->items === []) {
@@ -101,9 +109,11 @@ TypeNameSpecifiers -> {
   : DeclarationSpecifiers()
   ;
 
-//
-// 6.7.2 Storage-class specifiers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.2 Storage-class specifiers
+ * -----------------------------------------------------------------------------
+ */
 
 StorageClassSpecifier
   : TypeDefSpecifier()
@@ -143,9 +153,11 @@ ConstExprSpecifier -> { return new Specifier\StorageClassSpecifier\ConstExprSpec
   : <T_CONSTEXPR>
   ;
 
-//
-// 6.7.3.1 Type specifiers: the modifiers of the base
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.3.1 Type specifiers: the modifiers of the base
+ * -----------------------------------------------------------------------------
+ */
 
 TypeModifier
   : SignedModifier()
@@ -180,9 +192,11 @@ ImaginaryModifier -> { return Type\ModifiedType\TypeModifier::Imaginary; }
   : <T_IMAGINARY>
   ;
 
-//
-// 6.7.3 Type specifiers: the base
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.3 Type specifiers: the base
+ * -----------------------------------------------------------------------------
+ */
 
 BaseType
   : VoidType()
@@ -253,7 +267,9 @@ BitIntType -> {
   : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
   ;
 
-// The integer types of MSVC
+/**
+ * The integer types of MSVC
+ */
 Int8Type -> { return new Type\BuiltinType\Int8Type($offset); }
   : <T_INT8>
   ;
@@ -270,12 +286,16 @@ Int64Type -> { return new Type\BuiltinType\Int64Type($offset); }
   : <T_INT64>
   ;
 
-// The 128-bit integer type of GCC
+/**
+ * The 128-bit integer type of GCC
+ */
 Int128Type -> { return new Type\BuiltinType\Int128Type($offset); }
   : <T_INT128>
   ;
 
-// 6.7.3.5 Atomic type specifiers, _Atomic(T)
+/**
+ * 6.7.3.5 Atomic type specifiers, _Atomic(T)
+ */
 AtomicType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\AtomicType($children[1], $offset);
@@ -283,15 +303,13 @@ AtomicType -> {
   : <T_ATOMIC> ::T_LPAREN:: TypeName() ::T_RPAREN::
   ;
 
-// A typedef name, the parser has no table of the declared names to tell what
-// kind of type it is. A name before "=" is the declarator of a declaration
-// whose type is inferred (6.7.10), "static x = 1;" and "constexpr auto n = 1;":
-// no declarator starts with "=".
+/**
+ * A typedef name, of an unknown kind of type. A name before "=" is the
+ * declarator of a declaration whose type is inferred (6.7.10), "static x = 1;"
+ * and "constexpr auto n = 1;".
+ */
 NamedType -> {
     /** @var array{TokenInterface} $children */
-    // The name is read here rather than by Identifier(): every typedef name
-    // would build it in a rule of its own, which costs a trace entry and a
-    // reducer call per name
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Type\NamedType(new Node\Identifier($children[0]->value, $offset), $offset);
 }
@@ -302,13 +320,16 @@ InitializerStart
   : <T_ASSIGN>
   ;
 
-//
-// 6.7.3.2 Structure and union specifiers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.3.2 Structure and union specifiers
+ * -----------------------------------------------------------------------------
+ */
 
-// A tag, a body or both, with the attributes after the keyword and after
-// the body. The tag and the body are alternatives of one rule, so that the
-// attributes are parsed once.
+/**
+ * A tag, a body or both, with the attributes after the keyword and after
+ * the body
+ */
 StructType -> {
     /**
      * @var list{
@@ -337,7 +358,7 @@ StructType -> {
         $offset,
     );
 }
-  : <T_STRUCT> (AttributeSpecifier()+)? (Identifier() RecordBody()? | RecordBody())
+  : <T_STRUCT> AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
   ;
 
 UnionType -> {
@@ -368,16 +389,20 @@ UnionType -> {
         $offset,
     );
 }
-  : <T_UNION> (AttributeSpecifier()+)? (Identifier() RecordBody()? | RecordBody())
+  : <T_UNION> AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
   ;
 
-// The members and the attributes GCC allows after the body
+/**
+ * The members and the attributes GCC allows after the body
+ */
 RecordBody
-  : MemberDeclarationList() (AttributeSpecifier()+)?
+  : MemberDeclarationList() AttributeSpecifier()*
   ;
 
-// C23 requires at least one member, but GCC allows an empty body. The brace
-// is kept, so that an empty list starts where it is written.
+/**
+ * The members in braces, an empty body is accepted as GCC does (C23
+ * requires at least one member). The brace marks the start of the list.
+ */
 MemberDeclarationList -> {
     /**
      * @var list{
@@ -393,21 +418,25 @@ MemberDeclarationList -> {
 
     return new Type\RecordType\MemberDeclarationList($members, $members[0]->offset ?? $offset);
 }
-  : <T_LBRACE> (RecordMember()+)? ::T_RBRACE::
+  : <T_LBRACE> RecordMember()*
+    ::T_RBRACE:: @error("Syntax error, unexpected {token} in the members, \"}\" expected")
   ;
 
-// A lone ";" among the members is not valid C, but GCC and Clang accept it
-// as they do at file scope, so it is skipped
+/**
+ * A member declaration, a static assertion, or a lone ";", which GCC and
+ * Clang accept and which gives nothing
+ */
 RecordMember
   : MemberDeclarations()
   | StaticAssertDeclaration()
   | ::T_SEMICOLON::
   ;
 
-// A member declaration gives a node for each of its declarators, and a
-// single node without a name when it has none: an anonymous structure or
-// union, "struct { int a; };". Both forms are one rule, so that the
-// specifiers, which may hold a nested body, are parsed only once.
+/**
+ * A member declaration gives a node for each of its declarators, and a
+ * single node without a name when it has none: an anonymous structure or
+ * union, "struct { int a; };".
+ */
 MemberDeclarations -> {
     /**
      * @var list{
@@ -432,20 +461,25 @@ MemberDeclarations -> {
 
     return $members;
 }
-  : DeclarationSpecifiers() (MemberDeclarator() ((::T_COMMA:: MemberDeclarator())+)?)? ::T_SEMICOLON::
+  : DeclarationSpecifiers() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)?
+    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} in the member declaration, \";\" expected")
   ;
 
-// The declarator of a member is a function from the type and the other
-// specifiers of the member declaration and its start to the declared one
+/**
+ * The declarator of a member is a function from the type and the other
+ * specifiers of the member declaration and its start to the declared one
+ */
 MemberDeclarator
   : NamedMemberDeclarator()
   | UnnamedBitFieldDeclarator()
   ;
 
-// A declarator, the width of a bit-field and the attributes GCC allows
-// before the declarator (other than the first one of the member
-// declaration, whose attributes go to the specifiers), after it and after
-// the width
+/**
+ * A declarator, the width of a bit-field and the attributes GCC allows
+ * before the declarator (other than the first one of the member
+ * declaration, whose attributes go to the specifiers), after it and after
+ * the width
+ */
 NamedMemberDeclarator -> {
     /**
      * @var list<
@@ -493,7 +527,7 @@ NamedMemberDeclarator -> {
         );
     };
 }
-  : (AttributeSpecifier()+)? Declarator() (::T_COLON:: ConditionalExpression())? (AttributeSpecifier()+)?
+  : AttributeSpecifier()* Declarator() (::T_COLON:: ConditionalExpression())? AttributeSpecifier()*
   ;
 
 UnnamedBitFieldDeclarator -> {
@@ -522,18 +556,20 @@ UnnamedBitFieldDeclarator -> {
         );
     };
 }
-  : ::T_COLON:: ConditionalExpression() (AttributeSpecifier()+)?
+  : ::T_COLON:: ConditionalExpression() AttributeSpecifier()*
   ;
 
-//
-// 6.7.3.3 Enumeration specifiers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.3.3 Enumeration specifiers
+ * -----------------------------------------------------------------------------
+ */
 
-// An enumeration with a tag (a reference to it, its declaration with the
-// underlying type only, "enum E : int;", or its definition) or an anonymous
-// one, with the attributes after the keyword and after the body. The tag
-// and the body are alternatives of one rule, so that the attributes are
-// parsed once.
+/**
+ * An enumeration with a tag (a reference to it, its declaration with the
+ * underlying type only, "enum E : int;", or its definition) or an anonymous
+ * one, with the attributes after the keyword and after the body
+ */
 EnumType -> {
     /**
      * @var list{
@@ -566,7 +602,7 @@ EnumType -> {
         $offset,
     );
 }
-  : <T_ENUM> (AttributeSpecifier()+)? (
+  : <T_ENUM> AttributeSpecifier()* (
         Identifier() EnumUnderlyingType()? EnumBody()?
       | EnumUnderlyingType()? EnumBody()
     )
@@ -576,20 +612,28 @@ EnumUnderlyingType
   : ::T_COLON:: TypeNameSpecifiers()
   ;
 
-// The enumerators and the attributes GCC allows after the body
+/**
+ * The enumerators and the attributes GCC allows after the body
+ */
 EnumBody
-  : ::T_LBRACE:: EnumeratorList() ::T_RBRACE:: (AttributeSpecifier()+)?
+  : ::T_LBRACE:: EnumeratorList()
+    ::T_RBRACE:: @error("Syntax error, unexpected {token} in the enumerators, \",\" or \"}\" expected")
+    AttributeSpecifier()*
   ;
 
-// C23 requires at least one enumerator, a trailing comma is allowed
+/**
+ * C23 requires at least one enumerator, a trailing comma is allowed
+ */
 EnumeratorList -> {
     /** @var non-empty-list<Type\EnumType\Enumerator> $children */
     return new Type\EnumType\EnumeratorList($children, $offset);
 }
-  : Enumerator() ((::T_COMMA:: Enumerator())+)? ::T_COMMA::?
+  : Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
   ;
 
-// A name, the attributes after it and the value: A [[deprecated]] = 1
+/**
+ * A name, the attributes after it and the value: A [[deprecated]] = 1
+ */
 Enumerator -> {
     /** @var list{Node\Identifier, ...<Attribute\AttributeInterface|Expression\ExpressionInterface>} $children */
     $value = null;
@@ -610,14 +654,18 @@ Enumerator -> {
         $offset,
     );
 }
-  : Identifier() (AttributeSpecifier()+)? (::T_ASSIGN:: ConditionalExpression())?
+  : Identifier() AttributeSpecifier()* (::T_ASSIGN:: ConditionalExpression())?
   ;
 
-//
-// 6.7.3.6 Typeof specifiers. Whether the operand is a type name or an
-// expression is the class of the node, as in sizeof. A lone identifier in
-// the parentheses is read as a type name.
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.3.6 Typeof specifiers
+ * -----------------------------------------------------------------------------
+ *
+ *  Whether the operand is a type name or an expression is the class of the
+ *  node, as in sizeof. A lone identifier in the parentheses is read as a
+ *  type name.
+ */
 
 TypeOfTypeType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
@@ -647,9 +695,11 @@ TypeOfUnqualType -> {
   : <T_TYPEOF_UNQUAL> ::T_LPAREN:: Expression() ::T_RPAREN::
   ;
 
-//
-// 6.7.4 Type qualifiers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.4 Type qualifiers
+ * -----------------------------------------------------------------------------
+ */
 
 TypeQualifier
   : ConstQualifier()
@@ -670,7 +720,9 @@ RestrictQualifier -> { return Type\QualifiedType\TypeQualifier::Restrict; }
   : <T_RESTRICT>
   ;
 
-// 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type specifier
+/**
+ * 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type specifier
+ */
 AtomicQualifier -> { return Type\QualifiedType\TypeQualifier::Atomic; }
   : <T_ATOMIC> !LeftParenthesis()
   ;
@@ -679,9 +731,11 @@ LeftParenthesis
   : <T_LPAREN>
   ;
 
-//
-// 6.7.5 Function specifiers
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.5 Function specifiers
+ * -----------------------------------------------------------------------------
+ */
 
 FunctionSpecifier
   : InlineSpecifier()
@@ -696,9 +750,11 @@ NoReturnSpecifier -> { return new Specifier\FunctionSpecifier\NoReturnSpecifier(
   : <T_NORETURN>
   ;
 
-//
-// 6.7.6 Alignment specifier
-//
+/**
+ * -----------------------------------------------------------------------------
+ *  6.7.6 Alignment specifier
+ * -----------------------------------------------------------------------------
+ */
 
 AlignmentSpecifier
   : AlignAsTypeSpecifier()
