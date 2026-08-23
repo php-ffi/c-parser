@@ -6,8 +6,8 @@ namespace FFI\Parser\Node\Expression;
 
 /**
  * Prefix operator applied to an operand, such as `-x`, `~x` or `&x`. The
- * operator is the class of the node. The `sizeof` and `alignof` operators
- * are nodes of their own, since they may take a type instead.
+ * operator is the class of the node. The `sizeof` and `alignof` operators,
+ * which may take a type, are nodes of their own.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.4 Unary operators
  */
