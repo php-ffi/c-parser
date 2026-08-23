@@ -35,8 +35,8 @@ enum EncodingPrefix: string
 
     /**
      * Returns the largest value of a code unit of the character type, the
-     * limit of an octal or a hexadecimal escape sequence. The size of
-     * `wchar_t` is up to the implementation, so the larger one is taken.
+     * limit of an octal or a hexadecimal escape sequence. For `wchar_t`,
+     * whose size is up to the implementation, the larger one.
      *
      * @return int<255, 4294967295>
      */

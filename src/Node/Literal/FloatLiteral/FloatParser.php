@@ -54,8 +54,8 @@ final class FloatParser
     private const MIN_NORMAL_EXPONENT = -1022;
 
     /**
-     * The exponent of the step a small power of two is taken in: `0x1p-1000`
-     * is a normal double, so scaling by it is exact.
+     * The exponent of the step a small power of two is taken in, `0x1p-1000`
+     * is a normal double
      */
     private const SCALE_STEP = 1000;
 
@@ -110,8 +110,8 @@ final class FloatParser
     }
 
     /**
-     * PHP does not understand hexadecimal floating numbers, so the value is
-     * the mantissa scaled by the binary exponent.
+     * Evaluates a hexadecimal floating constant: the mantissa scaled by the
+     * binary exponent.
      */
     private static function evaluateHexadecimal(string $mantissa, string $exponent): float
     {
@@ -149,10 +149,9 @@ final class FloatParser
     /**
      * Rounds `mantissa * 2^exponent` to the nearest double, ties to even.
      *
-     * A normal value is rounded once, by the conversion of the mantissa. A
-     * subnormal one has fewer significant bits than the conversion keeps, so
-     * the mantissa is rounded to them first, otherwise it would be rounded
-     * twice.
+     * A normal value is rounded once, by the conversion of the mantissa. The
+     * mantissa of a subnormal one is rounded to its significant bits before
+     * the conversion, which then keeps it exact.
      */
     private static function toFloat(int $mantissa, int $exponent): float
     {

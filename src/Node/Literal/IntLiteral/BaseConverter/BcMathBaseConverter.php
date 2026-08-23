@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal\IntLiteral\BaseConverter;
 
 /**
- * Converts the base by the `ext-bcmath` extension, which has no base
- * conversion of its own, so the digits are accumulated by the Horner scheme.
+ * Converts the base by the `ext-bcmath` extension, accumulating the digits
+ * by the Horner scheme.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
@@ -24,8 +24,7 @@ final class BcMathBaseConverter implements BaseConverterInterface
         $multiplier = (string) $base;
 
         foreach (\str_split($digits) as $digit) {
-            // The scale is explicit, so that a custom "bcmath.scale" setting
-            // does not turn the result into a fractional number.
+            // Whole numbers regardless of the "bcmath.scale" setting
             $result = \bcadd(\bcmul($result, $multiplier, 0), (string) \intval($digit, $base), 0);
         }
 

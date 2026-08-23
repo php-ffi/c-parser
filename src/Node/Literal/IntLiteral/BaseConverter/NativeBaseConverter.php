@@ -8,8 +8,8 @@ namespace FFI\Parser\Node\Literal\IntLiteral\BaseConverter;
  * Converts the base without any extension.
  *
  * The number is accumulated by the Horner scheme in decimal limbs, the least
- * significant first. Adding a digit only multiplies the number by the base
- * and adds the digit, so no arithmetic on two long numbers is needed.
+ * significant first. Adding a digit multiplies the number by the base and
+ * adds the digit.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal

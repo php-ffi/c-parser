@@ -105,8 +105,7 @@ abstract class FloatLiteral extends Literal
 
     /**
      * Writes the mantissa and the exponent with the prefix and the exponent
-     * letter of the base, so that the text reads back as a floating constant
-     * rather than an integer one.
+     * letter of the base, a text that reads back as a floating constant.
      *
      * @return non-empty-string
      */

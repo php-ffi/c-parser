@@ -16,14 +16,14 @@ use FFI\Parser\Node\Literal\FloatLiteral;
 final class HexFloatLiteral extends FloatLiteral
 {
     /**
-     * Doubles from this one up are even whole numbers, so halving them is
-     * exact, and a whole double below it fits in a native integer.
+     * The bound of the significand: doubles from this one up are even whole
+     * numbers, a whole double below it fits in a native integer
      */
     private const MAX_SIGNIFICAND = 2 ** 53;
 
     /**
-     * Doubling and halving a double are exact, so the value is scaled to a
-     * whole number, which is the mantissa written without a point.
+     * Scales the value by powers of two to a whole number, the mantissa
+     * written without a point.
      */
     protected function splitValue(): array
     {
@@ -46,8 +46,7 @@ final class HexFloatLiteral extends FloatLiteral
 
     protected function representAsRawNumber(): string
     {
-        // The exponent is mandatory, even if it is `0`, because
-        // otherwise it would be an `int` rather than a `float`.
+        // The exponent is written even if it is `0`
         return '0x' . $this->mantissa . 'p' . $this->exponent;
     }
 }

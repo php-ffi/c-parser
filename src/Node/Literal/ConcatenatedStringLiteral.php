@@ -9,8 +9,8 @@ use FFI\Parser\Node\Expression\Expression;
 /**
  * Adjacent string literals, which C joins into one: `"a" "b"`.
  *
- * The parts are kept apart, so that a validator sees the prefix of each of
- * them (`u8"a" L"b"` cannot be joined).
+ * The parts are kept apart, each with its own prefix (`u8"a" L"b"` cannot
+ * be joined).
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.5 String literals
  */
