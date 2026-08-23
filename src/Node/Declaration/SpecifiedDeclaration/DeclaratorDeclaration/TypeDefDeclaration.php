@@ -15,7 +15,7 @@ use FFI\Parser\Node\Type\TypeInterface;
 /**
  * Declaration of a typedef name, `typedef void (*callback_t)(int);`: a
  * declaration with `typedef` among its specifiers. The other specifiers
- * stay in the list, so `typedef static int x;` is seen as written.
+ * stay in the list: `typedef static int x;` is kept as written.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.9 Type definitions
  */

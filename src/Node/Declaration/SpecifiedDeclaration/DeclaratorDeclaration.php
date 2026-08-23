@@ -21,8 +21,8 @@ use FFI\Parser\Node\Specifier\SpecifierList;
  * The kind of the declaration is chosen by one sign and hides nothing else:
  * `typedef` among the specifiers gives a {@see DeclaratorDeclaration\TypeDefDeclaration},
  * a function type a {@see DeclaratorDeclaration\FunctionDeclaration}, anything
- * else a {@see DeclaratorDeclaration\VariableDeclaration}. The type is a
- * property of each kind, since a function has a {@see \FFI\Parser\Node\Type\FunctionType}.
+ * else a {@see DeclaratorDeclaration\VariableDeclaration}. Each kind has its
+ * own type property: a function has a {@see \FFI\Parser\Node\Type\FunctionType}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */
