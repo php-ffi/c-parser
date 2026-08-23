@@ -411,9 +411,9 @@ final class AttributesTest extends TestCase
         // Positions C23 has no attributes in
         yield 'attribute in the brackets of an array' => ['int a[[[x]] 3];', 7, '['];
         yield 'attribute after a parenthesized declarator' => ['int (*f) [[x]] (int);', 15, '('];
-        yield 'attribute in a subscript' => ['int x = y[[z]];', 10, '['];
+        yield 'attribute in a subscript' => ['int x = y[[z]];', 9, '[['];
         yield 'attribute before a static assertion' => ['[[a]] static_assert(1);', 6, 'static_assert'];
-        yield 'attribute before an initializer' => ['int x [[a]] = [[b]] 1;', 14, '['];
+        yield 'attribute before an initializer' => ['int x [[a]] = [[b]] 1;', 14, '[['];
         yield 'attributes between the tag and the body' => ['struct S [[a]] { int a; };', 15, '{'];
         yield 'empty last argument' => ['[[a(1,)]];', 6, ')'];
         yield 'keyword of the extensions as a name' => ['__attribute__((__declspec));', 15, '__declspec'];

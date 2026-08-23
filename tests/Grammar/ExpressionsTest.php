@@ -189,8 +189,7 @@ final class ExpressionsTest extends TestCase
     }
 
     /**
-     * The printer does not tell a type name from an expression, so the class
-     * is checked here.
+     * Checks the class of the operand, which the printer does not show.
      */
     public function testLoneNameInSizeofIsATypeName(): void
     {

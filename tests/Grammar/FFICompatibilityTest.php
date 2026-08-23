@@ -11,12 +11,11 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 
 /**
  * Checks the grammar against `FFI::cdef()`: whatever the parser of PHP FFI
- * accepts is accepted by this one too. `FFI::cdef()` parses the whole code
- * before it resolves the functions, so only `\FFI\ParserException` tells it
- * has rejected the code, and any other `\FFI\Exception` is the failure to
- * find a function without its library. The parser of PHP FFI checks some
- * semantics too (the attributes it knows, the types declared), so it rejects
- * more than a syntax error, and most headers of `gcc -E` among them.
+ * accepts is accepted by this one too. Only `\FFI\ParserException` means
+ * the code is rejected, any other `\FFI\Exception` is the failure to find a
+ * function without its library. The parser of PHP FFI checks some semantics
+ * too (the attributes it knows, the types declared) and rejects more than a
+ * syntax error, most headers of `gcc -E` among them.
  */
 #[CoversNothing]
 #[RequiresPhpExtension('ffi')]

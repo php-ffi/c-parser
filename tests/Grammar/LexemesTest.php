@@ -264,7 +264,7 @@ final class LexemesTest extends TestCase
 
         yield 'string broken by a newline' => [
             "\"a\nb\"",
-            [['Unknown', '"a'], ['T_IDENTIFIER', 'b'], ['Unknown', '"']],
+            [['T_INVALID_STRING_LITERAL', '"a'], ['T_IDENTIFIER', 'b'], ['T_INVALID_STRING_LITERAL', '"']],
         ];
         yield 'lone hash at the beginning of a line is a directive' => ['#', [['T_DIRECTIVE', '#']]];
 
@@ -277,15 +277,30 @@ final class LexemesTest extends TestCase
             yield 'number of the preprocessor ' . $number => [$number, [['T_PP_NUMBER', $number]]];
         }
 
-        yield 'doubled digit separator' => ["1''0", [['T_PP_NUMBER', '1'], ['Unknown', "''0"]]];
-        yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['Unknown', "'"]]];
+        yield 'doubled digit separator' => ["1''0", [
+            ['T_PP_NUMBER', '1'], ['T_INVALID_CHAR_LITERAL', "''"], ['T_OCT_INT_LITERAL', '0'],
+        ]];
+        yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['T_INVALID_CHAR_LITERAL', "'"]]];
 
-        foreach ([
-            "'1", "''", "'a", '"text',
-            '"\\q"', "'\\q'", '"\\x"', '"\\u12"', '@', '$', '`',
-        ] as $fragment) {
+        // A character constant or a string literal that is not closed or holds
+        // an unknown escape sequence is a single token up to the end of the line
+        foreach (["'1", "''", "'a", "'\\q'", "'ab\\", "u8'x"] as $fragment) {
+            yield 'invalid character ' . $fragment => [$fragment, [['T_INVALID_CHAR_LITERAL', $fragment]]];
+        }
+
+        foreach (['"text', '"\\q"', '"\\x"', '"\\u12"', '"a; int b;', 'L"x'] as $fragment) {
+            yield 'invalid string ' . $fragment => [$fragment, [['T_INVALID_STRING_LITERAL', $fragment]]];
+        }
+
+        foreach (['@', '$', '`'] as $fragment) {
             yield 'not a lexeme ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
+
+        yield 'start of an attribute' => ['[[', [['T_ATTRIBUTE_START', '[[']]];
+        yield 'start of an attribute in digraphs' => ['<:<:', [['T_ATTRIBUTE_START', '<:<:']]];
+        yield 'start of an attribute with whitespace' => ["[ \n[", [['T_ATTRIBUTE_START', "[ \n["]]];
+        yield 'end of an attribute is two brackets' => [']]', [['T_RBRACKET', ']'], ['T_RBRACKET', ']']]];
+        yield 'dot before a digit is not a punctuator' => ['.5 .', [['T_DEC_FLOAT_LITERAL', '.5'], ['T_DOT', '.']]];
     }
 
     /**

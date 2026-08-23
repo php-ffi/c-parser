@@ -339,9 +339,7 @@ final class DeclarationsTest extends TestCase
         yield 'designator without an equals sign' => ['int a = {.a 1};', 12, '1'];
         yield 'range without the last index' => ['int a[] = {[0 ...] = 1};', 17, ']'];
         yield 'range of three indices' => ['int a[] = {[0 ... 1 ... 2] = 1};', 20, '...'];
-        // The error is reported after "[", where an attribute would need
-        // the second "["
-        yield 'name without a type specifier before an array' => ['static x[3];', 9, '3'];
+        yield 'name without a type specifier before an array' => ['static x[3];', 8, '['];
     }
 
     /**

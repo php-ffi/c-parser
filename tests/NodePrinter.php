@@ -64,8 +64,8 @@ use FFI\Parser\Node\Type\TypeOfUnqualType;
 use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
 
 /**
- * Prints a syntax tree as an S-expression, so that a test compares the whole
- * tree with one string: `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
+ * Prints a syntax tree as an S-expression, the whole tree as one string:
+ * `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
  * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. A declaration is
  * named by its kind, `(variable static int x = {1, .a=2, [3]={}})`,
  * `(function ...)`, `(typedef ...)`, `(tag ...)`, `(type ...)`,
