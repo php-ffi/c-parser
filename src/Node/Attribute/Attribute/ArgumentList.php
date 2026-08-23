@@ -11,9 +11,8 @@ use FFI\Parser\Node\NodeList;
 /**
  * Arguments of an attribute, the list between the parentheses of
  * `aligned(8)` or `format(printf, 1, 2)`, split at the commas outside of
- * nested brackets. C23 allows any balanced sequence of tokens there, so an
- * argument that is a constant expression gives its node, and any other
- * sequence its text: `introduced=10.4` in
+ * nested brackets. An argument that is a constant expression gives its
+ * node, any other balanced sequence of tokens its text: `introduced=10.4` in
  * `availability(macos, introduced=10.4)`. An empty list starts where the
  * parenthesis does.
  *
