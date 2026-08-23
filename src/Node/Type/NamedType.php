@@ -9,8 +9,7 @@ use FFI\Parser\Node\Identifier;
 /**
  * Type referred to by a name declared elsewhere, such as a typedef name.
  *
- * The parser has no table of the declared names, so whether the name is
- * actually a type is up to the consumer.
+ * Whether the name is actually a type is up to the consumer.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.9 Type definitions
  */

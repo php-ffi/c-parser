@@ -8,11 +8,11 @@ use FFI\Parser\Node\Attribute\AttributeList;
 
 /**
  * Type with the attributes written at the start of a parenthesized
- * declarator, `void (__stdcall *f)(int)`. GCC applies them to the type the
- * parenthesized declarator receives, the function in this example, which
- * may be any type, so they wrap it. The attributes of a pointer, an array
- * or a function written after it are a property of that type instead. The
- * node starts where the attributes do.
+ * declarator, `void (__stdcall *f)(int)`. As in GCC, they apply to the type
+ * the parenthesized declarator receives, the function in this example,
+ * which may be any type. The attributes of a pointer, an array or a
+ * function written after it are a property of that type. The node starts
+ * where the attributes do.
  *
  * @link https://gcc.gnu.org/onlinedocs/gcc/Attribute-Syntax.html GCC, Attribute Syntax
  */
