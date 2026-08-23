@@ -28,5 +28,7 @@
     <php>
         <ini name="error_reporting" value="-1"/>
         <ini name="memory_limit" value="-1"/>
+        <!-- Plain text of the rendered errors in any environment -->
+        <env name="NO_COLOR" value="1" force="true"/>
     </php>
 </phpunit>
