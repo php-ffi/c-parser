@@ -50,11 +50,9 @@ abstract class ParseRuntimeException extends ParserException
             $contents = $this->source->content;
             // @phpstan-ignore-next-line the contract of the property tells it throws in its text only
         } catch (SourceExceptionInterface) {
-            // A source that cannot be read again, such as a removed file
             return parent::__toString();
         }
 
-        // The snippet of the contents read above, with the name of the file
         $snippet = $this->source instanceof FileInterface
             ? VirtualSource::createFromString($this->source->pathname, $contents)
             : new StringSource($contents);
