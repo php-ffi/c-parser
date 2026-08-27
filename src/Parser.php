@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace FFI\Parser;
 
 use FFI\Parser\Exception\InternalException;
-use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Exception\SyntaxErrorException;
+use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser\ParserExecutor;
+use FFI\Parser\Validator\ValidatorInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
@@ -20,8 +22,9 @@ use Phplrt\Source\SourceFactory;
  * Parses preprocessed C23 headers, the ones accepted by {@see \FFI::cdef()},
  * into the syntax tree.
  *
- * The parser only checks the syntax. Whatever is syntactically valid gives
- * a syntax tree, even if a compiler would reject it.
+ * The parser checks the syntax. Whatever is syntactically valid gives a
+ * syntax tree, even if a compiler would reject it, unless one of the given
+ * validators rejects it.
  */
 final class Parser
 {
@@ -29,19 +32,49 @@ final class Parser
 
     private readonly SourceFactoryInterface $sources;
 
+    private readonly Validator $validator;
+
     /**
      * @param SourceFactoryInterface|null $sources creates the sources out of
      *        the values given to {@see parse()} and {@see validate()}, the
      *        default one accepts strings, files and streams
+     * @param iterable<mixed, ValidatorInterface>|null $validators checks of the
+     *        syntax tree run by {@see parse()}
      */
-    public function __construct(?SourceFactoryInterface $sources = null)
+    public function __construct(
+        ?SourceFactoryInterface $sources = null,
+        ?iterable $validators = null,
+    ) {
+        $this->parser = $this->createExecutor();
+        $this->sources = $this->createSourceFactory($sources);
+        $this->validator = $this->createValidator($validators);
+    }
+
+    private function createExecutor(): ParserExecutor
     {
-        $this->parser = new ParserExecutor();
-        $this->sources = $sources ?? SourceFactory::createDefault();
+        return new ParserExecutor();
+    }
+
+    private function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
+    {
+        return $sources ?? SourceFactory::createDefault();
     }
 
     /**
-     * Parses the header into the syntax tree.
+     * @param iterable<mixed, ValidatorInterface>|null $rules
+     */
+    private function createValidator(?iterable $rules): Validator
+    {
+        if ($rules === null) {
+            return Validator::createDefault();
+        }
+
+        return new Validator($rules);
+    }
+
+    /**
+     * Parses the header into the syntax tree and runs the validators over
+     * it.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
@@ -50,26 +83,37 @@ final class Parser
      *         are not listed
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it
-     * @throws SyntaxException in case of the header is not syntactically valid
+     * @throws SyntaxErrorException in case of the header is not syntactically valid
+     * @throws ValidationException in case of the syntax tree breaks a rule of
+     *         a validator
      */
     public function parse(mixed $source): array
     {
         $source = $this->createSource($source);
 
-        try {
-            return $this->parser->parse($source);
-        } catch (UnexpectedTokenException $e) {
-            throw SyntaxException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
-        } catch (ParserSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
-        } catch (ParserException $e) {
-            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
+        $declarations = $this->parseOrFail($source);
+
+        $this->validateOrFail($declarations, $source);
+
+        return $declarations;
+    }
+
+    /**
+     * @param list<RootDeclarationInterface> $declarations
+     * @throws ValidationException
+     */
+    private function validateOrFail(array $declarations, ReadableInterface $source): void
+    {
+        $violations = $this->validator->validate($declarations);
+
+        if ($violations !== []) {
+            throw ValidationException::becauseValidationFailed($source, $violations);
         }
     }
 
     /**
      * Checks whether the header is syntactically valid, without building
-     * the syntax tree.
+     * the syntax tree. The validators are not run.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
@@ -82,6 +126,25 @@ final class Parser
 
         try {
             return $this->parser->validate($source);
+        } catch (ParserSourceException $e) {
+            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+        } catch (ParserException $e) {
+            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
+        }
+    }
+
+    /**
+     * @return list<RootDeclarationInterface>
+     * @throws InternalException in case of the header cannot be read or the
+     *         lexer fails on it
+     * @throws SyntaxErrorException in case of the header is not syntactically valid
+     */
+    private function parseOrFail(ReadableInterface $source): array
+    {
+        try {
+            return $this->parser->parse($source);
+        } catch (UnexpectedTokenException $e) {
+            throw SyntaxErrorException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
         } catch (ParserSourceException $e) {
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (ParserException $e) {

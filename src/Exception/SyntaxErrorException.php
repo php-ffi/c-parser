@@ -11,7 +11,7 @@ use Phplrt\Contracts\Source\ReadableInterface;
  * Occurs when the source is not a syntactically valid header, whether a
  * fragment of it is not a lexeme of C at all or the lexemes are misplaced.
  */
-final class SyntaxException extends ParseRuntimeException
+final class SyntaxErrorException extends ParseRuntimeException
 {
     /**
      * @param string $message description of the failure, either the one
