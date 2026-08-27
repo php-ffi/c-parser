@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests;
 
-use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Parser;
@@ -59,7 +59,7 @@ abstract class TestCase extends BaseTestCase
 
         try {
             $parser->parse($code);
-        } catch (SyntaxException $e) {
+        } catch (SyntaxErrorException $e) {
             self::assertSame(
                 [$offset, $fragment],
                 [$e->offset, \substr($code, $e->offset, $e->length ?? 0)],

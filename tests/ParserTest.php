@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests;
 
 use FFI\Parser\Exception\InternalException;
-use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Exception\SyntaxErrorException;
+use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Node\NodeInterface;
+use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
+use FFI\Parser\Validator\ValidationContext;
+use FFI\Parser\Validator\ValidatorInterface;
+use FFI\Parser\Validator\Violation;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
@@ -20,7 +26,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(Parser::class)]
 #[CoversClass(ParserExecutor::class)]
 #[CoversClass(InternalException::class)]
-#[CoversClass(SyntaxException::class)]
+#[CoversClass(SyntaxErrorException::class)]
+#[CoversClass(ValidationException::class)]
 final class ParserTest extends TestCase
 {
     private const HEADER_FILE = __DIR__ . '/resources/empty.h';
@@ -284,5 +291,87 @@ final class ParserTest extends TestCase
 
         self::assertSame($isValid, (new Parser())->validate($code));
         self::assertLessThan(1.0, \microtime(true) - $start);
+    }
+
+    public function testViolationsAreReportedByValidationException(): void
+    {
+        $parser = new Parser(validators: [self::createIntTypeValidator()]);
+
+        try {
+            $parser->parse("int a;\nint b;");
+        } catch (ValidationException $e) {
+            self::assertSame('No int (and 1 more)', $e->getMessage());
+            self::assertSame([0, 3], [$e->offset, $e->length]);
+            self::assertSame([0, 7], \array_map(static fn(Violation $v): int => $v->offset, $e->violations));
+
+            return;
+        }
+
+        self::fail('ValidationException has not been thrown');
+    }
+
+    public function testValidatorsAreGivenTheParsedDeclarations(): void
+    {
+        $validator = self::createRecordingValidator();
+
+        $declarations = (new Parser(validators: [$validator]))->parse('char a; long b;');
+
+        self::assertNotSame([], $validator->contexts);
+        self::assertSame($declarations, $validator->contexts[0]->declarations);
+    }
+
+    public function testValidatorsAreNotRunBySyntaxCheck(): void
+    {
+        $validator = self::createRecordingValidator();
+
+        self::assertTrue((new Parser(validators: [$validator]))->validate('int a;'));
+        self::assertSame([], $validator->contexts);
+    }
+
+    public function testValidatorsAreNotRunOnSyntaxError(): void
+    {
+        $validator = self::createRecordingValidator();
+
+        try {
+            (new Parser(validators: [$validator]))->parse('int a');
+        } catch (SyntaxErrorException) {
+            self::assertSame([], $validator->contexts);
+
+            return;
+        }
+
+        self::fail('SyntaxException has not been thrown');
+    }
+
+    private static function createIntTypeValidator(): ValidatorInterface
+    {
+        return new class implements ValidatorInterface {
+            public function validate(NodeInterface $node, ValidationContext $context): iterable
+            {
+                if ($node instanceof IntType) {
+                    yield new Violation('No int', $node->offset, 3);
+                }
+            }
+        };
+    }
+
+    /**
+     * @return ValidatorInterface&object{contexts: list<ValidationContext>}
+     */
+    private static function createRecordingValidator(): ValidatorInterface
+    {
+        return new class implements ValidatorInterface {
+            /**
+             * @var list<ValidationContext>
+             */
+            public array $contexts = [];
+
+            public function validate(NodeInterface $node, ValidationContext $context): iterable
+            {
+                $this->contexts[] = $context;
+
+                return [];
+            }
+        };
     }
 }

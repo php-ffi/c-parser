@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Architecture;
 
 use FFI\Parser\Parser;
+use FFI\Parser\Validator;
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\Rule;
 use PHPat\Test\PHPat;
@@ -37,6 +38,23 @@ final class LibraryArchitectureTest
             ->dependOn()
             ->classes(Selector::inNamespace('FFI\Parser\Parser'))
             ->because('the generated parser is an implementation detail of the public parser');
+    }
+
+    public function testValidatorsDependOnTheNodesOnly(): Rule
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::classname(Validator::class),
+                Selector::inNamespace('FFI\Parser\Validator'),
+            )
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::classname(Validator::class),
+                Selector::inNamespace('FFI\Parser\Validator'),
+                Selector::inNamespace('FFI\Parser\Node'),
+            )
+            ->because('a validator checks the syntax tree and can be run without the parser');
     }
 
     public function testLibraryDoesNotDependOnTheDevelopmentPackages(): Rule

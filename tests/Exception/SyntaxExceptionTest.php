@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Exception;
 
 use FFI\Parser\Exception\ParseRuntimeException;
-use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Parser;
 use FFI\Parser\Tests\TestCase;
 use Phplrt\Contracts\Lexer\Channel;
@@ -15,7 +15,7 @@ use Phplrt\Source\StringSource;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-#[CoversClass(SyntaxException::class)]
+#[CoversClass(SyntaxErrorException::class)]
 #[CoversClass(ParseRuntimeException::class)]
 final class SyntaxExceptionTest extends TestCase
 {
@@ -24,7 +24,7 @@ final class SyntaxExceptionTest extends TestCase
         $source = new StringSource('int x @;');
         $token = new Token(1, 'T_UNKNOWN', Channel::Unknown, '@', 6);
 
-        $e = SyntaxException::becauseUnexpectedToken($source, $token, 'Message');
+        $e = SyntaxErrorException::becauseUnexpectedToken($source, $token, 'Message');
 
         self::assertSame('Message', $e->getMessage());
         self::assertSame($source, $e->source);
@@ -149,23 +149,23 @@ final class SyntaxExceptionTest extends TestCase
         $source = FileSource::createFromPathname(__DIR__ . '/missing.h');
         $token = new Token(1, 'T_IDENTIFIER', Channel::Default, 'x', 0);
 
-        $rendered = (string) SyntaxException::becauseUnexpectedToken($source, $token, 'Message');
+        $rendered = (string) SyntaxErrorException::becauseUnexpectedToken($source, $token, 'Message');
 
-        self::assertStringStartsWith(SyntaxException::class . ': Message in ', $rendered);
+        self::assertStringStartsWith(SyntaxErrorException::class . ': Message in ', $rendered);
     }
 
-    private static function catchSyntaxException(mixed $source): SyntaxException
+    private static function catchSyntaxException(mixed $source): SyntaxErrorException
     {
         try {
             (new Parser())->parse($source);
-        } catch (SyntaxException $e) {
+        } catch (SyntaxErrorException $e) {
             return $e;
         }
 
         self::fail('SyntaxException has not been thrown');
     }
 
-    private static function renderWithoutTrace(SyntaxException $e): string
+    private static function renderWithoutTrace(SyntaxErrorException $e): string
     {
         $rendered = (string) $e;
         $trace = \strpos($rendered, "\n#0 ");

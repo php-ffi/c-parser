@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Grammar;
 
-use FFI\Parser\Exception\SyntaxException;
+use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Parser;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -137,7 +137,7 @@ final class SyntaxErrorsTest extends TestCase
 
         try {
             (new Parser())->parse($code);
-        } catch (SyntaxException $e) {
+        } catch (SyntaxErrorException $e) {
             self::assertSame($message, $e->getMessage());
 
             return;
