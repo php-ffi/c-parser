@@ -143,7 +143,6 @@ InitDeclarator -> {
         int $start,
         ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
     ) use ($name, $declarator, $asmLabel, $initializer, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
-        // The start of a declaration is a byte offset
         \assert($start >= 0);
 
         $type = $declarator($type);

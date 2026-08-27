@@ -87,7 +87,6 @@ BinaryExpression -> {
         default => 1,
     };
 
-    // The operator node of two operands, its start is the one of the left
     $build = static fn(
         TokenInterface $operator,
         Expression\ExpressionInterface $left,
@@ -424,7 +423,6 @@ PostfixOperator
 SubscriptOperator -> {
     /** @var array{Expression\ExpressionInterface} $children */
     return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-        // The start of an expression is a byte offset
         \assert($start >= 0);
 
         return new Expression\SubscriptExpression($operand, $children[0], $start);
@@ -436,7 +434,6 @@ SubscriptOperator -> {
 DirectMemberOperator -> {
     /** @var array{Node\Identifier} $children */
     return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-        // The start of an expression is a byte offset
         \assert($start >= 0);
 
         return new MemberExpression\DirectMemberExpression($operand, $children[0], $start);
@@ -448,7 +445,6 @@ DirectMemberOperator -> {
 PointerMemberOperator -> {
     /** @var array{Node\Identifier} $children */
     return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-        // The start of an expression is a byte offset
         \assert($start >= 0);
 
         return new MemberExpression\PointerMemberExpression($operand, $children[0], $start);
