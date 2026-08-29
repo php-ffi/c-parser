@@ -263,27 +263,17 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     /** @var int */
     public const T_ASM = 107;
     /** @var int */
-    public const T_BUILTIN_OFFSETOF = 108;
+    public const T_DECLSPEC = 108;
     /** @var int */
-    public const T_DECLSPEC = 109;
+    public const T_BUILTIN_CALL = 109;
     /** @var int */
-    public const T_INT128 = 110;
+    public const T_KEYWORD_ATTRIBUTE = 110;
     /** @var int */
-    public const T_INT16 = 111;
+    public const T_EXTENSION = 111;
     /** @var int */
-    public const T_INT32 = 112;
+    public const T_RESERVED_KEYWORD = 112;
     /** @var int */
-    public const T_INT64 = 113;
-    /** @var int */
-    public const T_INT8 = 114;
-    /** @var int */
-    public const T_KEYWORD_ATTRIBUTE = 115;
-    /** @var int */
-    public const T_EXTENSION = 116;
-    /** @var int */
-    public const T_RESERVED_KEYWORD = 117;
-    /** @var int */
-    public const T_IDENTIFIER = 118;
+    public const T_IDENTIFIER = 113;
 
     /** @var array<int, non-empty-string> */
     private const PARSER_EXPECTATIONS = [
@@ -395,13 +385,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         'T_NORETURN',
         'T_ATTRIBUTE',
         'T_ASM',
-        'T_BUILTIN_OFFSETOF',
         'T_DECLSPEC',
-        'T_INT128',
-        'T_INT16',
-        'T_INT32',
-        'T_INT64',
-        'T_INT8',
+        'T_BUILTIN_CALL',
         'T_KEYWORD_ATTRIBUTE',
         'T_EXTENSION',
         'T_RESERVED_KEYWORD',
@@ -413,12 +398,12 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     private const PARSER_MESSAGES = [
         5 => 'Syntax error, unexpected {token} in the expression',
         7 => 'Syntax error, unexpected {token} in the expression',
-        304 => 'Syntax error, unexpected {token} in the parameters, "," or ")" expected',
-        315 => 'Syntax error, unexpected {token} in the member declaration, ";" expected',
-        317 => 'Syntax error, unexpected {token} in the members, "}" expected',
-        336 => 'Syntax error, unexpected {token} in the enumerators, "," or "}" expected',
-        360 => 'Syntax error, unexpected {token} in the initializer',
-        364 => 'Syntax error, unexpected {token} in the initializer list, "," or "}" expected',
+        295 => 'Syntax error, unexpected {token} in the parameters, "," or ")" expected',
+        306 => 'Syntax error, unexpected {token} in the member declaration, ";" expected',
+        308 => 'Syntax error, unexpected {token} in the members, "}" expected',
+        327 => 'Syntax error, unexpected {token} in the enumerators, "," or "}" expected',
+        355 => 'Syntax error, unexpected {token} in the initializer',
+        359 => 'Syntax error, unexpected {token} in the initializer list, "," or "}" expected',
         426 => 'Syntax error, unexpected {token} in the declaration, ";" expected',
     ];
 
@@ -612,11 +597,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         false,
         false,
         false,
-        false,
-        false,
-        false,
-        false,
-        false,
         true,
         false,
         false,
@@ -650,13 +630,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         true,
         true,
         false,
-        true,
         false,
-        true,
-        true,
-        true,
-        true,
-        true,
+        false,
+        false,
         true,
         true,
         true,
@@ -769,6 +745,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         false,
         false,
         true,
+        true,
+        false,
+        false,
+        false,
         true,
         false,
         true,
@@ -830,6 +810,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         true,
         true,
         true,
+        true,
+        false,
+        false,
+        false,
+        false,
         false,
         false,
         false,
@@ -901,23 +886,42 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
+            108 => true,
+            110 => true,
+            113 => true,
+        ],
+        [
+            86 => true,
+        ],
+        [
+            86 => true,
+        ],
+        [
+            11 => true,
+        ],
+        [
+            11 => true,
+            39 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            54 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            66 => true,
+            75 => true,
+            80 => true,
+            85 => true,
+            90 => true,
             109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
-        ],
-        [
-            86 => true,
-        ],
-        [
-            86 => true,
-        ],
-        [
-            11 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -940,8 +944,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -964,32 +968,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
-        ],
-        [
-            11 => true,
-            39 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            54 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            66 => true,
-            75 => true,
-            80 => true,
-            85 => true,
-            90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -1001,20 +981,20 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         null,
         null,
         [
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
             8 => true,
         ],
         null,
         [
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
             14 => true,
@@ -1054,7 +1034,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             40 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
             40 => true,
@@ -1076,11 +1056,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         ],
         [
             11 => true,
-            118 => true,
+            113 => true,
         ],
         null,
         [
-            118 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -1100,8 +1080,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             59 => true,
@@ -1149,7 +1129,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             66 => true,
         ],
         [
-            108 => true,
+            109 => true,
         ],
         [
             12 => true,
@@ -1192,14 +1172,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -1239,14 +1214,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -1286,14 +1256,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -1312,8 +1277,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             105 => true,
             true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
@@ -1332,8 +1297,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             105 => true,
             true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
@@ -1352,8 +1317,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             105 => true,
             true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             67 => true,
@@ -1432,13 +1397,13 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         [
             13 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
             106 => true,
-            109 => true,
+            108 => true,
         ],
         [
             13 => true,
@@ -1489,7 +1454,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -1534,7 +1499,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -1579,7 +1544,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -1670,7 +1635,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             105 => true,
         ],
         [
-            117 => true,
+            112 => true,
         ],
         [
             38 => true,
@@ -1780,12 +1745,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -1888,12 +1848,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -1917,8 +1872,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         null,
         [
@@ -2025,12 +1980,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -2133,12 +2083,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -2246,12 +2191,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -2355,12 +2295,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -2382,25 +2317,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             107 => true,
         ],
         [
-            109 => true,
+            108 => true,
         ],
         [
             110 => true,
-        ],
-        [
-            111 => true,
-        ],
-        [
-            112 => true,
-        ],
-        [
-            113 => true,
-        ],
-        [
-            114 => true,
-        ],
-        [
-            115 => true,
         ],
         [
             64 => true,
@@ -2568,7 +2488,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         null,
@@ -2627,7 +2547,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         null,
@@ -2638,7 +2558,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             7 => true,
         ],
         [
-            109 => true,
+            108 => true,
         ],
         null,
         [
@@ -2683,7 +2603,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
@@ -2728,11 +2648,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            117 => true,
+            112 => true,
             true,
         ],
         [
-            115 => true,
+            110 => true,
         ],
         null,
         [
@@ -2758,46 +2678,41 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
+            113 => true,
+        ],
+        [
+            113 => true,
+        ],
+        [
+            113 => true,
+        ],
+        null,
+        null,
+        [
+            13 => true,
+            65 => true,
+            67 => true,
+            70 => true,
+            true,
+            74 => true,
+            77 => true,
+            79 => true,
+            81 => true,
+            true,
+            true,
+            true,
+            87 => true,
+            89 => true,
+            91 => true,
+            95 => true,
+            97 => true,
+            true,
+            100 => true,
+            104 => true,
+            true,
+            true,
+            108 => true,
             110 => true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
-        ],
-        [
-            118 => true,
-        ],
-        [
-            118 => true,
-        ],
-        null,
-        null,
-        [
-            13 => true,
-            65 => true,
-            67 => true,
-            70 => true,
-            true,
-            74 => true,
-            77 => true,
-            79 => true,
-            81 => true,
-            true,
-            true,
-            true,
-            87 => true,
-            89 => true,
-            91 => true,
-            95 => true,
-            97 => true,
-            true,
-            100 => true,
-            104 => true,
-            true,
-            true,
-            109 => true,
-            115 => true,
         ],
         [
             13 => true,
@@ -2822,8 +2737,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             104 => true,
             true,
             true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             79 => true,
@@ -2877,11 +2792,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             101 => true,
             true,
             true,
-            110 => true,
-            true,
-            true,
-            true,
-            true,
+            113 => true,
         ],
         [
             68 => true,
@@ -2900,9 +2811,23 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             101 => true,
             true,
             true,
-            110 => true,
+            113 => true,
+        ],
+        [
+            68 => true,
+            true,
+            72 => true,
+            true,
+            76 => true,
+            78 => true,
+            88 => true,
+            92 => true,
             true,
             true,
+            96 => true,
+            98 => true,
+            true,
+            101 => true,
             true,
             true,
         ],
@@ -2937,21 +2862,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             99 => true,
         ],
         [
-            114 => true,
-        ],
-        [
-            111 => true,
-        ],
-        [
-            112 => true,
-        ],
-        [
-            113 => true,
-        ],
-        [
-            110 => true,
-        ],
-        [
             98 => true,
         ],
         [
@@ -2961,18 +2871,18 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         [
             13 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             12 => true,
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         null,
         [
@@ -3022,14 +2932,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             6 => true,
@@ -3071,14 +2976,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -3118,14 +3018,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         null,
         [
@@ -3134,9 +3029,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             40 => true,
             52 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -3144,41 +3039,41 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             40 => true,
             52 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             40 => true,
@@ -3191,8 +3086,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             97 => true,
             true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
@@ -3201,17 +3096,17 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             97 => true,
             true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         null,
         [
@@ -3297,14 +3192,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -3344,14 +3234,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             13 => true,
@@ -3391,14 +3276,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         null,
         [
@@ -3407,9 +3287,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -3417,15 +3297,15 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             40 => true,
@@ -3434,8 +3314,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         [
             13 => true,
             106 => true,
-            109 => true,
-            115 => true,
+            108 => true,
+            110 => true,
         ],
         [
             11 => true,
@@ -3500,10 +3380,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         [
             12 => true,
             52 => true,
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         null,
         [
@@ -3517,10 +3397,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             12 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         null,
         [
@@ -3571,8 +3451,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         null,
         [
@@ -3586,6 +3466,32 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         ],
         [
             92 => true,
+        ],
+        [
+            113 => true,
+        ],
+        null,
+        [
+            40 => true,
+            113 => true,
+        ],
+        [
+            68 => true,
+            true,
+            72 => true,
+            true,
+            76 => true,
+            78 => true,
+            88 => true,
+            92 => true,
+            true,
+            true,
+            96 => true,
+            98 => true,
+            true,
+            101 => true,
+            true,
+            true,
         ],
         [
             11 => true,
@@ -3609,8 +3515,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             12 => true,
@@ -3643,8 +3549,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -3670,8 +3576,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             14 => true,
@@ -3720,8 +3626,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         null,
         [
@@ -3783,8 +3689,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             80 => true,
             85 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             41 => true,
@@ -3836,8 +3742,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             75 => true,
             80 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
             11 => true,
@@ -3852,11 +3758,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             75 => true,
             80 => true,
             90 => true,
-            108 => true,
-            118 => true,
+            109 => true,
+            113 => true,
         ],
         [
-            118 => true,
+            113 => true,
         ],
         [
             54 => true,
@@ -3910,12 +3816,144 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             11 => true,
         ],
         [
-            108 => true,
+            109 => true,
+        ],
+        [
+            11 => true,
         ],
         null,
         [
-            14 => true,
-            16 => true,
+            11 => true,
+            13 => true,
+            39 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            54 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            65 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            87 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            108 => true,
+            true,
+            true,
+            113 => true,
+        ],
+        [
+            11 => true,
+            13 => true,
+            39 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            54 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            65 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            87 => true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            108 => true,
+            true,
+            true,
+            113 => true,
+        ],
+        null,
+        [
+            7 => true,
+        ],
+        [
+            7 => true,
         ],
         null,
         [
@@ -4027,14 +4065,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             true,
             true,
             true,
-            109 => true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             6 => true,
@@ -4042,27 +4075,27 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         [
             11 => true,
             13 => true,
             40 => true,
             106 => true,
-            109 => true,
-            115 => true,
-            118 => true,
+            108 => true,
+            110 => true,
+            113 => true,
         ],
         null,
         [
@@ -4213,97 +4246,82 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 417,
             ],
-            109 => [
+            108 => [
                 417,
             ],
-            [
+            110 => [
                 417,
             ],
-            [
-                417,
-            ],
-            [
-                417,
-            ],
-            [
-                417,
-            ],
-            [
-                417,
-            ],
-            [
-                417,
-            ],
-            118 => [
+            113 => [
                 417,
             ],
             6 => [
-                -317,
+                -308,
             ],
         ],
         7 => [
             39 => [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             54 => [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             [
-                374,
+                369,
             ],
             66 => [
-                374,
+                369,
             ],
             75 => [
-                374,
+                369,
             ],
             80 => [
-                374,
+                369,
             ],
             85 => [
-                374,
+                369,
             ],
             90 => [
-                374,
+                369,
             ],
-            108 => [
-                374,
+            109 => [
+                369,
             ],
-            118 => [
-                374,
+            113 => [
+                369,
             ],
         ],
         21 => [
@@ -4344,7 +4362,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             ],
         ],
         36 => [
-            118 => [
+            113 => [
                 -15,
             ],
             11 => [
@@ -4352,7 +4370,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             ],
         ],
         39 => [
-            118 => [
+            113 => [
                 -15,
             ],
             11 => [
@@ -4403,7 +4421,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             66 => [
                 -55,
             ],
-            108 => [
+            109 => [
                 -56,
             ],
             12 => [
@@ -4456,92 +4474,77 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 60,
             ],
-            109 => [
+            108 => [
                 60,
             ],
-            115 => [
+            110 => [
                 60,
             ],
             68 => [
-                210,
+                205,
             ],
             69 => [
-                210,
+                205,
             ],
             72 => [
-                210,
+                205,
             ],
             73 => [
-                210,
+                205,
             ],
             76 => [
-                210,
+                205,
             ],
             78 => [
-                210,
+                205,
             ],
             79 => [
-                210,
+                205,
             ],
             83 => [
-                210,
+                205,
             ],
             84 => [
-                210,
+                205,
             ],
             88 => [
-                210,
+                205,
             ],
             92 => [
-                210,
+                205,
             ],
             93 => [
-                210,
+                205,
             ],
             94 => [
-                210,
+                205,
             ],
             95 => [
-                210,
+                205,
             ],
             96 => [
-                210,
+                205,
             ],
             99 => [
-                210,
+                205,
             ],
             100 => [
-                210,
+                205,
             ],
             101 => [
-                210,
+                205,
             ],
             102 => [
-                210,
+                205,
             ],
             103 => [
-                210,
+                205,
             ],
             104 => [
-                210,
-            ],
-            110 => [
-                210,
-            ],
-            111 => [
-                210,
-            ],
-            112 => [
-                210,
+                205,
             ],
             113 => [
-                210,
-            ],
-            114 => [
-                210,
-            ],
-            118 => [
-                210,
+                205,
             ],
         ],
         62 => [
@@ -4593,10 +4596,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 85,
             ],
-            109 => [
+            108 => [
                 85,
             ],
-            115 => [
+            110 => [
                 85,
             ],
         ],
@@ -4652,11 +4655,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             106 => [
                 86,
             ],
-            109 => [
+            108 => [
                 86,
             ],
-            115 => [
-                -209,
+            110 => [
+                -204,
             ],
         ],
         [
@@ -4664,14 +4667,14 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 87,
             ],
             106 => [
-                198,
+                193,
             ],
-            109 => [
-                204,
+            108 => [
+                199,
             ],
         ],
         92 => [
-            118 => [
+            113 => [
                 -15,
             ],
             65 => [
@@ -4797,7 +4800,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             105 => [
                 -122,
             ],
-            117 => [
+            112 => [
                 -123,
             ],
         ],
@@ -5030,28 +5033,13 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 132,
             ],
-            109 => [
-                132,
-            ],
             [
                 132,
             ],
-            [
+            110 => [
                 132,
             ],
-            [
-                132,
-            ],
-            [
-                132,
-            ],
-            [
-                132,
-            ],
-            [
-                132,
-            ],
-            117 => [
+            112 => [
                 132,
             ],
         ],
@@ -5199,7 +5187,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 92,
             ],
-            117 => [
+            112 => [
                 92,
             ],
             [
@@ -5211,29 +5199,14 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             107 => [
                 -144,
             ],
-            108 => [
+            109 => [
                 -56,
             ],
-            109 => [
+            108 => [
                 -145,
             ],
             110 => [
                 -146,
-            ],
-            111 => [
-                -147,
-            ],
-            112 => [
-                -148,
-            ],
-            113 => [
-                -149,
-            ],
-            114 => [
-                -150,
-            ],
-            115 => [
-                -151,
             ],
             54 => [
                 -46,
@@ -5260,91 +5233,91 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 -48,
             ],
             64 => [
-                -152,
+                -147,
             ],
             15 => [
-                -153,
+                -148,
             ],
             17 => [
-                -154,
+                -149,
             ],
             18 => [
-                -155,
+                -150,
             ],
             19 => [
-                -156,
+                -151,
             ],
             20 => [
-                -157,
+                -152,
             ],
             21 => [
-                -158,
+                -153,
             ],
             22 => [
-                -159,
+                -154,
             ],
             23 => [
-                -160,
+                -155,
             ],
             24 => [
-                -161,
+                -156,
             ],
             25 => [
-                -162,
+                -157,
             ],
             26 => [
-                -163,
+                -158,
             ],
             27 => [
-                -164,
+                -159,
             ],
             28 => [
-                -165,
+                -160,
             ],
             29 => [
-                -166,
+                -161,
             ],
             30 => [
-                -167,
+                -162,
             ],
             31 => [
-                -168,
+                -163,
             ],
             32 => [
-                -169,
+                -164,
             ],
             33 => [
-                -170,
+                -165,
             ],
             34 => [
-                -171,
+                -166,
             ],
             35 => [
-                -172,
+                -167,
             ],
             36 => [
-                -173,
+                -168,
             ],
             37 => [
-                -174,
+                -169,
             ],
             38 => [
-                -175,
+                -170,
             ],
             16 => [
-                -176,
+                -171,
             ],
             39 => [
-                -177,
+                -172,
             ],
             40 => [
                 -30,
             ],
             41 => [
-                -178,
+                -173,
             ],
             42 => [
-                -179,
+                -174,
             ],
             43 => [
                 -52,
@@ -5353,34 +5326,34 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 -53,
             ],
             45 => [
-                -180,
+                -175,
             ],
             46 => [
-                -181,
+                -176,
             ],
             47 => [
-                -182,
+                -177,
             ],
             48 => [
-                -183,
+                -178,
             ],
             49 => [
-                -184,
+                -179,
             ],
             50 => [
-                -185,
+                -180,
             ],
             51 => [
-                -186,
+                -181,
             ],
             52 => [
-                -187,
+                -182,
             ],
             6 => [
-                -188,
+                -183,
             ],
             53 => [
-                -189,
+                -184,
             ],
         ],
         137 => [
@@ -5681,22 +5654,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 133,
             ],
-            [
-                133,
-            ],
-            [
-                133,
-            ],
-            [
-                133,
-            ],
-            [
-                133,
-            ],
-            [
-                133,
-            ],
-            117 => [
+            112 => [
                 133,
             ],
             [
@@ -5706,110 +5664,95 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 -35,
             ],
         ],
-        210 => [
-            118 => [
-                211,
+        205 => [
+            113 => [
+                206,
             ],
             79 => [
-                224,
+                219,
             ],
             83 => [
-                224,
+                219,
             ],
             84 => [
-                224,
+                219,
             ],
             95 => [
-                224,
+                219,
             ],
             100 => [
-                224,
+                219,
             ],
             104 => [
-                224,
+                219,
             ],
             68 => [
-                226,
+                340,
             ],
             69 => [
-                226,
+                340,
             ],
             72 => [
-                226,
+                340,
             ],
             73 => [
-                226,
+                340,
             ],
             76 => [
-                226,
+                340,
             ],
             78 => [
-                226,
+                340,
             ],
             88 => [
-                226,
+                340,
             ],
             92 => [
-                226,
+                340,
             ],
             93 => [
-                226,
+                340,
             ],
             94 => [
-                226,
+                340,
             ],
             96 => [
-                226,
+                340,
             ],
             98 => [
-                226,
+                340,
             ],
             99 => [
-                226,
+                340,
             ],
             101 => [
-                226,
+                340,
             ],
             102 => [
-                226,
+                340,
             ],
             103 => [
-                226,
-            ],
-            110 => [
-                226,
-            ],
-            111 => [
-                226,
-            ],
-            112 => [
-                226,
-            ],
-            113 => [
-                226,
-            ],
-            114 => [
-                226,
+                340,
             ],
         ],
-        216 => [
+        211 => [
             79 => [
-                217,
+                212,
             ],
             83 => [
-                217,
+                212,
             ],
             [
-                217,
+                212,
             ],
             95 => [
-                217,
+                212,
             ],
             100 => [
-                217,
+                212,
             ],
             104 => [
-                217,
+                212,
             ],
             13 => [
                 62,
@@ -5859,318 +5802,341 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             [
                 62,
             ],
-            109 => [
+            108 => [
                 62,
             ],
-            115 => [
+            110 => [
                 62,
             ],
         ],
         [
             84 => [
-                -219,
+                -214,
             ],
             95 => [
-                -220,
+                -215,
             ],
             83 => [
-                -221,
+                -216,
             ],
             79 => [
-                -222,
+                -217,
             ],
             100 => [
-                -223,
+                -218,
             ],
             104 => [
-                -224,
+                -219,
             ],
         ],
-        227 => [
-            96 => [
-                -229,
+        222 => [
+            68 => [
+                223,
             ],
-            69 => [
-                -230,
-            ],
-            78 => [
-                -231,
-            ],
-            76 => [
-                -232,
+            [
+                223,
             ],
             72 => [
-                -233,
-            ],
-            68 => [
-                -234,
-            ],
-            102 => [
-                -235,
+                223,
             ],
             [
-                -236,
-            ],
-            101 => [
-                -237,
-            ],
-            99 => [
-                237,
-            ],
-            114 => [
-                -239,
-            ],
-            111 => [
-                -240,
-            ],
-            112 => [
-                -241,
-            ],
-            113 => [
-                -242,
-            ],
-            110 => [
-                -243,
-            ],
-            98 => [
-                243,
-            ],
-            88 => [
-                244,
-            ],
-            94 => [
-                318,
-            ],
-            73 => [
-                319,
-            ],
-            93 => [
-                338,
-                339,
-            ],
-            92 => [
-                344,
-                345,
-            ],
-        ],
-        247 => [
-            118 => [
-                248,
-            ],
-            12 => [
-                251,
-            ],
-        ],
-        255 => [
-            13 => [
-                256,
-            ],
-            65 => [
-                256,
-            ],
-            67 => [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
+                223,
             ],
             76 => [
-                256,
+                223,
+            ],
+            78 => [
+                223,
+            ],
+            88 => [
+                223,
+            ],
+            92 => [
+                223,
             ],
             [
-                256,
+                223,
             ],
             [
-                256,
+                223,
+            ],
+            96 => [
+                223,
+            ],
+            98 => [
+                223,
             ],
             [
-                256,
+                223,
+            ],
+            101 => [
+                223,
+            ],
+            [
+                223,
+            ],
+            [
+                223,
+            ],
+            113 => [
+                337,
+            ],
+        ],
+        [
+            96 => [
+                -225,
+            ],
+            69 => [
+                -226,
+            ],
+            78 => [
+                -227,
+            ],
+            76 => [
+                -228,
+            ],
+            72 => [
+                -229,
+            ],
+            68 => [
+                -230,
+            ],
+            102 => [
+                -231,
+            ],
+            [
+                -232,
+            ],
+            101 => [
+                -233,
+            ],
+            99 => [
+                233,
+            ],
+            98 => [
+                234,
+            ],
+            88 => [
+                235,
+            ],
+            94 => [
+                309,
+            ],
+            73 => [
+                310,
+            ],
+            93 => [
+                329,
+                330,
+            ],
+            92 => [
+                335,
+                336,
+            ],
+        ],
+        238 => [
+            113 => [
+                239,
+            ],
+            12 => [
+                242,
+            ],
+        ],
+        246 => [
+            13 => [
+                247,
+            ],
+            65 => [
+                247,
+            ],
+            67 => [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            76 => [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
+            ],
+            [
+                247,
             ],
             81 => [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             87 => [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             91 => [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
             [
-                256,
+                247,
             ],
-            109 => [
-                256,
+            108 => [
+                247,
             ],
-            [
-                256,
+            110 => [
+                247,
             ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            [
-                256,
-            ],
-            118 => [
-                256,
+            113 => [
+                247,
             ],
             86 => [
                 2,
             ],
             6 => [
-                -317,
+                -308,
             ],
         ],
-        259 => [
+        250 => [
             11 => [
-                260,
+                251,
             ],
             13 => [
-                260,
+                251,
             ],
             40 => [
-                260,
+                251,
             ],
             106 => [
-                260,
+                251,
             ],
-            109 => [
-                260,
+            108 => [
+                251,
             ],
-            115 => [
-                260,
+            110 => [
+                251,
             ],
-            118 => [
-                260,
+            113 => [
+                251,
             ],
             52 => [
-                311,
+                302,
             ],
         ],
-        261 => [
+        252 => [
             13 => [
-                262,
+                253,
             ],
             40 => [
-                262,
+                253,
             ],
             106 => [
-                262,
+                253,
             ],
-            109 => [
-                262,
+            108 => [
+                253,
             ],
-            115 => [
-                262,
+            110 => [
+                253,
             ],
-            118 => [
-                269,
+            113 => [
+                260,
             ],
             11 => [
-                307,
+                298,
             ],
         ],
-        263 => [
+        254 => [
             40 => [
-                264,
+                255,
             ],
             13 => [
-                268,
+                259,
             ],
             106 => [
-                268,
+                259,
             ],
-            109 => [
-                268,
+            108 => [
+                259,
             ],
-            115 => [
-                268,
+            110 => [
+                259,
             ],
         ],
-        267 => [
+        258 => [
             70 => [
                 74,
             ],
@@ -6189,384 +6155,377 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             106 => [
                 85,
             ],
-            109 => [
+            108 => [
                 85,
             ],
-            115 => [
+            110 => [
                 85,
             ],
         ],
-        273 => [
+        264 => [
             14 => [
-                274,
+                265,
             ],
             11 => [
-                285,
+                276,
             ],
         ],
-        287 => [
+        278 => [
             13 => [
-                288,
+                279,
             ],
             65 => [
-                288,
+                279,
             ],
             67 => [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             76 => [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             81 => [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             87 => [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             91 => [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
             [
-                288,
+                279,
             ],
-            109 => [
-                288,
+            108 => [
+                279,
             ],
-            [
-                288,
+            110 => [
+                279,
             ],
-            [
-                288,
-            ],
-            [
-                288,
-            ],
-            [
-                288,
-            ],
-            [
-                288,
-            ],
-            [
-                288,
-            ],
-            118 => [
-                288,
+            113 => [
+                279,
             ],
             15 => [
-                -153,
+                -148,
             ],
         ],
-        291 => [
-            118 => [
-                261,
+        282 => [
+            113 => [
+                252,
             ],
             14 => [
-                292,
+                283,
             ],
         ],
         [
             13 => [
-                293,
+                284,
             ],
             40 => [
-                293,
+                284,
             ],
             106 => [
-                293,
+                284,
             ],
-            109 => [
-                293,
+            108 => [
+                284,
             ],
-            115 => [
-                293,
+            110 => [
+                284,
             ],
             11 => [
-                297,
+                288,
             ],
             14 => [
-                297,
+                288,
             ],
         ],
         [
             40 => [
-                294,
+                285,
             ],
             13 => [
-                296,
+                287,
             ],
             106 => [
-                296,
+                287,
             ],
-            109 => [
-                296,
+            108 => [
+                287,
             ],
-            115 => [
-                296,
+            110 => [
+                287,
             ],
         ],
-        297 => [
+        288 => [
             14 => [
-                271,
+                262,
             ],
         ],
-        320 => [
-            118 => [
-                321,
+        311 => [
+            113 => [
+                312,
             ],
             12 => [
-                337,
+                328,
             ],
             52 => [
-                337,
+                328,
+            ],
+        ],
+        339 => [
+            113 => [
+                -15,
+            ],
+            40 => [
+                -30,
+            ],
+        ],
+        341 => [
+            12 => [
+                342,
+            ],
+            11 => [
+                7,
+            ],
+            39 => [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            54 => [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            [
+                7,
+            ],
+            66 => [
+                7,
+            ],
+            75 => [
+                7,
+            ],
+            80 => [
+                7,
+            ],
+            85 => [
+                7,
+            ],
+            90 => [
+                7,
+            ],
+            109 => [
+                7,
+            ],
+            113 => [
+                7,
             ],
         ],
         346 => [
-            12 => [
+            14 => [
+                347,
+            ],
+            16 => [
                 347,
             ],
             11 => [
-                7,
-            ],
-            39 => [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            54 => [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            [
-                7,
-            ],
-            66 => [
-                7,
-            ],
-            75 => [
-                7,
-            ],
-            80 => [
-                7,
-            ],
-            85 => [
-                7,
-            ],
-            90 => [
-                7,
-            ],
-            108 => [
-                7,
-            ],
-            118 => [
-                7,
-            ],
-        ],
-        351 => [
-            14 => [
-                352,
-            ],
-            16 => [
-                352,
-            ],
-            11 => [
-                360,
-            ],
-            12 => [
-                360,
-            ],
-            39 => [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            54 => [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            [
-                360,
-            ],
-            66 => [
-                360,
-            ],
-            75 => [
-                360,
-            ],
-            80 => [
-                360,
-            ],
-            85 => [
-                360,
-            ],
-            90 => [
-                360,
-            ],
-            108 => [
-                360,
-            ],
-            118 => [
-                360,
-            ],
-        ],
-        354 => [
-            16 => [
                 355,
             ],
-            14 => [
-                356,
+            12 => [
+                355,
+            ],
+            39 => [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            54 => [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            [
+                355,
+            ],
+            66 => [
+                355,
+            ],
+            75 => [
+                355,
+            ],
+            80 => [
+                355,
+            ],
+            85 => [
+                355,
+            ],
+            90 => [
+                355,
+            ],
+            109 => [
+                355,
+            ],
+            113 => [
+                355,
             ],
         ],
-        360 => [
+        349 => [
+            16 => [
+                350,
+            ],
+            14 => [
+                351,
+            ],
+        ],
+        355 => [
             12 => [
-                348,
+                343,
             ],
             11 => [
                 5,
@@ -6628,179 +6587,361 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             90 => [
                 5,
             ],
-            108 => [
+            109 => [
                 5,
             ],
-            118 => [
+            113 => [
                 5,
             ],
         ],
-        367 => [
+        362 => [
             14 => [
-                368,
+                363,
             ],
             16 => [
+                365,
+            ],
+            [
+                367,
+            ],
+        ],
+        369 => [
+            41 => [
                 370,
             ],
             [
-                372,
-            ],
-        ],
-        374 => [
-            41 => [
-                375,
-            ],
-            [
-                376,
+                371,
             ],
             44 => [
-                377,
+                372,
             ],
             43 => [
-                378,
+                373,
             ],
             40 => [
-                379,
+                374,
             ],
             39 => [
-                380,
+                375,
             ],
             85 => [
-                381,
-                385,
+                376,
+                380,
             ],
             66 => [
-                386,
-                387,
+                381,
+                382,
             ],
             11 => [
-                388,
+                383,
             ],
             54 => [
-                388,
+                383,
             ],
             55 => [
-                388,
+                383,
             ],
             56 => [
-                388,
+                383,
             ],
             57 => [
-                388,
+                383,
             ],
             58 => [
-                388,
+                383,
             ],
             59 => [
-                388,
+                383,
             ],
             60 => [
-                388,
+                383,
             ],
             61 => [
-                388,
+                383,
             ],
             75 => [
-                388,
+                383,
             ],
             80 => [
-                388,
+                383,
             ],
             90 => [
-                388,
+                383,
             ],
-            108 => [
-                388,
+            109 => [
+                383,
             ],
-            118 => [
-                388,
+            113 => [
+                383,
             ],
         ],
-        384 => [
+        379 => [
             14 => [
                 -20,
             ],
             16 => [
-                -176,
+                -171,
             ],
             [
-                -154,
+                -149,
             ],
         ],
-        389 => [
-            118 => [
-                390,
+        384 => [
+            113 => [
+                385,
             ],
             54 => [
-                391,
+                386,
             ],
             55 => [
-                391,
+                386,
             ],
             56 => [
-                391,
+                386,
             ],
             57 => [
-                391,
+                386,
             ],
             58 => [
-                391,
+                386,
             ],
             59 => [
-                391,
+                386,
             ],
             60 => [
-                391,
+                386,
             ],
             75 => [
-                391,
+                386,
             ],
             80 => [
-                391,
+                386,
             ],
             90 => [
-                391,
+                386,
             ],
             61 => [
-                402,
+                397,
             ],
             11 => [
-                404,
+                399,
             ],
-            108 => [
-                405,
+            109 => [
+                400,
             ],
         ],
-        391 => [
+        386 => [
             59 => [
-                -393,
+                -388,
             ],
             56 => [
-                -394,
+                -389,
             ],
             58 => [
-                -395,
+                -390,
             ],
             57 => [
-                -396,
+                -391,
             ],
             55 => [
-                -397,
+                -392,
             ],
             54 => [
-                -398,
+                -393,
             ],
             [
-                -399,
+                -394,
             ],
             90 => [
-                -400,
+                -395,
             ],
             75 => [
-                -401,
+                -396,
             ],
             80 => [
-                -402,
+                -397,
+            ],
+        ],
+        404 => [
+            11 => [
+                129,
+            ],
+            39 => [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            54 => [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            [
+                129,
+            ],
+            66 => [
+                129,
+            ],
+            75 => [
+                129,
+            ],
+            80 => [
+                129,
+            ],
+            85 => [
+                129,
+            ],
+            90 => [
+                129,
+            ],
+            109 => [
+                129,
+            ],
+            13 => [
+                57,
+            ],
+            65 => [
+                57,
+            ],
+            67 => [
+                57,
+            ],
+            68 => [
+                57,
+            ],
+            69 => [
+                57,
+            ],
+            70 => [
+                57,
+            ],
+            71 => [
+                57,
+            ],
+            72 => [
+                57,
+            ],
+            73 => [
+                57,
+            ],
+            74 => [
+                57,
+            ],
+            76 => [
+                57,
+            ],
+            77 => [
+                57,
+            ],
+            78 => [
+                57,
+            ],
+            79 => [
+                57,
+            ],
+            81 => [
+                57,
+            ],
+            82 => [
+                57,
+            ],
+            83 => [
+                57,
+            ],
+            84 => [
+                57,
+            ],
+            87 => [
+                57,
+            ],
+            88 => [
+                57,
+            ],
+            89 => [
+                57,
+            ],
+            91 => [
+                57,
+            ],
+            92 => [
+                57,
+            ],
+            93 => [
+                57,
+            ],
+            94 => [
+                57,
+            ],
+            95 => [
+                57,
+            ],
+            96 => [
+                57,
+            ],
+            97 => [
+                57,
+            ],
+            98 => [
+                57,
+            ],
+            99 => [
+                57,
+            ],
+            100 => [
+                57,
+            ],
+            101 => [
+                57,
+            ],
+            102 => [
+                57,
+            ],
+            103 => [
+                57,
+            ],
+            104 => [
+                57,
+            ],
+            105 => [
+                57,
+            ],
+            106 => [
+                57,
+            ],
+            108 => [
+                57,
+            ],
+            [
+                57,
             ],
         ],
         411 => [
@@ -6808,55 +6949,55 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 -30,
             ],
             45 => [
-                -180,
+                -175,
             ],
             [
-                -181,
+                -176,
             ],
             41 => [
-                -178,
+                -173,
             ],
             42 => [
-                -179,
+                -174,
             ],
             22 => [
-                -159,
+                -154,
             ],
             23 => [
-                -160,
+                -155,
             ],
             [
-                -182,
-            ],
-            [
-                -183,
-            ],
-            24 => [
-                -161,
-            ],
-            25 => [
-                -162,
-            ],
-            26 => [
-                -163,
-            ],
-            27 => [
-                -164,
-            ],
-            39 => [
                 -177,
             ],
             [
-                -184,
+                -178,
+            ],
+            24 => [
+                -156,
+            ],
+            25 => [
+                -157,
+            ],
+            26 => [
+                -158,
+            ],
+            27 => [
+                -159,
+            ],
+            39 => [
+                -172,
             ],
             [
-                -185,
+                -179,
+            ],
+            [
+                -180,
             ],
             28 => [
-                -165,
+                -160,
             ],
             29 => [
-                -166,
+                -161,
             ],
         ],
         418 => [
@@ -6872,17 +7013,17 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             106 => [
                 419,
             ],
-            109 => [
+            108 => [
                 419,
             ],
-            115 => [
+            110 => [
                 419,
             ],
-            118 => [
+            113 => [
                 419,
             ],
             6 => [
-                -317,
+                -308,
             ],
         ],
         426 => [
@@ -6906,7 +7047,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             5,
             -417,
             83,
-            316,
+            307,
         ],
         5 => [
             6,
@@ -6918,18 +7059,18 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         ],
         57 => [
             58,
-            -293,
+            -284,
         ],
         60 => [
             61,
-            -211,
+            -206,
         ],
         87 => [
             88,
             -91,
-            -196,
-            197,
-            197,
+            -191,
+            192,
+            192,
         ],
         91 => [
             92,
@@ -6944,7 +7085,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         ],
         127 => [
             128,
-            -191,
+            -186,
         ],
         134 => [
             9,
@@ -6967,237 +7108,241 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             -137,
             141,
         ],
-        193 => [
+        188 => [
             92,
             -126,
         ],
-        196 => [
-            192,
+        191 => [
+            187,
             -91,
         ],
-        198 => [
+        193 => [
             142,
             4,
             4,
-            -201,
-            -203,
+            -196,
+            -198,
             83,
             83,
         ],
-        200 => [
+        195 => [
             92,
             -126,
         ],
-        203 => [
-            192,
-            -201,
+        198 => [
+            187,
+            -196,
         ],
         [
             144,
             4,
-            -207,
+            -202,
             83,
         ],
-        207 => [
+        202 => [
             92,
             -126,
         ],
-        211 => [
+        206 => [
+            207,
+            -211,
+        ],
+        219 => [
             212,
-            -216,
+            -211,
+            -222,
         ],
-        224 => [
-            217,
-            -216,
-            -227,
+        221 => [
+            222,
+            -211,
         ],
-        226 => [
-            227,
-            -216,
-        ],
-        244 => [
+        235 => [
             107,
-            -247,
-            247,
+            -238,
+            238,
         ],
-        248 => [
-            249,
-            -252,
+        239 => [
+            240,
+            -243,
         ],
-        251 => [
-            252,
-            -247,
+        242 => [
+            243,
+            -238,
         ],
         [
             56,
-            -255,
-            317,
+            -246,
+            308,
         ],
-        256 => [
+        247 => [
             59,
-            -259,
-            315,
+            -250,
+            306,
         ],
-        258 => [
-            259,
-            -314,
+        249 => [
+            250,
+            -305,
+        ],
+        251 => [
+            -238,
+            252,
+            -301,
+            -238,
+        ],
+        255 => [
+            29,
+            -258,
         ],
         260 => [
-            -247,
-            261,
-            -310,
-            -247,
-        ],
-        264 => [
-            29,
-            -267,
-        ],
-        269 => [
             14,
-            -247,
-            -272,
+            -238,
+            -263,
         ],
-        272 => [
-            273,
-            -307,
+        263 => [
+            264,
+            -298,
         ],
-        277 => [
+        268 => [
             23,
-            -280,
+            -271,
         ],
-        280 => [
-            -280,
+        271 => [
+            -271,
             -24,
         ],
-        282 => [
+        273 => [
             19,
-            -280,
-            283,
-            197,
+            -271,
+            274,
+            192,
         ],
-        284 => [
+        275 => [
             19,
-            -280,
-            197,
+            -271,
+            192,
         ],
         [
             9,
-            -288,
-            304,
+            -279,
+            295,
         ],
-        288 => [
-            289,
-            -301,
-            -304,
+        279 => [
+            280,
+            -292,
+            -295,
         ],
         [
             59,
-            -292,
-            -247,
+            -283,
+            -238,
         ],
-        294 => [
-            264,
-            -293,
+        285 => [
+            255,
+            -284,
+        ],
+        289 => [
+            4,
+            283,
+            83,
+            -263,
         ],
         298 => [
             4,
-            292,
+            252,
             83,
-            -272,
+            -263,
         ],
-        307 => [
-            4,
-            261,
-            83,
-            -272,
-        ],
-        311 => [
-            310,
+        302 => [
+            301,
             5,
-            -247,
+            -238,
         ],
-        318 => [
+        309 => [
             112,
-            -247,
-            247,
+            -238,
+            238,
         ],
         [
             98,
-            -247,
-            320,
+            -238,
+            311,
         ],
-        321 => [
-            249,
-            -324,
-            -326,
+        312 => [
+            240,
+            -315,
+            -317,
         ],
-        325 => [
-            326,
+        316 => [
+            317,
+            318,
             327,
-            336,
-            -247,
+            -238,
         ],
-        327 => [
-            328,
-            -334,
-            -193,
+        318 => [
+            319,
+            -325,
+            -188,
         ],
         [
-            249,
-            -247,
-            -331,
+            240,
+            -238,
+            -322,
         ],
-        337 => [
-            -324,
-            325,
+        328 => [
+            -315,
+            316,
+        ],
+        331 => [
+            5,
+            -334,
         ],
         340 => [
-            5,
-            -343,
+            223,
+            -211,
         ],
-        347 => [
-            348,
-            -367,
+        342 => [
+            343,
+            -362,
         ],
         [
             56,
-            -351,
-            364,
+            -346,
+            359,
         ],
-        350 => [
-            351,
-            -363,
-            -193,
+        345 => [
+            346,
+            -358,
+            -188,
         ],
-        356 => [
+        351 => [
             19,
             5,
-            -359,
-            197,
-        ],
-        388 => [
-            389,
-            -367,
-        ],
-        405 => [
-            55,
-            4,
-            57,
+            -354,
             192,
-            249,
-            -408,
+        ],
+        383 => [
+            384,
+            -362,
+        ],
+        401 => [
+            9,
+            -404,
             83,
         ],
+        403 => [
+            404,
+            -407,
+        ],
         420 => [
-            -247,
-            261,
-            -247,
+            -238,
+            252,
+            -238,
             -423,
             -426,
         ],
         422 => [
             423,
-            -247,
+            -238,
         ],
         427 => [
             56,
@@ -7206,7 +7351,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         ],
         [
             -431,
-            316,
+            307,
         ],
     ];
 
@@ -7220,7 +7365,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     public function __construct()
     {
         $this->lexer = new \Phplrt\Lexer\Lexer(
-            pattern: '/\\G(?|(?:(?:(?:^|(?<=\\A\\xEF\\xBB\\xBF))[\\x20\\t\\f\\x0B]*+(?:\\x23|%:)(?:(?:[^\\\\\\r\\n]++|\\\\(?:\\r\\n|.)|\\r(?!\\n))*+))(*MARK:0))|(?:(?:\\A\\xEF\\xBB\\xBF)(*MARK:1))|(?:(?:\\/\\/[^\\n]*+)(*MARK:2))|(?:(?:\\/\\*(?:[^*]++|\\*(?!\\/))*+\\*\\/)(*MARK:3))|(?:(?:\\n++)(*MARK:4))|(?:(?:[\\x20\\t\\r\\f\\x0B]++)(*MARK:5))|(?:(?:;)(*MARK:6))|(?:(?:,)(*MARK:7))|(?:(?:\\))(*MARK:8))|(?:(?:\\}|%>)(*MARK:9))|(?:(?:\\]|:>)(*MARK:10))|(?:(?:\\()(*MARK:11))|(?:(?:\\{|<%)(*MARK:12))|(?:(?:(?:\\[|<:)[\\x20\\t\\r\\n\\f\\x0B]*+(?:\\[|<:))(*MARK:13))|(?:(?:\\[|<:)(*MARK:14))|(?:(?:\\.\\.\\.)(*MARK:15))|(?:(?:\\.(?![0-9]))(*MARK:16))|(?:(?:->)(*MARK:17))|(?:(?:\\+\\+)(*MARK:18))|(?:(?:--)(*MARK:19))|(?:(?:<<=)(*MARK:20))|(?:(?:>>=)(*MARK:21))|(?:(?:<<)(*MARK:22))|(?:(?:>>)(*MARK:23))|(?:(?:<=)(*MARK:24))|(?:(?:>=)(*MARK:25))|(?:(?:==)(*MARK:26))|(?:(?:!=)(*MARK:27))|(?:(?:&&)(*MARK:28))|(?:(?:\\|\\|)(*MARK:29))|(?:(?:\\*=)(*MARK:30))|(?:(?:\\/=)(*MARK:31))|(?:(?:%=)(*MARK:32))|(?:(?:\\+=)(*MARK:33))|(?:(?:-=)(*MARK:34))|(?:(?:&=)(*MARK:35))|(?:(?:\\^=)(*MARK:36))|(?:(?:\\|=)(*MARK:37))|(?:(?:::)(*MARK:38))|(?:(?:&)(*MARK:39))|(?:(?:\\*)(*MARK:40))|(?:(?:\\+)(*MARK:41))|(?:(?:-)(*MARK:42))|(?:(?:~)(*MARK:43))|(?:(?:!)(*MARK:44))|(?:(?:\\/)(*MARK:45))|(?:(?:%)(*MARK:46))|(?:(?:<)(*MARK:47))|(?:(?:>)(*MARK:48))|(?:(?:\\^)(*MARK:49))|(?:(?:\\|)(*MARK:50))|(?:(?:\\?)(*MARK:51))|(?:(?::)(*MARK:52))|(?:(?:=)(*MARK:53))|(?:(?:(?:0[xX](?:(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)?\\.(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)\\.?)(?:[pP][+-]?(?:[0-9](?:\'?[0-9])*+)))(?:[fF](?:128x?|64x?|32x?|16)|(?:[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL)|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:54))|(?:(?:(?:(?:(?:[0-9](?:\'?[0-9])*+)?\\.(?:[0-9](?:\'?[0-9])*+)|(?:[0-9](?:\'?[0-9])*+)\\.)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))?|(?:[0-9](?:\'?[0-9])*+)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+)))(?:[fF](?:128x?|64x?|32x?|16)|(?:[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL)|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:55))|(?:(?:(?:0[xX](?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+))(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:56))|(?:(?:(?:0[bB][01](?:\'?[01])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:57))|(?:(?:(?:0(?:\'?[0-7])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:58))|(?:(?:(?:[1-9](?:\'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:59))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))++\')(*MARK:60))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))*+")(*MARK:61))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|\\\\[^\\n]?)*+\'?)(*MARK:62))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|\\\\[^\\n]?)*+"?)(*MARK:63))|(?:(?:\\.?[0-9](?:[eEpP][+-]|\'[A-Za-z0-9_\\x80-\\xFF]|[A-Za-z0-9_.\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))*+)(*MARK:64))|(?:(?:(?:alignas|_Alignas)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:65))|(?:(?:(?:alignof|_Alignof|__alignof__|__alignof)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:66))|(?:(?:auto(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:67))|(?:(?:(?:bool|_Bool)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:68))|(?:(?:char(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:69))|(?:(?:(?:const|__const__|__const)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:70))|(?:(?:constexpr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:71))|(?:(?:double(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:72))|(?:(?:enum(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:73))|(?:(?:extern(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:74))|(?:(?:false(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:75))|(?:(?:float(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:76))|(?:(?:(?:inline|__inline__|__inline)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:77))|(?:(?:int(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:78))|(?:(?:long(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:79))|(?:(?:nullptr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:80))|(?:(?:register(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:81))|(?:(?:(?:restrict|__restrict__|__restrict)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:82))|(?:(?:short(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:83))|(?:(?:(?:signed|__signed__|__signed)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:84))|(?:(?:sizeof(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:85))|(?:(?:(?:static_assert|_Static_assert)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:86))|(?:(?:static(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:87))|(?:(?:struct(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:88))|(?:(?:(?:thread_local|_Thread_local|__thread)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:89))|(?:(?:true(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:90))|(?:(?:typedef(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:91))|(?:(?:typeof_unqual(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:92))|(?:(?:(?:typeof|__typeof__|__typeof)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:93))|(?:(?:union(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:94))|(?:(?:unsigned(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:95))|(?:(?:void(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:96))|(?:(?:(?:volatile|__volatile__|__volatile)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:97))|(?:(?:_Atomic(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:98))|(?:(?:_BitInt(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:99))|(?:(?:(?:_Complex|__complex__|__complex)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:100))|(?:(?:_Decimal128(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:101))|(?:(?:_Decimal32(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:102))|(?:(?:_Decimal64(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:103))|(?:(?:_Imaginary(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:104))|(?:(?:_Noreturn(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:105))|(?:(?:(?:__attribute__|__attribute)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:106))|(?:(?:(?:__asm__|__asm)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:107))|(?:(?:__builtin_offsetof(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:108))|(?:(?:__declspec(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:109))|(?:(?:__int128(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:110))|(?:(?:__int16(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:111))|(?:(?:__int32(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:112))|(?:(?:__int64(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:113))|(?:(?:__int8(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:114))|(?:(?:(?:__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__ptr32|__ptr64|_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:115))|(?:(?:__extension__(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:116))|(?:(?:(?:(?:break|case|continue|default|do|else|for|goto|if|return|switch|while)|_Generic)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:117))|(?:(?:(?:[A-Za-z_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))(?:[A-Za-z0-9_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))*+)(*MARK:118))|(?:(?:[^\\s]++)(*MARK:119)))/Ssm',
+            pattern: '/\\G(?|(?:(?:(?:^|(?<=\\A\\xEF\\xBB\\xBF))[\\x20\\t\\f\\x0B]*+(?:\\x23|%:)(?:(?:[^\\\\\\r\\n]++|\\\\(?:\\r\\n|.)|\\r(?!\\n))*+))(*MARK:0))|(?:(?:\\A\\xEF\\xBB\\xBF)(*MARK:1))|(?:(?:\\/\\/[^\\n]*+)(*MARK:2))|(?:(?:\\/\\*(?:[^*]++|\\*(?!\\/))*+\\*\\/)(*MARK:3))|(?:(?:\\n++)(*MARK:4))|(?:(?:[\\x20\\t\\r\\f\\x0B]++)(*MARK:5))|(?:(?:;)(*MARK:6))|(?:(?:,)(*MARK:7))|(?:(?:\\))(*MARK:8))|(?:(?:\\}|%>)(*MARK:9))|(?:(?:\\]|:>)(*MARK:10))|(?:(?:\\()(*MARK:11))|(?:(?:\\{|<%)(*MARK:12))|(?:(?:(?:\\[|<:)[\\x20\\t\\r\\n\\f\\x0B]*+(?:\\[|<:))(*MARK:13))|(?:(?:\\[|<:)(*MARK:14))|(?:(?:\\.\\.\\.)(*MARK:15))|(?:(?:\\.(?![0-9]))(*MARK:16))|(?:(?:->)(*MARK:17))|(?:(?:\\+\\+)(*MARK:18))|(?:(?:--)(*MARK:19))|(?:(?:<<=)(*MARK:20))|(?:(?:>>=)(*MARK:21))|(?:(?:<<)(*MARK:22))|(?:(?:>>)(*MARK:23))|(?:(?:<=)(*MARK:24))|(?:(?:>=)(*MARK:25))|(?:(?:==)(*MARK:26))|(?:(?:!=)(*MARK:27))|(?:(?:&&)(*MARK:28))|(?:(?:\\|\\|)(*MARK:29))|(?:(?:\\*=)(*MARK:30))|(?:(?:\\/=)(*MARK:31))|(?:(?:%=)(*MARK:32))|(?:(?:\\+=)(*MARK:33))|(?:(?:-=)(*MARK:34))|(?:(?:&=)(*MARK:35))|(?:(?:\\^=)(*MARK:36))|(?:(?:\\|=)(*MARK:37))|(?:(?:::)(*MARK:38))|(?:(?:&)(*MARK:39))|(?:(?:\\*)(*MARK:40))|(?:(?:\\+)(*MARK:41))|(?:(?:-)(*MARK:42))|(?:(?:~)(*MARK:43))|(?:(?:!)(*MARK:44))|(?:(?:\\/)(*MARK:45))|(?:(?:%)(*MARK:46))|(?:(?:<)(*MARK:47))|(?:(?:>)(*MARK:48))|(?:(?:\\^)(*MARK:49))|(?:(?:\\|)(*MARK:50))|(?:(?:\\?)(*MARK:51))|(?:(?::)(*MARK:52))|(?:(?:=)(*MARK:53))|(?:(?:(?:0[xX](?:(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)?\\.(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)|(?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+)\\.?)(?:[pP][+-]?(?:[0-9](?:\'?[0-9])*+)))(?:[fF](?:128x?|64x?|32x?|16)|(?:[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL)|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:54))|(?:(?:(?:(?:(?:[0-9](?:\'?[0-9])*+)?\\.(?:[0-9](?:\'?[0-9])*+)|(?:[0-9](?:\'?[0-9])*+)\\.)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+))?|(?:[0-9](?:\'?[0-9])*+)(?:[eE][+-]?(?:[0-9](?:\'?[0-9])*+)))(?:[fF](?:128x?|64x?|32x?|16)|(?:[dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL)|[fFlL])?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:55))|(?:(?:(?:0[xX](?:[0-9A-Fa-f](?:\'?[0-9A-Fa-f])*+))(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:56))|(?:(?:(?:0[bB][01](?:\'?[01])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:57))|(?:(?:(?:0(?:\'?[0-7])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:58))|(?:(?:(?:[1-9](?:\'?[0-9])*+)(?:[uU](?:ll|LL|[lL]|wb|WB)?|(?:ll|LL|[lL]|wb|WB)[uU]?)?(?:(?![A-Za-z0-9_\\x80-\\xFF\'.]|\\\\[uU]|(?<=[eEpP])[+-])))(*MARK:59))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))++\')(*MARK:60))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|(?:\\\\(?:(?:[\'"?\\\\abfnrtv])|(?:[0-7]{1,3}|x[0-9A-Fa-f]++))|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8})))*+")(*MARK:61))|(?:(?:(?:u8|[uUL])?\'(?:[^\'\\\\\\n]|\\\\[^\\n]?)*+\'?)(*MARK:62))|(?:(?:(?:u8|[uUL])?"(?:[^"\\\\\\n]|\\\\[^\\n]?)*+"?)(*MARK:63))|(?:(?:\\.?[0-9](?:[eEpP][+-]|\'[A-Za-z0-9_\\x80-\\xFF]|[A-Za-z0-9_.\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))*+)(*MARK:64))|(?:(?:(?:alignas|_Alignas)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:65))|(?:(?:(?:alignof|_Alignof|__alignof__|__alignof)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:66))|(?:(?:auto(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:67))|(?:(?:(?:bool|_Bool)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:68))|(?:(?:char(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:69))|(?:(?:(?:const|__const__|__const)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:70))|(?:(?:constexpr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:71))|(?:(?:double(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:72))|(?:(?:enum(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:73))|(?:(?:extern(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:74))|(?:(?:false(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:75))|(?:(?:float(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:76))|(?:(?:(?:inline|__inline__|__inline)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:77))|(?:(?:int(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:78))|(?:(?:long(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:79))|(?:(?:nullptr(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:80))|(?:(?:register(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:81))|(?:(?:(?:restrict|__restrict__|__restrict)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:82))|(?:(?:short(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:83))|(?:(?:(?:signed|__signed__|__signed)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:84))|(?:(?:sizeof(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:85))|(?:(?:(?:static_assert|_Static_assert)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:86))|(?:(?:static(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:87))|(?:(?:struct(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:88))|(?:(?:(?:thread_local|_Thread_local|__thread)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:89))|(?:(?:true(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:90))|(?:(?:typedef(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:91))|(?:(?:typeof_unqual(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:92))|(?:(?:(?:typeof|__typeof__|__typeof)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:93))|(?:(?:union(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:94))|(?:(?:unsigned(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:95))|(?:(?:void(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:96))|(?:(?:(?:volatile|__volatile__|__volatile)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:97))|(?:(?:_Atomic(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:98))|(?:(?:_BitInt(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:99))|(?:(?:(?:_Complex|__complex__|__complex)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:100))|(?:(?:_Decimal128(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:101))|(?:(?:_Decimal32(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:102))|(?:(?:_Decimal64(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:103))|(?:(?:_Imaginary(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:104))|(?:(?:_Noreturn(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:105))|(?:(?:(?:__attribute__|__attribute)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:106))|(?:(?:(?:__asm__|__asm)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:107))|(?:(?:__declspec(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:108))|(?:(?:__builtin_[A-Za-z0-9_\\x80-\\xFF]++(?=[\\x20\\t\\r\\n\\f\\x0B]*+\\())(*MARK:109))|(?:(?:(?:(?:__cdecl|__clrcall|__stdcall|__fastcall|__thiscall|__vectorcall|__regcall|__pascal|_cdecl|_stdcall|_fastcall)|(?:__ptr32|__ptr64|__sptr|__uptr|__unaligned|__w64)|(?:_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)|__forceinline)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:110))|(?:(?:__extension__(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:111))|(?:(?:(?:(?:break|case|continue|default|do|else|for|goto|if|return|switch|while)|_Generic)(?:(?![A-Za-z0-9_\\x80-\\xFF]|\\\\[uU])))(*MARK:112))|(?:(?:(?:[A-Za-z_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))(?:[A-Za-z0-9_\\x80-\\xFF]|(?:\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}))*+)(*MARK:113))|(?:(?:[^\\s]++)(*MARK:114)))/Ssm',
             channels: [
                 'Directive',
                 'Hidden',
@@ -7228,8 +7373,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 'Hidden',
                 'Hidden',
                 'Hidden',
-                116 => 'Hidden',
-                119 => 'Unknown',
+                111 => 'Hidden',
+                114 => 'Unknown',
             ],
             names: [
                 'T_DIRECTIVE',
@@ -7340,13 +7485,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 'T_NORETURN',
                 'T_ATTRIBUTE',
                 'T_ASM',
-                'T_BUILTIN_OFFSETOF',
                 'T_DECLSPEC',
-                'T_INT128',
-                'T_INT16',
-                'T_INT32',
-                'T_INT64',
-                'T_INT8',
+                'T_BUILTIN_CALL',
                 'T_KEYWORD_ATTRIBUTE',
                 'T_EXTENSION',
                 'T_RESERVED_KEYWORD',
@@ -7358,14 +7498,14 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             lexer: $this->lexer,
             grammar: [
                 new \Phplrt\Parser\Grammar\Repetition(1, 0, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([2, 417, 316]),
-                new \Phplrt\Parser\Grammar\Concatenation([3, 4, 5, 415, 83, 316]),
+                new \Phplrt\Parser\Grammar\Alternation([2, 417, 307]),
+                new \Phplrt\Parser\Grammar\Concatenation([3, 4, 5, 415, 83, 307]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_STATIC_ASSERT, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LPAREN, false),
                 new \Phplrt\Parser\Grammar\Concatenation([6, 412]),
                 new \Phplrt\Parser\Grammar\Concatenation([7, 408]),
-                new \Phplrt\Parser\Grammar\Alternation([8, 374]),
-                new \Phplrt\Parser\Grammar\Concatenation([9, 10, 57, 83, 346]),
+                new \Phplrt\Parser\Grammar\Alternation([8, 369]),
+                new \Phplrt\Parser\Grammar\Concatenation([9, 10, 57, 83, 341]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LPAREN, true),
                 new \Phplrt\Parser\Grammar\Alternation([11, 37]),
                 new \Phplrt\Parser\Grammar\Concatenation([12, 16]),
@@ -7412,12 +7552,12 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_EXCLAMATION, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SIZEOF, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ALIGNOF, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_BUILTIN_OFFSETOF, true),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_BUILTIN_CALL, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LBRACE, true),
-                new \Phplrt\Parser\Grammar\Concatenation([58, 295]),
+                new \Phplrt\Parser\Grammar\Concatenation([58, 286]),
                 new \Phplrt\Parser\Grammar\Concatenation([59]),
-                new \Phplrt\Parser\Grammar\Alternation([60, 210]),
-                new \Phplrt\Parser\Grammar\Concatenation([61, 209]),
+                new \Phplrt\Parser\Grammar\Alternation([60, 205]),
+                new \Phplrt\Parser\Grammar\Concatenation([61, 204]),
                 new \Phplrt\Parser\Grammar\Repetition(62, 1, \INF),
                 new \Phplrt\Parser\Grammar\Alternation([63, 71, 74, 80, 85]),
                 new \Phplrt\Parser\Grammar\Alternation([64, 65, 66, 67, 68, 69, 70]),
@@ -7442,12 +7582,12 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ALIGNAS, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_RPAREN, false),
                 new \Phplrt\Parser\Grammar\Concatenation([82, 4, 5, 83]),
-                new \Phplrt\Parser\Grammar\Alternation([86, 208]),
-                new \Phplrt\Parser\Grammar\Alternation([87, 198, 204]),
-                new \Phplrt\Parser\Grammar\Concatenation([88, 89, 194, 197, 197]),
+                new \Phplrt\Parser\Grammar\Alternation([86, 203]),
+                new \Phplrt\Parser\Grammar\Alternation([87, 193, 199]),
+                new \Phplrt\Parser\Grammar\Concatenation([88, 89, 189, 192, 192]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ATTRIBUTE_START, true),
                 new \Phplrt\Parser\Grammar\Optional(90),
-                new \Phplrt\Parser\Grammar\Alternation([91, 193]),
+                new \Phplrt\Parser\Grammar\Alternation([91, 188]),
                 new \Phplrt\Parser\Grammar\Concatenation([92, 123, 92, 124]),
                 new \Phplrt\Parser\Grammar\Alternation([14, 82, 54, 93, 94, 95, 24, 96, 97, 98, 99, 49, 100, 101, 102, 103, 50, 104, 26, 105, 106, 53, 3, 23, 107, 108, 48, 109, 110, 111, 112, 113, 114, 25, 27, 115, 116, 117, 118, 119, 120, 121, 122]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_AUTO, true),
@@ -7484,13 +7624,13 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Optional(125),
                 new \Phplrt\Parser\Grammar\Concatenation([9, 126, 83]),
                 new \Phplrt\Parser\Grammar\Optional(127),
-                new \Phplrt\Parser\Grammar\Concatenation([128, 189]),
+                new \Phplrt\Parser\Grammar\Concatenation([128, 184]),
                 new \Phplrt\Parser\Grammar\Alternation([129, 132]),
                 new \Phplrt\Parser\Grammar\Concatenation([5, 130]),
                 new \Phplrt\Parser\Grammar\Predicate(131, true),
                 new \Phplrt\Parser\Grammar\Alternation([34, 15]),
                 new \Phplrt\Parser\Grammar\Repetition(133, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([134, 138, 139, 140, 92, 142, 143, 55, 144, 145, 146, 147, 148, 149, 150, 45, 44, 41, 43, 42, 40, 46, 47, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 29, 177, 178, 51, 52, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188]),
+                new \Phplrt\Parser\Grammar\Alternation([134, 138, 139, 140, 92, 142, 143, 55, 144, 145, 45, 44, 41, 43, 42, 40, 46, 47, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 29, 172, 173, 51, 52, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183]),
                 new \Phplrt\Parser\Grammar\Concatenation([9, 135, 15]),
                 new \Phplrt\Parser\Grammar\Optional(136),
                 new \Phplrt\Parser\Grammar\Repetition(137, 1, \INF),
@@ -7502,11 +7642,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ATTRIBUTE, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ASM, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_DECLSPEC, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT128, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT16, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT32, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT64, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT8, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_KEYWORD_ATTRIBUTE, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_PP_NUMBER, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ELLIPSIS, true),
@@ -7546,45 +7681,46 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_COLON, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SEMICOLON, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ASSIGN, true),
-                new \Phplrt\Parser\Grammar\Optional(190),
-                new \Phplrt\Parser\Grammar\Repetition(191, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 128]),
+                new \Phplrt\Parser\Grammar\Optional(185),
+                new \Phplrt\Parser\Grammar\Repetition(186, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 128]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_COMMA, false),
                 new \Phplrt\Parser\Grammar\Concatenation([92, 124]),
-                new \Phplrt\Parser\Grammar\Optional(195),
-                new \Phplrt\Parser\Grammar\Repetition(196, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 89]),
+                new \Phplrt\Parser\Grammar\Optional(190),
+                new \Phplrt\Parser\Grammar\Repetition(191, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 89]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACKET, false),
-                new \Phplrt\Parser\Grammar\Concatenation([142, 4, 4, 199, 201, 83, 83]),
-                new \Phplrt\Parser\Grammar\Optional(200),
+                new \Phplrt\Parser\Grammar\Concatenation([142, 4, 4, 194, 196, 83, 83]),
+                new \Phplrt\Parser\Grammar\Optional(195),
                 new \Phplrt\Parser\Grammar\Concatenation([92, 124]),
-                new \Phplrt\Parser\Grammar\Optional(202),
-                new \Phplrt\Parser\Grammar\Repetition(203, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 199]),
-                new \Phplrt\Parser\Grammar\Concatenation([144, 4, 205, 83]),
-                new \Phplrt\Parser\Grammar\Optional(206),
-                new \Phplrt\Parser\Grammar\Repetition(207, 1, \INF),
+                new \Phplrt\Parser\Grammar\Optional(197),
+                new \Phplrt\Parser\Grammar\Repetition(198, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 194]),
+                new \Phplrt\Parser\Grammar\Concatenation([144, 4, 200, 83]),
+                new \Phplrt\Parser\Grammar\Optional(201),
+                new \Phplrt\Parser\Grammar\Repetition(202, 1, \INF),
                 new \Phplrt\Parser\Grammar\Concatenation([92, 124]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_KEYWORD_ATTRIBUTE, true),
+                new \Phplrt\Parser\Grammar\Optional(205),
+                new \Phplrt\Parser\Grammar\Alternation([206, 219, 340]),
+                new \Phplrt\Parser\Grammar\Concatenation([207, 209]),
+                new \Phplrt\Parser\Grammar\Concatenation([14, 208]),
+                new \Phplrt\Parser\Grammar\Predicate(183, false),
                 new \Phplrt\Parser\Grammar\Optional(210),
-                new \Phplrt\Parser\Grammar\Alternation([211, 224, 226]),
-                new \Phplrt\Parser\Grammar\Concatenation([212, 214]),
-                new \Phplrt\Parser\Grammar\Concatenation([14, 213]),
-                new \Phplrt\Parser\Grammar\Predicate(188, false),
-                new \Phplrt\Parser\Grammar\Optional(215),
-                new \Phplrt\Parser\Grammar\Repetition(216, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([217, 62]),
-                new \Phplrt\Parser\Grammar\Alternation([218, 219, 220, 221, 222, 223]),
+                new \Phplrt\Parser\Grammar\Repetition(211, 1, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([212, 62]),
+                new \Phplrt\Parser\Grammar\Alternation([213, 214, 215, 216, 217, 218]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SIGNED, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_UNSIGNED, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SHORT, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LONG, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_COMPLEX, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_IMAGINARY, true),
-                new \Phplrt\Parser\Grammar\Concatenation([217, 214, 225]),
-                new \Phplrt\Parser\Grammar\Optional(226),
-                new \Phplrt\Parser\Grammar\Concatenation([227, 214]),
-                new \Phplrt\Parser\Grammar\Alternation([228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 318, 319, 338, 339, 344, 345]),
+                new \Phplrt\Parser\Grammar\Concatenation([212, 209, 220]),
+                new \Phplrt\Parser\Grammar\Optional(221),
+                new \Phplrt\Parser\Grammar\Concatenation([222, 209]),
+                new \Phplrt\Parser\Grammar\Alternation([223, 337]),
+                new \Phplrt\Parser\Grammar\Alternation([224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 309, 310, 329, 330, 335, 336]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_VOID, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_CHAR, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_INT, true),
@@ -7595,160 +7731,159 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_DECIMAL64, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_DECIMAL128, true),
                 new \Phplrt\Parser\Grammar\Concatenation([115, 4, 5, 83]),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT8, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT16, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT32, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT64, true),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_INT128, true),
                 new \Phplrt\Parser\Grammar\Concatenation([27, 4, 57, 83]),
-                new \Phplrt\Parser\Grammar\Concatenation([107, 245, 247]),
-                new \Phplrt\Parser\Grammar\Optional(246),
+                new \Phplrt\Parser\Grammar\Concatenation([107, 236, 238]),
+                new \Phplrt\Parser\Grammar\Optional(237),
                 new \Phplrt\Parser\Grammar\Repetition(85, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([248, 251]),
-                new \Phplrt\Parser\Grammar\Concatenation([249, 250]),
+                new \Phplrt\Parser\Grammar\Alternation([239, 242]),
+                new \Phplrt\Parser\Grammar\Concatenation([240, 241]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_IDENTIFIER, true),
-                new \Phplrt\Parser\Grammar\Optional(251),
-                new \Phplrt\Parser\Grammar\Concatenation([252, 245]),
-                new \Phplrt\Parser\Grammar\Concatenation([56, 253, 317]),
-                new \Phplrt\Parser\Grammar\Optional(254),
-                new \Phplrt\Parser\Grammar\Repetition(255, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([256, 2, 316]),
-                new \Phplrt\Parser\Grammar\Concatenation([59, 257, 315]),
-                new \Phplrt\Parser\Grammar\Optional(258),
-                new \Phplrt\Parser\Grammar\Concatenation([259, 312]),
-                new \Phplrt\Parser\Grammar\Alternation([260, 311]),
-                new \Phplrt\Parser\Grammar\Concatenation([245, 261, 308, 245]),
-                new \Phplrt\Parser\Grammar\Alternation([262, 269, 307]),
-                new \Phplrt\Parser\Grammar\Concatenation([263, 261]),
-                new \Phplrt\Parser\Grammar\Alternation([264, 268]),
-                new \Phplrt\Parser\Grammar\Concatenation([29, 265]),
-                new \Phplrt\Parser\Grammar\Optional(266),
-                new \Phplrt\Parser\Grammar\Repetition(267, 1, \INF),
+                new \Phplrt\Parser\Grammar\Optional(242),
+                new \Phplrt\Parser\Grammar\Concatenation([243, 236]),
+                new \Phplrt\Parser\Grammar\Concatenation([56, 244, 308]),
+                new \Phplrt\Parser\Grammar\Optional(245),
+                new \Phplrt\Parser\Grammar\Repetition(246, 1, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([247, 2, 307]),
+                new \Phplrt\Parser\Grammar\Concatenation([59, 248, 306]),
+                new \Phplrt\Parser\Grammar\Optional(249),
+                new \Phplrt\Parser\Grammar\Concatenation([250, 303]),
+                new \Phplrt\Parser\Grammar\Alternation([251, 302]),
+                new \Phplrt\Parser\Grammar\Concatenation([236, 252, 299, 236]),
+                new \Phplrt\Parser\Grammar\Alternation([253, 260, 298]),
+                new \Phplrt\Parser\Grammar\Concatenation([254, 252]),
+                new \Phplrt\Parser\Grammar\Alternation([255, 259]),
+                new \Phplrt\Parser\Grammar\Concatenation([29, 256]),
+                new \Phplrt\Parser\Grammar\Optional(257),
+                new \Phplrt\Parser\Grammar\Repetition(258, 1, \INF),
                 new \Phplrt\Parser\Grammar\Alternation([74, 85]),
                 new \Phplrt\Parser\Grammar\Repetition(85, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([14, 245, 270]),
-                new \Phplrt\Parser\Grammar\Optional(271),
-                new \Phplrt\Parser\Grammar\Repetition(272, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([273, 305]),
-                new \Phplrt\Parser\Grammar\Alternation([274, 285]),
-                new \Phplrt\Parser\Grammar\Alternation([275, 282, 284]),
-                new \Phplrt\Parser\Grammar\Concatenation([19, 276, 5, 197]),
-                new \Phplrt\Parser\Grammar\Alternation([277, 280]),
-                new \Phplrt\Parser\Grammar\Concatenation([23, 278]),
-                new \Phplrt\Parser\Grammar\Optional(279),
+                new \Phplrt\Parser\Grammar\Concatenation([14, 236, 261]),
+                new \Phplrt\Parser\Grammar\Optional(262),
+                new \Phplrt\Parser\Grammar\Repetition(263, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([264, 296]),
+                new \Phplrt\Parser\Grammar\Alternation([265, 276]),
+                new \Phplrt\Parser\Grammar\Alternation([266, 273, 275]),
+                new \Phplrt\Parser\Grammar\Concatenation([19, 267, 5, 192]),
+                new \Phplrt\Parser\Grammar\Alternation([268, 271]),
+                new \Phplrt\Parser\Grammar\Concatenation([23, 269]),
+                new \Phplrt\Parser\Grammar\Optional(270),
                 new \Phplrt\Parser\Grammar\Repetition(74, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([278, 281]),
+                new \Phplrt\Parser\Grammar\Concatenation([269, 272]),
                 new \Phplrt\Parser\Grammar\Optional(23),
-                new \Phplrt\Parser\Grammar\Concatenation([19, 278, 283, 197]),
+                new \Phplrt\Parser\Grammar\Concatenation([19, 269, 274, 192]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ASTERISK, false),
-                new \Phplrt\Parser\Grammar\Concatenation([19, 278, 197]),
-                new \Phplrt\Parser\Grammar\Concatenation([9, 286, 304]),
-                new \Phplrt\Parser\Grammar\Optional(287),
-                new \Phplrt\Parser\Grammar\Alternation([288, 152]),
-                new \Phplrt\Parser\Grammar\Concatenation([289, 299, 302]),
-                new \Phplrt\Parser\Grammar\Concatenation([59, 290, 245]),
+                new \Phplrt\Parser\Grammar\Concatenation([19, 269, 192]),
+                new \Phplrt\Parser\Grammar\Concatenation([9, 277, 295]),
+                new \Phplrt\Parser\Grammar\Optional(278),
+                new \Phplrt\Parser\Grammar\Alternation([279, 147]),
+                new \Phplrt\Parser\Grammar\Concatenation([280, 290, 293]),
+                new \Phplrt\Parser\Grammar\Concatenation([59, 281, 236]),
+                new \Phplrt\Parser\Grammar\Optional(282),
+                new \Phplrt\Parser\Grammar\Alternation([252, 283]),
+                new \Phplrt\Parser\Grammar\Alternation([284, 288]),
+                new \Phplrt\Parser\Grammar\Alternation([285, 287]),
+                new \Phplrt\Parser\Grammar\Concatenation([255, 286]),
+                new \Phplrt\Parser\Grammar\Optional(283),
+                new \Phplrt\Parser\Grammar\Concatenation([259, 283]),
+                new \Phplrt\Parser\Grammar\Alternation([289, 262]),
+                new \Phplrt\Parser\Grammar\Concatenation([4, 283, 83, 261]),
                 new \Phplrt\Parser\Grammar\Optional(291),
-                new \Phplrt\Parser\Grammar\Alternation([261, 292]),
-                new \Phplrt\Parser\Grammar\Alternation([293, 297]),
-                new \Phplrt\Parser\Grammar\Alternation([294, 296]),
-                new \Phplrt\Parser\Grammar\Concatenation([264, 295]),
-                new \Phplrt\Parser\Grammar\Optional(292),
-                new \Phplrt\Parser\Grammar\Concatenation([268, 292]),
-                new \Phplrt\Parser\Grammar\Alternation([298, 271]),
-                new \Phplrt\Parser\Grammar\Concatenation([4, 292, 83, 270]),
-                new \Phplrt\Parser\Grammar\Optional(300),
-                new \Phplrt\Parser\Grammar\Repetition(301, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 289]),
-                new \Phplrt\Parser\Grammar\Optional(303),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 152]),
+                new \Phplrt\Parser\Grammar\Repetition(292, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 280]),
+                new \Phplrt\Parser\Grammar\Optional(294),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 147]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_RPAREN, false),
-                new \Phplrt\Parser\Grammar\Optional(306),
+                new \Phplrt\Parser\Grammar\Optional(297),
                 new \Phplrt\Parser\Grammar\Repetition(87, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([4, 261, 83, 270]),
-                new \Phplrt\Parser\Grammar\Optional(309),
-                new \Phplrt\Parser\Grammar\Concatenation([310, 5]),
+                new \Phplrt\Parser\Grammar\Concatenation([4, 252, 83, 261]),
+                new \Phplrt\Parser\Grammar\Optional(300),
+                new \Phplrt\Parser\Grammar\Concatenation([301, 5]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_COLON, false),
-                new \Phplrt\Parser\Grammar\Concatenation([310, 5, 245]),
-                new \Phplrt\Parser\Grammar\Optional(313),
-                new \Phplrt\Parser\Grammar\Repetition(314, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 259]),
+                new \Phplrt\Parser\Grammar\Concatenation([301, 5, 236]),
+                new \Phplrt\Parser\Grammar\Optional(304),
+                new \Phplrt\Parser\Grammar\Repetition(305, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 250]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SEMICOLON, false),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_SEMICOLON, false),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACE, false),
-                new \Phplrt\Parser\Grammar\Concatenation([112, 245, 247]),
-                new \Phplrt\Parser\Grammar\Concatenation([98, 245, 320]),
-                new \Phplrt\Parser\Grammar\Alternation([321, 337]),
-                new \Phplrt\Parser\Grammar\Concatenation([249, 322, 324]),
-                new \Phplrt\Parser\Grammar\Optional(323),
-                new \Phplrt\Parser\Grammar\Concatenation([310, 58]),
-                new \Phplrt\Parser\Grammar\Optional(325),
-                new \Phplrt\Parser\Grammar\Concatenation([326, 327, 336, 245]),
+                new \Phplrt\Parser\Grammar\Concatenation([112, 236, 238]),
+                new \Phplrt\Parser\Grammar\Concatenation([98, 236, 311]),
+                new \Phplrt\Parser\Grammar\Alternation([312, 328]),
+                new \Phplrt\Parser\Grammar\Concatenation([240, 313, 315]),
+                new \Phplrt\Parser\Grammar\Optional(314),
+                new \Phplrt\Parser\Grammar\Concatenation([301, 58]),
+                new \Phplrt\Parser\Grammar\Optional(316),
+                new \Phplrt\Parser\Grammar\Concatenation([317, 318, 327, 236]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LBRACE, false),
-                new \Phplrt\Parser\Grammar\Concatenation([328, 332, 335]),
-                new \Phplrt\Parser\Grammar\Concatenation([249, 245, 329]),
-                new \Phplrt\Parser\Grammar\Optional(330),
-                new \Phplrt\Parser\Grammar\Concatenation([331, 5]),
+                new \Phplrt\Parser\Grammar\Concatenation([319, 323, 326]),
+                new \Phplrt\Parser\Grammar\Concatenation([240, 236, 320]),
+                new \Phplrt\Parser\Grammar\Optional(321),
+                new \Phplrt\Parser\Grammar\Concatenation([322, 5]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ASSIGN, false),
+                new \Phplrt\Parser\Grammar\Optional(324),
+                new \Phplrt\Parser\Grammar\Repetition(325, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 319]),
+                new \Phplrt\Parser\Grammar\Optional(187),
+                new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACE, false),
+                new \Phplrt\Parser\Grammar\Concatenation([313, 316]),
+                new \Phplrt\Parser\Grammar\Concatenation([111, 4, 16, 57, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([111, 4, 331, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([5, 332]),
                 new \Phplrt\Parser\Grammar\Optional(333),
                 new \Phplrt\Parser\Grammar\Repetition(334, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 328]),
-                new \Phplrt\Parser\Grammar\Optional(192),
-                new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACE, false),
-                new \Phplrt\Parser\Grammar\Concatenation([322, 325]),
-                new \Phplrt\Parser\Grammar\Concatenation([111, 4, 16, 57, 83]),
-                new \Phplrt\Parser\Grammar\Concatenation([111, 4, 340, 83]),
-                new \Phplrt\Parser\Grammar\Concatenation([5, 341]),
-                new \Phplrt\Parser\Grammar\Optional(342),
-                new \Phplrt\Parser\Grammar\Repetition(343, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 5]),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 5]),
                 new \Phplrt\Parser\Grammar\Concatenation([110, 4, 16, 57, 83]),
-                new \Phplrt\Parser\Grammar\Concatenation([110, 4, 340, 83]),
-                new \Phplrt\Parser\Grammar\Alternation([347, 7]),
-                new \Phplrt\Parser\Grammar\Concatenation([348, 365]),
-                new \Phplrt\Parser\Grammar\Concatenation([56, 349, 364]),
-                new \Phplrt\Parser\Grammar\Optional(350),
-                new \Phplrt\Parser\Grammar\Concatenation([351, 361, 335]),
-                new \Phplrt\Parser\Grammar\Alternation([352, 360]),
-                new \Phplrt\Parser\Grammar\Concatenation([353, 331, 360]),
-                new \Phplrt\Parser\Grammar\Repetition(354, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([355, 356]),
-                new \Phplrt\Parser\Grammar\Concatenation([175, 249]),
-                new \Phplrt\Parser\Grammar\Concatenation([19, 5, 357, 197]),
-                new \Phplrt\Parser\Grammar\Optional(358),
-                new \Phplrt\Parser\Grammar\Concatenation([359, 5]),
+                new \Phplrt\Parser\Grammar\Concatenation([110, 4, 331, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([207, 338]),
+                new \Phplrt\Parser\Grammar\Predicate(339, true),
+                new \Phplrt\Parser\Grammar\Alternation([14, 29]),
+                new \Phplrt\Parser\Grammar\Concatenation([223, 209]),
+                new \Phplrt\Parser\Grammar\Alternation([342, 7]),
+                new \Phplrt\Parser\Grammar\Concatenation([343, 360]),
+                new \Phplrt\Parser\Grammar\Concatenation([56, 344, 359]),
+                new \Phplrt\Parser\Grammar\Optional(345),
+                new \Phplrt\Parser\Grammar\Concatenation([346, 356, 326]),
+                new \Phplrt\Parser\Grammar\Alternation([347, 355]),
+                new \Phplrt\Parser\Grammar\Concatenation([348, 322, 355]),
+                new \Phplrt\Parser\Grammar\Repetition(349, 1, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([350, 351]),
+                new \Phplrt\Parser\Grammar\Concatenation([170, 240]),
+                new \Phplrt\Parser\Grammar\Concatenation([19, 5, 352, 192]),
+                new \Phplrt\Parser\Grammar\Optional(353),
+                new \Phplrt\Parser\Grammar\Concatenation([354, 5]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ELLIPSIS, false),
-                new \Phplrt\Parser\Grammar\Alternation([348, 5]),
-                new \Phplrt\Parser\Grammar\Optional(362),
-                new \Phplrt\Parser\Grammar\Repetition(363, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 351]),
+                new \Phplrt\Parser\Grammar\Alternation([343, 5]),
+                new \Phplrt\Parser\Grammar\Optional(357),
+                new \Phplrt\Parser\Grammar\Repetition(358, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 346]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_RBRACE, false),
-                new \Phplrt\Parser\Grammar\Optional(366),
-                new \Phplrt\Parser\Grammar\Repetition(367, 1, \INF),
-                new \Phplrt\Parser\Grammar\Alternation([368, 370, 372]),
-                new \Phplrt\Parser\Grammar\Concatenation([369, 340, 197]),
+                new \Phplrt\Parser\Grammar\Optional(361),
+                new \Phplrt\Parser\Grammar\Repetition(362, 1, \INF),
+                new \Phplrt\Parser\Grammar\Alternation([363, 365, 367]),
+                new \Phplrt\Parser\Grammar\Concatenation([364, 331, 192]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_LBRACKET, false),
-                new \Phplrt\Parser\Grammar\Concatenation([371, 249]),
+                new \Phplrt\Parser\Grammar\Concatenation([366, 240]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_DOT, false),
-                new \Phplrt\Parser\Grammar\Concatenation([373, 249]),
+                new \Phplrt\Parser\Grammar\Concatenation([368, 240]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_ARROW, false),
-                new \Phplrt\Parser\Grammar\Alternation([375, 376, 377, 378, 379, 380, 381, 385, 386, 387, 388]),
-                new \Phplrt\Parser\Grammar\Concatenation([177, 7]),
-                new \Phplrt\Parser\Grammar\Concatenation([178, 7]),
+                new \Phplrt\Parser\Grammar\Alternation([370, 371, 372, 373, 374, 375, 376, 380, 381, 382, 383]),
+                new \Phplrt\Parser\Grammar\Concatenation([172, 7]),
+                new \Phplrt\Parser\Grammar\Concatenation([173, 7]),
                 new \Phplrt\Parser\Grammar\Concatenation([52, 7]),
                 new \Phplrt\Parser\Grammar\Concatenation([51, 7]),
                 new \Phplrt\Parser\Grammar\Concatenation([29, 7]),
-                new \Phplrt\Parser\Grammar\Concatenation([176, 7]),
-                new \Phplrt\Parser\Grammar\Concatenation([53, 9, 16, 57, 83, 382]),
-                new \Phplrt\Parser\Grammar\Alternation([347, 383]),
-                new \Phplrt\Parser\Grammar\Predicate(384, false),
-                new \Phplrt\Parser\Grammar\Alternation([19, 175, 153]),
-                new \Phplrt\Parser\Grammar\Concatenation([53, 374]),
-                new \Phplrt\Parser\Grammar\Concatenation([54, 9, 16, 57, 83, 382]),
-                new \Phplrt\Parser\Grammar\Concatenation([54, 374]),
-                new \Phplrt\Parser\Grammar\Concatenation([389, 365]),
-                new \Phplrt\Parser\Grammar\Alternation([390, 391, 402, 404, 405]),
-                new \Phplrt\Parser\Grammar\Concatenation([249]),
-                new \Phplrt\Parser\Grammar\Alternation([392, 393, 394, 395, 396, 397, 398, 399, 400, 401]),
+                new \Phplrt\Parser\Grammar\Concatenation([171, 7]),
+                new \Phplrt\Parser\Grammar\Concatenation([53, 9, 16, 57, 83, 377]),
+                new \Phplrt\Parser\Grammar\Alternation([342, 378]),
+                new \Phplrt\Parser\Grammar\Predicate(379, false),
+                new \Phplrt\Parser\Grammar\Alternation([19, 170, 148]),
+                new \Phplrt\Parser\Grammar\Concatenation([53, 369]),
+                new \Phplrt\Parser\Grammar\Concatenation([54, 9, 16, 57, 83, 377]),
+                new \Phplrt\Parser\Grammar\Concatenation([54, 369]),
+                new \Phplrt\Parser\Grammar\Concatenation([384, 360]),
+                new \Phplrt\Parser\Grammar\Alternation([385, 386, 397, 399, 400]),
+                new \Phplrt\Parser\Grammar\Concatenation([240]),
+                new \Phplrt\Parser\Grammar\Alternation([387, 388, 389, 390, 391, 392, 393, 394, 395, 396]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_DEC_INT_LITERAL, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_HEX_INT_LITERAL, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_OCT_INT_LITERAL, true),
@@ -7759,36 +7894,41 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_TRUE, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_FALSE, true),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_NULLPTR, true),
-                new \Phplrt\Parser\Grammar\Repetition(403, 1, \INF),
+                new \Phplrt\Parser\Grammar\Repetition(398, 1, \INF),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_STRING_LITERAL, true),
-                new \Phplrt\Parser\Grammar\Concatenation([9, 340, 83]),
-                new \Phplrt\Parser\Grammar\Concatenation([55, 4, 57, 192, 249, 406, 83]),
-                new \Phplrt\Parser\Grammar\Optional(407),
-                new \Phplrt\Parser\Grammar\Repetition(354, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([9, 331, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([55, 401]),
+                new \Phplrt\Parser\Grammar\Concatenation([9, 402, 83]),
+                new \Phplrt\Parser\Grammar\Optional(403),
+                new \Phplrt\Parser\Grammar\Concatenation([404, 405]),
+                new \Phplrt\Parser\Grammar\Alternation([129, 57]),
+                new \Phplrt\Parser\Grammar\Optional(406),
+                new \Phplrt\Parser\Grammar\Repetition(407, 1, \INF),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 404]),
                 new \Phplrt\Parser\Grammar\Optional(409),
                 new \Phplrt\Parser\Grammar\Repetition(410, 1, \INF),
                 new \Phplrt\Parser\Grammar\Concatenation([411, 7]),
-                new \Phplrt\Parser\Grammar\Alternation([29, 179, 180, 177, 178, 158, 159, 181, 182, 160, 161, 162, 163, 176, 183, 184, 164, 165]),
+                new \Phplrt\Parser\Grammar\Alternation([29, 174, 175, 172, 173, 153, 154, 176, 177, 155, 156, 157, 158, 171, 178, 179, 159, 160]),
                 new \Phplrt\Parser\Grammar\Optional(413),
-                new \Phplrt\Parser\Grammar\Concatenation([414, 340, 310, 5]),
+                new \Phplrt\Parser\Grammar\Concatenation([414, 331, 301, 5]),
                 new \Phplrt\Parser\Grammar\Lexeme(self::T_QUESTION, false),
                 new \Phplrt\Parser\Grammar\Optional(416),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 402]),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 397]),
                 new \Phplrt\Parser\Grammar\Concatenation([59, 418]),
-                new \Phplrt\Parser\Grammar\Alternation([419, 316]),
+                new \Phplrt\Parser\Grammar\Alternation([419, 307]),
                 new \Phplrt\Parser\Grammar\Concatenation([420, 426]),
-                new \Phplrt\Parser\Grammar\Concatenation([245, 261, 245, 421, 424]),
+                new \Phplrt\Parser\Grammar\Concatenation([236, 252, 236, 421, 424]),
                 new \Phplrt\Parser\Grammar\Optional(422),
-                new \Phplrt\Parser\Grammar\Concatenation([423, 245]),
-                new \Phplrt\Parser\Grammar\Concatenation([143, 4, 402, 83]),
+                new \Phplrt\Parser\Grammar\Concatenation([423, 236]),
+                new \Phplrt\Parser\Grammar\Concatenation([143, 4, 397, 83]),
                 new \Phplrt\Parser\Grammar\Optional(425),
-                new \Phplrt\Parser\Grammar\Concatenation([331, 360]),
+                new \Phplrt\Parser\Grammar\Concatenation([322, 355]),
                 new \Phplrt\Parser\Grammar\Alternation([427, 428]),
                 new \Phplrt\Parser\Grammar\Concatenation([56, 135, 141]),
-                new \Phplrt\Parser\Grammar\Concatenation([429, 316]),
+                new \Phplrt\Parser\Grammar\Concatenation([429, 307]),
                 new \Phplrt\Parser\Grammar\Optional(430),
                 new \Phplrt\Parser\Grammar\Repetition(431, 1, \INF),
-                new \Phplrt\Parser\Grammar\Concatenation([192, 420]),
+                new \Phplrt\Parser\Grammar\Concatenation([187, 420]),
             ],
             initial: 0,
             reducers: [
@@ -7819,96 +7959,92 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 92 => self::reduceAttributeName(...),
                 125 => self::reduceAttributeArgumentList(...),
                 132 => self::reduceBalancedTokenSequence(...),
-                193 => self::reduceUnprefixedStandardAttribute(...),
-                200 => self::reduceGnuAttribute(...),
-                207 => self::reduceDeclSpecAttribute(...),
-                208 => self::reduceKeywordAttribute(...),
-                212 => self::reduceNamedType(...),
-                218 => self::reduceSignedModifier(...),
-                219 => self::reduceUnsignedModifier(...),
-                220 => self::reduceShortModifier(...),
-                221 => self::reduceLongModifier(...),
-                222 => self::reduceComplexModifier(...),
-                223 => self::reduceImaginaryModifier(...),
-                228 => self::reduceVoidType(...),
-                229 => self::reduceCharType(...),
-                230 => self::reduceIntType(...),
-                231 => self::reduceFloatType(...),
-                232 => self::reduceDoubleType(...),
-                233 => self::reduceBoolType(...),
-                234 => self::reduceDecimal32Type(...),
-                235 => self::reduceDecimal64Type(...),
-                236 => self::reduceDecimal128Type(...),
-                237 => self::reduceBitIntType(...),
-                238 => self::reduceInt8Type(...),
-                239 => self::reduceInt16Type(...),
-                240 => self::reduceInt32Type(...),
-                241 => self::reduceInt64Type(...),
-                242 => self::reduceInt128Type(...),
-                243 => self::reduceAtomicType(...),
-                244 => self::reduceStructType(...),
-                249 => self::reduceIdentifier(...),
-                252 => self::reduceMemberDeclarationList(...),
-                256 => self::reduceMemberDeclarations(...),
-                260 => self::reduceNamedMemberDeclarator(...),
-                262 => self::reducePointerDeclarator(...),
-                264 => self::reducePointer(...),
-                268 => self::reduceDeclaratorAttributes(...),
-                269 => self::reduceNameDeclarator(...),
-                272 => self::reduceDeclaratorSuffix(...),
-                275 => self::reduceSizedArrayDeclarator(...),
-                282 => self::reduceUnspecifiedSizeArrayDeclarator(...),
-                284 => self::reduceIncompleteArrayDeclarator(...),
-                285 => self::reduceFunctionDeclarator(...),
-                289 => self::reduceParameter(...),
-                293 => self::reduceAbstractPointerDeclarator(...),
-                297 => self::reduceDirectAbstractDeclarator(...),
-                307 => self::reduceNestedDeclarator(...),
-                311 => self::reduceUnnamedBitFieldDeclarator(...),
-                318 => self::reduceUnionType(...),
-                319 => self::reduceEnumType(...),
-                327 => self::reduceEnumeratorList(...),
-                328 => self::reduceEnumerator(...),
-                338 => self::reduceTypeOfTypeType(...),
-                339 => self::reduceTypeOfType(...),
-                340 => self::reduceExpression(...),
-                344 => self::reduceTypeOfUnqualTypeType(...),
-                345 => self::reduceTypeOfUnqualType(...),
-                347 => self::reduceCompoundLiteral(...),
-                348 => self::reduceInitializerList(...),
-                352 => self::reduceDesignatedInitializer(...),
-                353 => self::reduceDesignatorList(...),
-                355 => self::reduceMemberDesignator(...),
-                356 => self::reduceIndexDesignator(...),
-                368 => self::reduceSubscriptOperator(...),
-                370 => self::reduceDirectMemberOperator(...),
-                372 => self::reducePointerMemberOperator(...),
-                375 => self::reducePlusExpression(...),
-                376 => self::reduceMinusExpression(...),
-                377 => self::reduceLogicalNotExpression(...),
-                378 => self::reduceBitwiseNotExpression(...),
-                379 => self::reduceDereferenceExpression(...),
-                380 => self::reduceAddressOfExpression(...),
-                381 => self::reduceSizeOfTypeExpression(...),
-                385 => self::reduceSizeOfExpression(...),
-                386 => self::reduceAlignOfTypeExpression(...),
-                387 => self::reduceAlignOfExpression(...),
-                388 => self::reducePostfixExpression(...),
-                390 => self::reduceIdentifierExpression(...),
-                392 => self::reduceDecIntLiteral(...),
-                393 => self::reduceHexIntLiteral(...),
-                394 => self::reduceOctIntLiteral(...),
-                395 => self::reduceBinIntLiteral(...),
-                396 => self::reduceDecFloatLiteral(...),
-                397 => self::reduceHexFloatLiteral(...),
-                398 => self::reduceCharLiteral(...),
-                399 => self::reduceTrueLiteral(...),
-                400 => self::reduceFalseLiteral(...),
-                401 => self::reduceNullptrLiteral(...),
-                402 => self::reduceConcatenatedStringLiteral(...),
-                403 => self::reduceStringLiteral(...),
-                404 => self::reduceParenthesizedExpression(...),
-                405 => self::reduceOffsetOfExpression(...),
+                188 => self::reduceUnprefixedStandardAttribute(...),
+                195 => self::reduceGnuAttribute(...),
+                202 => self::reduceDeclSpecAttribute(...),
+                203 => self::reduceKeywordAttribute(...),
+                207 => self::reduceNamedType(...),
+                213 => self::reduceSignedModifier(...),
+                214 => self::reduceUnsignedModifier(...),
+                215 => self::reduceShortModifier(...),
+                216 => self::reduceLongModifier(...),
+                217 => self::reduceComplexModifier(...),
+                218 => self::reduceImaginaryModifier(...),
+                224 => self::reduceVoidType(...),
+                225 => self::reduceCharType(...),
+                226 => self::reduceIntType(...),
+                227 => self::reduceFloatType(...),
+                228 => self::reduceDoubleType(...),
+                229 => self::reduceBoolType(...),
+                230 => self::reduceDecimal32Type(...),
+                231 => self::reduceDecimal64Type(...),
+                232 => self::reduceDecimal128Type(...),
+                233 => self::reduceBitIntType(...),
+                234 => self::reduceAtomicType(...),
+                235 => self::reduceStructType(...),
+                240 => self::reduceIdentifier(...),
+                243 => self::reduceMemberDeclarationList(...),
+                247 => self::reduceMemberDeclarations(...),
+                251 => self::reduceNamedMemberDeclarator(...),
+                253 => self::reducePointerDeclarator(...),
+                255 => self::reducePointer(...),
+                259 => self::reduceDeclaratorAttributes(...),
+                260 => self::reduceNameDeclarator(...),
+                263 => self::reduceDeclaratorSuffix(...),
+                266 => self::reduceSizedArrayDeclarator(...),
+                273 => self::reduceUnspecifiedSizeArrayDeclarator(...),
+                275 => self::reduceIncompleteArrayDeclarator(...),
+                276 => self::reduceFunctionDeclarator(...),
+                280 => self::reduceParameter(...),
+                284 => self::reduceAbstractPointerDeclarator(...),
+                288 => self::reduceDirectAbstractDeclarator(...),
+                298 => self::reduceNestedDeclarator(...),
+                302 => self::reduceUnnamedBitFieldDeclarator(...),
+                309 => self::reduceUnionType(...),
+                310 => self::reduceEnumType(...),
+                318 => self::reduceEnumeratorList(...),
+                319 => self::reduceEnumerator(...),
+                329 => self::reduceTypeOfTypeType(...),
+                330 => self::reduceTypeOfType(...),
+                331 => self::reduceExpression(...),
+                335 => self::reduceTypeOfUnqualTypeType(...),
+                336 => self::reduceTypeOfUnqualType(...),
+                342 => self::reduceCompoundLiteral(...),
+                343 => self::reduceInitializerList(...),
+                347 => self::reduceDesignatedInitializer(...),
+                348 => self::reduceDesignatorList(...),
+                350 => self::reduceMemberDesignator(...),
+                351 => self::reduceIndexDesignator(...),
+                363 => self::reduceSubscriptOperator(...),
+                365 => self::reduceDirectMemberOperator(...),
+                367 => self::reducePointerMemberOperator(...),
+                370 => self::reducePlusExpression(...),
+                371 => self::reduceMinusExpression(...),
+                372 => self::reduceLogicalNotExpression(...),
+                373 => self::reduceBitwiseNotExpression(...),
+                374 => self::reduceDereferenceExpression(...),
+                375 => self::reduceAddressOfExpression(...),
+                376 => self::reduceSizeOfTypeExpression(...),
+                380 => self::reduceSizeOfExpression(...),
+                381 => self::reduceAlignOfTypeExpression(...),
+                382 => self::reduceAlignOfExpression(...),
+                383 => self::reducePostfixExpression(...),
+                385 => self::reduceIdentifierExpression(...),
+                387 => self::reduceDecIntLiteral(...),
+                388 => self::reduceHexIntLiteral(...),
+                389 => self::reduceOctIntLiteral(...),
+                390 => self::reduceBinIntLiteral(...),
+                391 => self::reduceDecFloatLiteral(...),
+                392 => self::reduceHexFloatLiteral(...),
+                393 => self::reduceCharLiteral(...),
+                394 => self::reduceTrueLiteral(...),
+                395 => self::reduceFalseLiteral(...),
+                396 => self::reduceNullptrLiteral(...),
+                397 => self::reduceConcatenatedStringLiteral(...),
+                398 => self::reduceStringLiteral(...),
+                399 => self::reduceParenthesizedExpression(...),
+                400 => self::reduceBuiltinCallExpression(...),
+                401 => self::reduceBuiltinArgumentList(...),
                 417 => self::reduceDeclaration(...),
                 420 => self::reduceInitDeclarator(...),
                 423 => self::reduceAsmLabel(...),
@@ -8487,46 +8623,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
         return new Type\BuiltinType\BitIntType($children[1], $offset);
-    }
-
-    private static function reduceInt8Type(\Phplrt\Parser\Context $ctx, mixed $children): mixed
-    {
-        // The variables below are declared by the compiler
-        $offset = $ctx->begin;
-
-        return new Type\BuiltinType\Int8Type($offset);
-    }
-
-    private static function reduceInt16Type(\Phplrt\Parser\Context $ctx, mixed $children): mixed
-    {
-        // The variables below are declared by the compiler
-        $offset = $ctx->begin;
-
-        return new Type\BuiltinType\Int16Type($offset);
-    }
-
-    private static function reduceInt32Type(\Phplrt\Parser\Context $ctx, mixed $children): mixed
-    {
-        // The variables below are declared by the compiler
-        $offset = $ctx->begin;
-
-        return new Type\BuiltinType\Int32Type($offset);
-    }
-
-    private static function reduceInt64Type(\Phplrt\Parser\Context $ctx, mixed $children): mixed
-    {
-        // The variables below are declared by the compiler
-        $offset = $ctx->begin;
-
-        return new Type\BuiltinType\Int64Type($offset);
-    }
-
-    private static function reduceInt128Type(\Phplrt\Parser\Context $ctx, mixed $children): mixed
-    {
-        // The variables below are declared by the compiler
-        $offset = $ctx->begin;
-
-        return new Type\BuiltinType\Int128Type($offset);
     }
 
     private static function reduceAtomicType(\Phplrt\Parser\Context $ctx, mixed $children): mixed
@@ -9585,30 +9681,31 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         return $children[1];
     }
 
-    private static function reduceOffsetOfExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    private static function reduceBuiltinCallExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /**
-         * @var list{
-         *     TokenInterface,
-         *     Type\TypeInterface,
-         *     Node\Identifier,
-         *     ...<DesignatedInitializer\Designator>
-         * } $children
-         */
-        $designators = [new DesignatedInitializer\Designator\MemberDesignator($children[2], $children[2]->offset)];
+        /** @var array{TokenInterface, Expression\BuiltinCallExpression\ArgumentList} $children */
+        // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+        $name = new Node\Identifier($children[0]->value, $offset);
 
-        for ($i = 3, $count = \count($children); $i < $count; ++$i) {
-            $designators[] = $children[$i];
+        return new Expression\BuiltinCallExpression($name, $children[1], $offset);
+    }
+
+    private static function reduceBuiltinArgumentList(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
+        /** @var list{TokenInterface, ...<Expression\ExpressionInterface|Type\TypeInterface>} $children */
+        $arguments = [];
+
+        for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+            $arguments[] = $children[$i];
         }
 
-        return new Expression\OffsetOfExpression(
-            $children[1],
-            new DesignatedInitializer\DesignatorList($designators, $children[2]->offset),
-            $offset,
-        );
+        return new Expression\BuiltinCallExpression\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
     }
 
     private static function reduceDeclaration(\Phplrt\Parser\Context $ctx, mixed $children): mixed

@@ -72,6 +72,13 @@
 %fragment STATEMENT_KEYWORD break|case|continue|default|do|else|for|goto|if|return|switch|while
 
 /**
+ * Keywords of the compiler extensions that are attributes by themselves
+ */
+%fragment CALLING_CONVENTION __cdecl|__clrcall|__stdcall|__fastcall|__thiscall|__vectorcall|__regcall|__pascal|_cdecl|_stdcall|_fastcall
+%fragment POINTER_MODIFIER   __ptr32|__ptr64|__sptr|__uptr|__unaligned|__w64
+%fragment NULLABILITY        _Nonnull|_Nullable_result|_Nullable|_Null_unspecified
+
+/**
  * -----------------------------------------------------------------------------
  *  Preprocessing leftovers
  * -----------------------------------------------------------------------------
@@ -262,24 +269,26 @@
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
 /**
- * Keywords of the compiler extensions: GCC attributes, assembler labels
- * and offsetof, the integer types of GCC and MSVC, MSVC attributes
+ * Keywords of the compiler extensions: GCC attributes, assembler labels,
+ * MSVC attributes
  */
 %token T_ATTRIBUTE          (?:__attribute__|__attribute)(?&KEYWORD_END)
 %token T_ASM                (?:__asm__|__asm)(?&KEYWORD_END)
-%token T_BUILTIN_OFFSETOF   __builtin_offsetof(?&KEYWORD_END)
 %token T_DECLSPEC           __declspec(?&KEYWORD_END)
-%token T_INT128             __int128(?&KEYWORD_END)
-%token T_INT16              __int16(?&KEYWORD_END)
-%token T_INT32              __int32(?&KEYWORD_END)
-%token T_INT64              __int64(?&KEYWORD_END)
-%token T_INT8               __int8(?&KEYWORD_END)
 
 /**
- * Attributes spelled by a keyword alone: the calling conventions of MSVC,
- * its pointer sizes and the nullability of Clang
+ * The name of a built-in function of a compiler followed by its parenthesis,
+ * __builtin_offsetof(...). Without the parenthesis it is an identifier, as
+ * the __builtin_va_list type is.
  */
-%token T_KEYWORD_ATTRIBUTE  (?:__cdecl|__stdcall|__fastcall|__thiscall|__vectorcall|__ptr32|__ptr64|_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)(?&KEYWORD_END)
+%token T_BUILTIN_CALL       __builtin_[A-Za-z0-9_\x80-\xFF]++(?=[\x20\t\r\n\f\x0B]*+\()
+
+/**
+ * Attributes spelled by a keyword alone, whatever compiler they come from:
+ * calling conventions, modifiers of pointers, the nullability of Clang
+ * and __forceinline
+ */
+%token T_KEYWORD_ATTRIBUTE  (?:(?&CALLING_CONVENTION)|(?&POINTER_MODIFIER)|(?&NULLABILITY)|__forceinline)(?&KEYWORD_END)
 
 /**
  * The marker of GCC that silences the warnings about the extensions in what

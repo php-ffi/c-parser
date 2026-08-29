@@ -8,9 +8,7 @@ use FFI\Parser\Node\NodeList;
 
 /**
  * Designators of a designated initializer, `.a[2]` in `.a[2] = 1`. C
- * requires at least one. It is also the path to the member of a
- * {@see \FFI\Parser\Node\Expression\OffsetOfExpression}, whose first member
- * is written without a dot and its designator starts at the name.
+ * requires at least one.
  *
  * @template-extends NodeList<Designator>
  *

@@ -208,7 +208,7 @@ CastStart
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
-  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_OFFSETOF> | <T_LBRACE>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_CALL> | <T_LBRACE>
   ;
 
 /**
@@ -465,36 +465,46 @@ PrimaryExpression
   | Constant()
   | ConcatenatedStringLiteral()
   | ParenthesizedExpression()
-  | OffsetOfExpression()
+  | BuiltinCallExpression()
   ;
 
 /**
- * GCC: __builtin_offsetof(struct S, a.b[2]), what the offsetof macro of
- * <stddef.h> expands to. The first member of the path, written without a
- * dot, is the first member designator.
+ * GCC and Clang: a built-in function, __builtin_offsetof(struct S, a.b[2])
+ * or __builtin_types_compatible_p(int, T)
  */
-OffsetOfExpression -> {
-    /**
-     * @var list{
-     *     TokenInterface,
-     *     Type\TypeInterface,
-     *     Node\Identifier,
-     *     ...<DesignatedInitializer\Designator>
-     * } $children
-     */
-    $designators = [new DesignatedInitializer\Designator\MemberDesignator($children[2], $children[2]->offset)];
+BuiltinCallExpression -> {
+    /** @var array{TokenInterface, Expression\BuiltinCallExpression\ArgumentList} $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    $name = new Node\Identifier($children[0]->value, $offset);
 
-    for ($i = 3, $count = \count($children); $i < $count; ++$i) {
-        $designators[] = $children[$i];
+    return new Expression\BuiltinCallExpression($name, $children[1], $offset);
+}
+  : <T_BUILTIN_CALL> BuiltinArgumentList()
+  ;
+
+/**
+ * (), (x) or (struct S, a.b[2]). The parenthesis marks the start of the
+ * list.
+ */
+BuiltinArgumentList -> {
+    /** @var list{TokenInterface, ...<Expression\ExpressionInterface|Type\TypeInterface>} $children */
+    $arguments = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $arguments[] = $children[$i];
     }
 
-    return new Expression\OffsetOfExpression(
-        $children[1],
-        new DesignatedInitializer\DesignatorList($designators, $children[2]->offset),
-        $offset,
-    );
+    return new Expression\BuiltinCallExpression\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
 }
-  : <T_BUILTIN_OFFSETOF> ::T_LPAREN:: TypeName() ::T_COMMA:: Identifier() Designator()* ::T_RPAREN::
+  : <T_LPAREN> (BuiltinArgument() (::T_COMMA:: BuiltinArgument())*)? ::T_RPAREN::
+  ;
+
+/**
+ * An expression, or a type name where it cannot be one
+ */
+BuiltinArgument
+  : ConditionalExpression() &ArgumentEnd()
+  | TypeName()
   ;
 
 ParenthesizedExpression -> {

@@ -171,11 +171,14 @@ AttributeArgumentList -> {
   ;
 
 AttributeArgument
-  : ConditionalExpression() &AttributeArgumentEnd()
+  : ConditionalExpression() &ArgumentEnd()
   | BalancedTokenSequence()
   ;
 
-AttributeArgumentEnd
+/**
+ * The end of an argument of an attribute or of a built-in function
+ */
+ArgumentEnd
   : <T_COMMA>
   | <T_RPAREN>
   ;
@@ -203,8 +206,7 @@ BalancedToken
   | <T_ATTRIBUTE_START> (BalancedToken() | <T_COMMA>)* <T_RBRACKET> <T_RBRACKET>
   | <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   | AttributeName()
-  | <T_ATTRIBUTE> | <T_ASM> | <T_BUILTIN_OFFSETOF> | <T_DECLSPEC> | <T_INT128> | <T_INT16> | <T_INT32>
-  | <T_INT64> | <T_INT8> | <T_KEYWORD_ATTRIBUTE>
+  | <T_ATTRIBUTE> | <T_ASM> | <T_BUILTIN_CALL> | <T_DECLSPEC> | <T_KEYWORD_ATTRIBUTE>
   | <T_HEX_FLOAT_LITERAL> | <T_DEC_FLOAT_LITERAL> | <T_HEX_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL> | <T_PP_NUMBER>
   | <T_ELLIPSIS> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT> | <T_SHL_ASSIGN> | <T_SHR_ASSIGN> | <T_SHL>

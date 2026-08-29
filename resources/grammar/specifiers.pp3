@@ -66,7 +66,8 @@ DeclarationSpecifiers -> {
  */
 TypeSpecifiers
   : NamedType() (TypeModifier() | NonTypeSpecifier())*
-  | TypeModifier() (TypeModifier() | NonTypeSpecifier())* (BaseType() (TypeModifier() | NonTypeSpecifier())*)?
+  | TypeModifier() (TypeModifier() | NonTypeSpecifier())*
+        ((BaseType() | ModifiedNamedType()) (TypeModifier() | NonTypeSpecifier())*)?
   | BaseType() (TypeModifier() | NonTypeSpecifier())*
   ;
 
@@ -209,11 +210,6 @@ BaseType
   | Decimal64Type()
   | Decimal128Type()
   | BitIntType()
-  | Int8Type()
-  | Int16Type()
-  | Int32Type()
-  | Int64Type()
-  | Int128Type()
   | AtomicType()
   | StructType()
   | UnionType()
@@ -267,31 +263,6 @@ BitIntType -> {
   : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
   ;
 
-/**
- * The integer types of MSVC
- */
-Int8Type -> { return new Type\BuiltinType\Int8Type($offset); }
-  : <T_INT8>
-  ;
-
-Int16Type -> { return new Type\BuiltinType\Int16Type($offset); }
-  : <T_INT16>
-  ;
-
-Int32Type -> { return new Type\BuiltinType\Int32Type($offset); }
-  : <T_INT32>
-  ;
-
-Int64Type -> { return new Type\BuiltinType\Int64Type($offset); }
-  : <T_INT64>
-  ;
-
-/**
- * The 128-bit integer type of GCC
- */
-Int128Type -> { return new Type\BuiltinType\Int128Type($offset); }
-  : <T_INT128>
-  ;
 
 /**
  * 6.7.3.5 Atomic type specifiers, _Atomic(T)
@@ -308,6 +279,20 @@ AtomicType -> {
  * declarator of a declaration whose type is inferred (6.7.10), "static x = 1;"
  * and "constexpr auto n = 1;".
  */
+/**
+ * A typedef name after the modifiers, followed by a declarator:
+ * "unsigned __int64 x", "unsigned T *p". Without a declarator after it the
+ * name is the declarator: "unsigned T;".
+ */
+ModifiedNamedType
+  : NamedType() &ModifiedNamedTypeEnd()
+  ;
+
+ModifiedNamedTypeEnd
+  : <T_IDENTIFIER>
+  | <T_ASTERISK>
+  ;
+
 NamedType -> {
     /** @var array{TokenInterface} $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string

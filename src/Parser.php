@@ -19,7 +19,7 @@ use Phplrt\Parser\Exception\UnexpectedTokenException;
 use Phplrt\Source\SourceFactory;
 
 /**
- * Parses preprocessed C23 headers, the ones accepted by {@see \FFI::cdef()},
+ * Parses preprocessed C23 headers, with the extensions of the compilers,
  * into the syntax tree.
  *
  * The parser checks the syntax. Whatever is syntactically valid gives a

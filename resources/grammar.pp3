@@ -1,6 +1,7 @@
 /**
  * -----------------------------------------------------------------------------
- *  C23 (ISO/IEC 9899:2024) headers accepted by PHP FFI, after preprocessing.
+ *  C23 (ISO/IEC 9899:2024) headers with the extensions of the compilers,
+ *  after preprocessing.
  * -----------------------------------------------------------------------------
  *
  *  The lexer works with bytes: offsets are byte offsets, and a header in any
