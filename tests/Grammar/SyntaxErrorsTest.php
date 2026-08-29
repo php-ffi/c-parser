@@ -143,6 +143,6 @@ final class SyntaxErrorsTest extends TestCase
             return;
         }
 
-        self::fail('SyntaxException has not been thrown');
+        self::fail('SyntaxErrorException has not been thrown');
     }
 }

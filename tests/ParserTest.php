@@ -340,7 +340,7 @@ final class ParserTest extends TestCase
             return;
         }
 
-        self::fail('SyntaxException has not been thrown');
+        self::fail('SyntaxErrorException has not been thrown');
     }
 
     private static function createIntTypeValidator(): ValidatorInterface

@@ -69,7 +69,7 @@ abstract class TestCase extends BaseTestCase
             return;
         }
 
-        self::fail('SyntaxException has not been thrown');
+        self::fail('SyntaxErrorException has not been thrown');
     }
 
     /**

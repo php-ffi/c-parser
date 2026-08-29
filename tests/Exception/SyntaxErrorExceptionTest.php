@@ -17,7 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(SyntaxErrorException::class)]
 #[CoversClass(ParseRuntimeException::class)]
-final class SyntaxExceptionTest extends TestCase
+final class SyntaxErrorExceptionTest extends TestCase
 {
     public function testExceptionPointsToTheUnexpectedToken(): void
     {
@@ -42,7 +42,7 @@ final class SyntaxExceptionTest extends TestCase
         yield 'first line' => [
             "int x\nint y;\n",
             <<<'TEXT'
-                error[SyntaxException]: Syntax error, unexpected "int" (T_INT) in the declaration, ";" expected
+                error[SyntaxErrorException]: Syntax error, unexpected "int" (T_INT) in the declaration, ";" expected
                 1 | int x
                 2 | int y;
                   | ^^^
@@ -52,7 +52,7 @@ final class SyntaxExceptionTest extends TestCase
         yield 'end of input without a line break' => [
             "int a;\nint b;\nint c",
             <<<'TEXT'
-                error[SyntaxException]: Syntax error, unexpected end of input in the declaration, ";" expected
+                error[SyntaxErrorException]: Syntax error, unexpected end of input in the declaration, ";" expected
                 1 | int a;
                 2 | int b;
                 3 | int c
@@ -62,7 +62,7 @@ final class SyntaxExceptionTest extends TestCase
         yield 'middle of the header' => [
             "int a;\nint b;\nint c = 08;\nint d;\nint e;\n",
             <<<'TEXT'
-                error[SyntaxException]: Syntax error, unexpected "08" (T_PP_NUMBER) in the initializer
+                error[SyntaxErrorException]: Syntax error, unexpected "08" (T_PP_NUMBER) in the initializer
                 1 | int a;
                 2 | int b;
                 3 | int c = 08;
@@ -74,7 +74,7 @@ final class SyntaxExceptionTest extends TestCase
         yield 'CRLF line endings' => [
             "int a;\r\nint b = 08;\r\n",
             <<<'TEXT'
-                error[SyntaxException]: Syntax error, unexpected "08" (T_PP_NUMBER) in the initializer
+                error[SyntaxErrorException]: Syntax error, unexpected "08" (T_PP_NUMBER) in the initializer
                 1 | int a;
                 2 | int b = 08;
                   |         ^^
@@ -83,7 +83,7 @@ final class SyntaxExceptionTest extends TestCase
         ];
         yield 'UTF-8 before the failure' => [
             "/* \xC3\x84\xC3\x96 */ int x = 08;",
-            "error[SyntaxException]: Syntax error, unexpected \"08\" (T_PP_NUMBER) in the initializer\n"
+            "error[SyntaxErrorException]: Syntax error, unexpected \"08\" (T_PP_NUMBER) in the initializer\n"
                 . "1 | /* \xC3\x84\xC3\x96 */ int x = 08;\n"
                 . '  |                  ^^',
         ];
@@ -92,7 +92,7 @@ final class SyntaxExceptionTest extends TestCase
     #[DataProvider('renderedExceptionsDataProvider')]
     public function testExceptionIsRenderedWithTheSnippet(string $code, string $expected): void
     {
-        self::assertSame($expected, self::renderWithoutTrace(self::catchSyntaxException($code)));
+        self::assertSame($expected, self::renderWithoutTrace(self::catchSyntaxErrorException($code)));
     }
 
     public function testFileIsNamedInTheRenderedException(): void
@@ -104,7 +104,7 @@ final class SyntaxExceptionTest extends TestCase
         try {
             \file_put_contents($pathname, "int a;\nint b");
 
-            $rendered = (string) self::catchSyntaxException(new \SplFileInfo($pathname));
+            $rendered = (string) self::catchSyntaxErrorException(new \SplFileInfo($pathname));
         } finally {
             \unlink($pathname);
         }
@@ -114,7 +114,7 @@ final class SyntaxExceptionTest extends TestCase
 
     public function testStringIsNotNamedInTheRenderedException(): void
     {
-        self::assertStringNotContainsString(' --> ', (string) self::catchSyntaxException('int a'));
+        self::assertStringNotContainsString(' --> ', (string) self::catchSyntaxErrorException('int a'));
     }
 
     /**
@@ -131,13 +131,13 @@ final class SyntaxExceptionTest extends TestCase
         \rewind($stream);
 
         try {
-            $e = self::catchSyntaxException($stream);
+            $e = self::catchSyntaxErrorException($stream);
         } finally {
             \fclose($stream);
         }
 
         self::assertSame(
-            "error[SyntaxException]: Syntax error, unexpected end of input in the declaration, \";\" expected\n"
+            "error[SyntaxErrorException]: Syntax error, unexpected end of input in the declaration, \";\" expected\n"
                 . "1 | int a\n"
                 . '  |      ^',
             self::renderWithoutTrace($e),
@@ -154,7 +154,7 @@ final class SyntaxExceptionTest extends TestCase
         self::assertStringStartsWith(SyntaxErrorException::class . ': Message in ', $rendered);
     }
 
-    private static function catchSyntaxException(mixed $source): SyntaxErrorException
+    private static function catchSyntaxErrorException(mixed $source): SyntaxErrorException
     {
         try {
             (new Parser())->parse($source);
@@ -162,7 +162,7 @@ final class SyntaxExceptionTest extends TestCase
             return $e;
         }
 
-        self::fail('SyntaxException has not been thrown');
+        self::fail('SyntaxErrorException has not been thrown');
     }
 
     private static function renderWithoutTrace(SyntaxErrorException $e): string
