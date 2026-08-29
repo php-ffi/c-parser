@@ -7988,7 +7988,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             default => 1,
         };
 
-        // The operator node of two operands, its start is the one of the left
         $build = static fn(
             TokenInterface $operator,
             Expression\ExpressionInterface $left,
@@ -8666,7 +8665,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             Specifier\SpecifierList $specifiers,
             int $start,
         ) use ($declarator, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
-            // The start of a declaration is a byte offset
             \assert($start >= 0);
 
             return new Type\RecordType\MemberDeclaration(
@@ -9030,7 +9028,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             Specifier\SpecifierList $specifiers,
             int $start,
         ) use ($children, $attributes): Type\RecordType\MemberDeclaration {
-            // The start of a declaration is a byte offset
             \assert($start >= 0);
 
             return new Type\RecordType\MemberDeclaration(
@@ -9290,7 +9287,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     {
         /** @var array{Expression\ExpressionInterface} $children */
         return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-            // The start of an expression is a byte offset
             \assert($start >= 0);
 
             return new Expression\SubscriptExpression($operand, $children[0], $start);
@@ -9301,7 +9297,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     {
         /** @var array{Node\Identifier} $children */
         return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-            // The start of an expression is a byte offset
             \assert($start >= 0);
 
             return new MemberExpression\DirectMemberExpression($operand, $children[0], $start);
@@ -9312,7 +9307,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
     {
         /** @var array{Node\Identifier} $children */
         return static function (Expression\ExpressionInterface $operand, int $start) use ($children): Expression\ExpressionInterface {
-            // The start of an expression is a byte offset
             \assert($start >= 0);
 
             return new MemberExpression\PointerMemberExpression($operand, $children[0], $start);
@@ -9726,7 +9720,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             int $start,
             ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
         ) use ($name, $declarator, $asmLabel, $initializer, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
-            // The start of a declaration is a byte offset
             \assert($start >= 0);
 
             $type = $declarator($type);
