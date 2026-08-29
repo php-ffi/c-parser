@@ -129,6 +129,8 @@ final class DeclarationsTest extends TestCase
 
         // The typedef name rule
         yield 'name after a modifier' => ['unsigned T;', ['(variable (unsigned _) T)']];
+        yield 'typedef name after a modifier' => ['unsigned __int64 x;', ['(variable (unsigned __int64) x)']];
+        yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', ['(variable (ptr (unsigned T)) p)']];
         yield 'name after a typedef name' => ['T T;', ['(variable T T)']];
         yield 'name after a base' => ['int T;', ['(variable int T)']];
         yield 'name after a modifier and a base' => ['unsigned int T;', ['(variable (unsigned int) T)']];

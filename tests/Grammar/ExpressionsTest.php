@@ -157,18 +157,33 @@ final class ExpressionsTest extends TestCase
         ];
         yield 'alignof of a compound literal' => ['alignof(int){1}', '(alignof (compound int@22 {1@27}@26)@21)@14'];
 
-        // offsetof of GCC
-        yield 'offsetof' => ['__builtin_offsetof(struct S, a)', '(offsetof struct S@33 .a@43@43)@14'];
+        // Built-in functions
+        yield 'offsetof' => [
+            '__builtin_offsetof(struct S, a)',
+            '(__builtin_offsetof struct S@33 a@43)@14',
+        ];
         yield 'offsetof of a nested member and an element' => [
             '__builtin_offsetof(T, a.b[2].c)',
-            '(offsetof T@33 .a@36@36.b@38@37[2@40]@39.c@43@42)@14',
+            '(__builtin_offsetof T@33 (. ([] (. a@36 b@38)@36 2@40)@36 c@43)@36)@14',
         ];
-        yield 'offsetof of a range of elements' => [
-            '__builtin_offsetof(T, a[0 ... 1])',
-            '(offsetof T@33 .a@36@36[0@38 ... 1@44]@37)@14',
+        yield 'built-in function of types' => [
+            '__builtin_types_compatible_p(int, T *)',
+            '(__builtin_types_compatible_p int@43 (ptr T@48)@50)@14',
         ];
-        yield 'offsetof in a sum' => ['1 + __builtin_offsetof(T, a)', '(+ 1@14 (offsetof T@37 .a@40@40)@18)@14'];
-        yield 'cast of offsetof' => ['(T)__builtin_offsetof(U, a)', '(cast T@15 (offsetof U@36 .a@39@39)@17)@14'];
+        yield 'name of a built-in function without a parenthesis' => ['__builtin_va_list', '__builtin_va_list@14'];
+        yield 'built-in function without arguments' => ['__builtin_huge_val()', '(__builtin_huge_val)@14'];
+        yield 'built-in function with a space before the parenthesis' => [
+            '__builtin_constant_p (1)',
+            '(__builtin_constant_p 1@36)@14',
+        ];
+        yield 'built-in function in a sum' => [
+            '1 + __builtin_offsetof(T, a)',
+            '(+ 1@14 (__builtin_offsetof T@37 a@40)@18)@14',
+        ];
+        yield 'cast of a built-in function' => [
+            '(T)__builtin_offsetof(U, a)',
+            '(cast T@15 (__builtin_offsetof U@36 a@39)@17)@14',
+        ];
 
         // Every operator
         foreach (NodePrinter::BINARY_OPERATORS as $operator) {
@@ -277,9 +292,8 @@ final class ExpressionsTest extends TestCase
         yield 'comma outside parentheses' => ['a, b', 17, 'b'];
         yield 'sign after a hexadecimal constant ending with E' => ['0xE+1', 14, '0xE+1'];
         yield 'alignof without an operand' => ['alignof', 21, ')'];
-        yield 'offsetof without a member' => ['__builtin_offsetof(T)', 34, ')'];
-        yield 'offsetof of a member written with a dot' => ['__builtin_offsetof(T, .a)', 36, '.'];
-        yield 'offsetof without a type' => ['__builtin_offsetof(, a)', 33, ','];
+        yield 'built-in function with an empty argument' => ['__builtin_offsetof(, a)', 33, ','];
+        yield 'built-in function of a member written with a dot' => ['__builtin_offsetof(T, .a)', 36, '.'];
     }
 
     /**

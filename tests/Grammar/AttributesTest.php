@@ -347,15 +347,9 @@ final class AttributesTest extends TestCase
             'VariableDeclaration@0', 'SpecifierList@2', 'StandardAttribute@2', 'Identifier@2', 'StandardAttribute@12',
             'Identifier@12', 'Identifier@16', 'IntType@6',
         ]];
-        yield '__declspec and the integer types of MSVC' => ['__declspec(align(8)) __int8 a;', [
+        yield '__declspec and a typedef name' => ['__declspec(align(8)) __int8 a;', [
             'VariableDeclaration@0', 'SpecifierList@11', 'DeclSpecAttribute@11', 'Identifier@11', 'ArgumentList@17',
-            'DecIntLiteral@17', 'Identifier@28', 'Int8Type@21',
-        ]];
-        yield 'integer types of MSVC and GCC' => ['__int16 a; __int32 b; __int64 c; __int128 d;', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@8', 'Int16Type@0', 'VariableDeclaration@11',
-            'SpecifierList@11', 'Identifier@19', 'Int32Type@11', 'VariableDeclaration@22', 'SpecifierList@22',
-            'Identifier@30', 'Int64Type@22', 'VariableDeclaration@33', 'SpecifierList@33', 'Identifier@42',
-            'Int128Type@33',
+            'DecIntLiteral@17', 'Identifier@28', 'NamedType@21', 'Identifier@21',
         ]];
         yield 'attributes of a tag' => ['struct [[a]] S {} [[b]];', [
             'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@13', 'MemberDeclarationList@15',
@@ -419,7 +413,6 @@ final class AttributesTest extends TestCase
         yield 'keyword of the extensions as a name' => ['__attribute__((__declspec));', 15, '__declspec'];
         yield 'extra closing parenthesis of GCC' => ['__attribute__((a))) int x;', 18, ')'];
         yield 'empty assembler label' => ['int f(void) __asm__();', 20, ')'];
-        yield 'two integer types' => ['__int128 __int128 x;', 9, '__int128'];
     }
 
     /**

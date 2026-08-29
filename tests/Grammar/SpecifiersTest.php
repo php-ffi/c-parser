@@ -104,12 +104,6 @@ final class SpecifiersTest extends TestCase
         yield 'short double' => ['short double', '(short double)'];
 
         // Compiler extensions
-        yield '__int128' => ['__int128', '__int128'];
-        yield 'unsigned __int128' => ['unsigned __int128', '(unsigned __int128)'];
-        yield '__int8' => ['__int8', '__int8'];
-        yield '__int16' => ['__int16', '__int16'];
-        yield '__int32' => ['__int32', '__int32'];
-        yield 'unsigned __int64' => ['unsigned __int64', '(unsigned __int64)'];
         yield 'spellings of GCC' => [
             '__const __volatile__ __signed__ __complex__ double',
             '[const volatile (signed _Complex double)]',

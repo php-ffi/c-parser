@@ -18,13 +18,13 @@ use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\AlignOfExpression;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
 use FFI\Parser\Node\Expression\BinaryExpression;
+use FFI\Parser\Node\Expression\BuiltinCallExpression;
 use FFI\Parser\Node\Expression\CastExpression;
 use FFI\Parser\Node\Expression\CompoundLiteralExpression;
 use FFI\Parser\Node\Expression\ConditionalExpression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
-use FFI\Parser\Node\Expression\OffsetOfExpression;
 use FFI\Parser\Node\Expression\SizeOfExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
@@ -137,11 +137,6 @@ final class NodePrinter
         BuiltinType\Decimal32Type::class => '_Decimal32',
         BuiltinType\Decimal64Type::class => '_Decimal64',
         BuiltinType\Decimal128Type::class => '_Decimal128',
-        BuiltinType\Int8Type::class => '__int8',
-        BuiltinType\Int16Type::class => '__int16',
-        BuiltinType\Int32Type::class => '__int32',
-        BuiltinType\Int64Type::class => '__int64',
-        BuiltinType\Int128Type::class => '__int128',
         StorageClassSpecifier\TypeDefSpecifier::class => 'typedef',
         StorageClassSpecifier\ExternSpecifier::class => 'extern',
         StorageClassSpecifier\StaticSpecifier::class => 'static',
@@ -215,11 +210,9 @@ final class NodePrinter
             $node instanceof SizeOfTypeExpression => '(sizeof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfTypeExpression => '(alignof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfExpression => '(alignof ' . $this->format($node->operand) . ')',
-            $node instanceof OffsetOfExpression => \sprintf(
-                '(offsetof %s %s)',
-                $this->format($node->type),
-                \implode('', \array_map($this->format(...), $node->path->items)),
-            ),
+            $node instanceof BuiltinCallExpression => $node->arguments->items === []
+                ? '(' . $node->name->name . ')'
+                : '(' . $node->name->name . ' ' . $this->format($node->arguments) . ')',
             $node instanceof SubscriptExpression => \sprintf(
                 '([] %s %s)',
                 $this->format($node->array),

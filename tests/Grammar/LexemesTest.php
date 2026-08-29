@@ -75,16 +75,13 @@ final class LexemesTest extends TestCase
             'T_NORETURN' => ['_Noreturn'],
             'T_ATTRIBUTE' => ['__attribute__', '__attribute'],
             'T_ASM' => ['__asm__', '__asm'],
-            'T_BUILTIN_OFFSETOF' => ['__builtin_offsetof'],
             'T_DECLSPEC' => ['__declspec'],
-            'T_INT128' => ['__int128'],
-            'T_INT16' => ['__int16'],
-            'T_INT32' => ['__int32'],
-            'T_INT64' => ['__int64'],
-            'T_INT8' => ['__int8'],
             'T_KEYWORD_ATTRIBUTE' => [
-                '__cdecl', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__ptr32', '__ptr64',
+                '__cdecl', '__clrcall', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__regcall',
+                '__pascal', '_cdecl', '_stdcall', '_fastcall',
+                '__ptr32', '__ptr64', '__sptr', '__uptr', '__unaligned', '__w64',
                 '_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified',
+                '__forceinline',
             ],
             'T_RESERVED_KEYWORD' => [
                 'break', 'case', 'continue', 'default', 'do', 'else', 'for',
@@ -120,6 +117,10 @@ final class LexemesTest extends TestCase
         yield 'identifier' => ['point_t', [['T_IDENTIFIER', 'point_t']]];
         yield 'identifier starting with an underscore' => ['__x', [['T_IDENTIFIER', '__x']]];
         yield 'identifier with digits' => ['x86_64', [['T_IDENTIFIER', 'x86_64']]];
+        yield 'integer type of a compiler' => ['__int64', [['T_IDENTIFIER', '__int64']]];
+        yield 'typedef name after an integer type of a compiler' => ['__int128_t', [['T_IDENTIFIER', '__int128_t']]];
+        yield 'built-in function' => ['__builtin_expect (', [['T_BUILTIN_CALL', '__builtin_expect'], ['T_LPAREN', '(']]];
+        yield 'built-in name without a parenthesis' => ['__builtin_va_list', [['T_IDENTIFIER', '__builtin_va_list']]];
         yield 'identifier in UTF-8' => ["caf\xC3\xA9", [['T_IDENTIFIER', "caf\xC3\xA9"]]];
         yield 'identifier of universal character names' => ['\\u00E9t\\U0001F600', [
             ['T_IDENTIFIER', '\\u00E9t\\U0001F600'],
