@@ -46,7 +46,6 @@ final class HexFloatLiteral extends FloatLiteral
 
     protected function representAsRawNumber(): string
     {
-        // The exponent is written even if it is `0`
         return '0x' . $this->mantissa . 'p' . $this->exponent;
     }
 }
