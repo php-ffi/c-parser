@@ -131,6 +131,40 @@ final class FloatLiteralTest extends TestCase
         self::assertSame($suffix, $class::parse($raw)->suffix);
     }
 
+    /**
+     * @return iterable<non-empty-string, array{
+     *     class-string<FloatLiteral>,
+     *     non-empty-string,
+     *     ?FloatTypeSuffix,
+     *     bool,
+     * }>
+     */
+    public static function imaginarySuffixesDataProvider(): iterable
+    {
+        yield 'none' => [DecFloatLiteral::class, '2.0', null, false];
+        yield 'i' => [DecFloatLiteral::class, '2.0i', null, true];
+        yield 'j after the type' => [DecFloatLiteral::class, '2.0fj', FloatTypeSuffix::Float, true];
+        yield 'I before the type' => [DecFloatLiteral::class, '2.0If', FloatTypeSuffix::Float, true];
+        yield 'hexadecimal' => [HexFloatLiteral::class, '0x1p1li', FloatTypeSuffix::LongDouble, true];
+    }
+
+    /**
+     * @param class-string<FloatLiteral> $class
+     */
+    #[DataProvider('imaginarySuffixesDataProvider')]
+    public function testImaginarySuffixIsParsed(
+        string $class,
+        string $raw,
+        ?FloatTypeSuffix $suffix,
+        bool $isImaginary,
+    ): void {
+        $constant = $class::parse($raw);
+
+        self::assertSame(2.0, $constant->value);
+        self::assertSame($suffix, $constant->suffix);
+        self::assertSame($isImaginary, $constant->isImaginary);
+    }
+
     public function testSuffixDoesNotChangeTheValue(): void
     {
         self::assertSame(12.0, HexFloatLiteral::parse('0x1.8p3f128')->value);
@@ -209,6 +243,7 @@ final class FloatLiteralTest extends TestCase
         yield 'hexadecimal PHP_FLOAT_MAX' => [new HexFloatLiteral(\PHP_FLOAT_MAX), '0x1fffffffffffffp971'];
         yield 'hexadecimal smallest subnormal' => [new HexFloatLiteral(2 ** -1074), '0x1p-1074'];
         yield 'hexadecimal with a suffix' => [new HexFloatLiteral(0.25, suffix: FloatTypeSuffix::Float), '0x1p-2f'];
+        yield 'imaginary' => [new DecFloatLiteral(2.5, suffix: FloatTypeSuffix::Float, isImaginary: true), '2.5fi'];
     }
 
     /**

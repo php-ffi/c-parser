@@ -19,14 +19,18 @@ use FFI\Parser\Node\Expression\AlignOfExpression;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
 use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\BuiltinCallExpression;
+use FFI\Parser\Node\Expression\CallExpression;
 use FFI\Parser\Node\Expression\CastExpression;
 use FFI\Parser\Node\Expression\CompoundLiteralExpression;
 use FFI\Parser\Node\Expression\ConditionalExpression;
+use FFI\Parser\Node\Expression\GenericSelectionExpression;
+use FFI\Parser\Node\Expression\GenericSelectionExpression\GenericAssociation;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
 use FFI\Parser\Node\Expression\SizeOfExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
+use FFI\Parser\Node\Expression\StatementExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression;
 use FFI\Parser\Node\Identifier;
@@ -46,6 +50,7 @@ use FFI\Parser\Node\Specifier\StorageClassSpecifier;
 use FFI\Parser\Node\Type\ArrayType;
 use FFI\Parser\Node\Type\AtomicType;
 use FFI\Parser\Node\Type\AttributedType;
+use FFI\Parser\Node\Type\BlockPointerType;
 use FFI\Parser\Node\Type\BuiltinType;
 use FFI\Parser\Node\Type\EnumType;
 use FFI\Parser\Node\Type\EnumType\Enumerator;
@@ -218,6 +223,20 @@ final class NodePrinter
                 $this->format($node->array),
                 $this->format($node->index),
             ),
+            $node instanceof CallExpression => $node->arguments->items === []
+                ? '(call ' . $this->format($node->function) . ')'
+                : '(call ' . $this->format($node->function) . ' ' . $this->format($node->arguments) . ')',
+            $node instanceof GenericSelectionExpression => \sprintf(
+                '(_Generic %s %s)',
+                $this->format($node->operand),
+                $this->format($node->associations),
+            ),
+            $node instanceof GenericAssociation => \sprintf(
+                '%s:%s',
+                $node->type === null ? 'default' : $this->format($node->type),
+                $this->format($node->expression),
+            ),
+            $node instanceof StatementExpression => '(' . $node->body . ')',
             $node instanceof MemberExpression => \sprintf(
                 '(%s %s %s)',
                 $node instanceof PointerMemberExpression ? '->' : '.',
@@ -251,6 +270,11 @@ final class NodePrinter
             ),
             $node instanceof AlignAsSpecifier => 'alignas(' . $this->format($node->operand) . ')',
             $node instanceof AlignAsTypeSpecifier => 'alignas(' . $this->format($node->type) . ')',
+            $node instanceof BlockPointerType => \sprintf(
+                '(block %s%s)',
+                $this->format($node->type),
+                $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
+            ),
             $node instanceof PointerType => \sprintf(
                 '(ptr %s%s)',
                 $this->format($node->type),
@@ -277,7 +301,7 @@ final class NodePrinter
                 $this->format($node->name),
                 $this->formatArguments($node),
             ),
-            $node instanceof KeywordAttribute => $this->format($node->name),
+            $node instanceof KeywordAttribute => $this->format($node->name) . $this->formatArguments($node),
             $node instanceof BalancedTokenSequence => '(tokens ' . $node->raw . ')',
             $node instanceof ArrayType => \sprintf(
                 '(array %s)',

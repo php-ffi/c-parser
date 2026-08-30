@@ -172,6 +172,28 @@ final class IntLiteralTest extends TestCase
         self::assertSame($suffix, $class::parse($raw)->suffix);
     }
 
+    /**
+     * @return iterable<non-empty-string, array{non-empty-string, ?IntTypeSuffix, bool}>
+     */
+    public static function imaginarySuffixesDataProvider(): iterable
+    {
+        yield 'none' => ['1', null, false];
+        yield 'i' => ['1i', null, true];
+        yield 'J' => ['1J', null, true];
+        yield 'i after the type' => ['1uli', IntTypeSuffix::UnsignedLong, true];
+        yield 'i before the type' => ['1iul', IntTypeSuffix::UnsignedLong, true];
+    }
+
+    #[DataProvider('imaginarySuffixesDataProvider')]
+    public function testImaginarySuffixIsParsed(string $raw, ?IntTypeSuffix $suffix, bool $isImaginary): void
+    {
+        $constant = DecIntLiteral::parse($raw);
+
+        self::assertSame(1, $constant->value);
+        self::assertSame($suffix, $constant->suffix);
+        self::assertSame($isImaginary, $constant->isImaginary);
+    }
+
     public function testHexadecimalDigitBIsPartOfTheValue(): void
     {
         self::assertSame(0x1B, HexIntLiteral::parse('0x1bwb')->value);
@@ -197,6 +219,7 @@ final class IntLiteralTest extends TestCase
         yield 'octal' => [new OctIntLiteral(8), '010'];
         yield 'octal zero' => [new OctIntLiteral(0), '00'];
         yield 'binary with a suffix' => [new BinIntLiteral(5, suffix: IntTypeSuffix::BitPrecise), '0b101wb'];
+        yield 'imaginary' => [new DecIntLiteral(3, suffix: IntTypeSuffix::Long, isImaginary: true), '3li'];
     }
 
     /**

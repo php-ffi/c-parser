@@ -54,6 +54,7 @@ final class ExpressionsTest extends TestCase
         yield 'true' => ['true', 'true@14'];
         yield 'false' => ['false', 'false@14'];
         yield 'nullptr' => ['nullptr', 'nullptr@14'];
+        yield 'imaginary constant' => ['2.0i', '2.0i@14'];
 
         // Precedence and associativity
         yield 'left associativity' => ['1 - 2 - 3', '(- (- 1@14 2@18)@14 3@22)@14'];
@@ -122,6 +123,12 @@ final class ExpressionsTest extends TestCase
         yield 'digraph subscript' => ['a<:1:>', '([] a@14 1@17)@14'];
         yield 'comma in a subscript' => ['a[1, 2]', '([] a@14 (, 1@16 2@19)@16)@14'];
         yield 'subscript of a compound literal' => ['(T){1}[0]', '([] (compound T@15 {1@18}@17)@14 0@21)@14'];
+        yield 'function call' => ['f(1, x)', '(call f@14 1@16 x@19)@14'];
+        yield 'function call without arguments' => ['f()', '(call f@14)@14'];
+        yield 'call of a call' => ['f(1)(2)[0]', '([] (call (call f@14 1@16)@14 2@19)@14 0@22)@14'];
+        yield 'call in parentheses after a lone identifier is a cast' => ['(T)(1)', '(cast T@15 1@18)@14'];
+        yield 'call of a parenthesized name' => ['(f)()', '(call f@15)@14'];
+        yield 'call in a sum' => ['1 + f(2) * 3', '(+ 1@14 (* (call f@18 2@20)@18 3@25)@18)@14'];
 
         // All the levels of precedence are one rule
         yield 'every level of precedence' => [
@@ -156,6 +163,34 @@ final class ExpressionsTest extends TestCase
             '(alignof ([] x@26 0@28)@26)@14',
         ];
         yield 'alignof of a compound literal' => ['alignof(int){1}', '(alignof (compound int@22 {1@27}@26)@21)@14'];
+        yield 'sizeof of a call without arguments' => ['sizeof(f())', '(sizeof (call f@21)@21)@14'];
+        yield 'sizeof of a call' => ['sizeof(f(x, y))', '(sizeof (call f@21 x@23 y@26)@21)@14'];
+        yield 'sizeof of a call of a name in parentheses' => ['sizeof(f)(1)', '(sizeof (call f@21 1@24)@20)@14'];
+        yield 'sizeof of a function type' => ['sizeof(T(void))', '(sizeof (fn T@21 (void@23@23))@22)@14'];
+        yield 'sizeof of a function type with a pointer parameter' => [
+            'sizeof(T(U *))',
+            '(sizeof (fn T@21 ((ptr U@23)@25@23))@22)@14',
+        ];
+
+        // Generic selection
+        yield 'generic selection' => [
+            '_Generic(x, int: 1, default: 0)',
+            '(_Generic x@23 int@26:1@31@26 default:0@43@34)@14',
+        ];
+        yield 'generic selection of a type name' => [
+            '_Generic(int, T *: 1)',
+            '(_Generic int@23 (ptr T@28)@30:1@33@28)@14',
+        ];
+        yield 'generic selection of a lone name' => ['_Generic(a, T: 1)', '(_Generic a@23 T@26:1@29@26)@14'];
+        yield 'cast of a generic selection' => [
+            '(T)_Generic(x, default: 0)',
+            '(cast T@15 (_Generic x@26 default:0@38@29)@17)@14',
+        ];
+
+        // Statement expressions
+        yield 'statement expression' => ['({ int y = 1; y; })', '({ int y = 1; y; })@14'];
+        yield 'cast of a statement expression' => ['(T)({ 1; })', '(cast T@15 ({ 1; })@17)@14'];
+        yield 'statement expression in a sum' => ['1 + ({ 2; })', '(+ 1@14 ({ 2; })@18)@14'];
 
         // Built-in functions
         yield 'offsetof' => [
@@ -280,7 +315,10 @@ final class ExpressionsTest extends TestCase
         yield 'conditional without else' => ['a ? b', 19, ')'];
         yield 'assignment' => ['a = 1', 16, '='];
         yield 'leading assignment' => ['= 1', 14, '='];
-        yield 'function call' => ['f(1)', 15, '('];
+        yield 'function call with an empty argument' => ['f(1, )', 19, ')'];
+        yield 'generic selection without associations' => ['_Generic(x)', 24, ')'];
+        yield 'generic association without an expression' => ['_Generic(x, int:)', 30, ')'];
+        yield 'statement expression without parentheses' => ['{ 1; }', 14, '{'];
         yield 'increment' => ['a++', 15, '++'];
         yield 'sizeof without an operand' => ['sizeof', 20, ')'];
         yield 'cast without an operand' => ['(T)~', 18, ')'];

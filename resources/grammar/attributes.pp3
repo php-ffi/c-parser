@@ -10,15 +10,10 @@
  *  of a specifier marks the start of the parent and is dropped here.
  */
 
-AttributeSpecifier
-  : BracketedAttributeSpecifier()
-  | KeywordAttribute()
-  ;
-
 /**
  * A specifier with the attributes in brackets or parentheses
  */
-BracketedAttributeSpecifier -> {
+AttributeSpecifier -> {
     /** @var list<TokenInterface|Attribute\AttributeInterface> $children */
     $attributes = [];
 
@@ -109,14 +104,66 @@ DeclSpecAttribute -> {
   ;
 
 /**
- * A keyword that is an attribute by itself: __stdcall, __ptr64, _Nonnull
+ * A calling convention among the specifiers, at the start of a declarator
+ * and after "*": "void __stdcall f(void);", "void (__stdcall *f)(int);",
+ * "void g(int (* __cdecl)(int));"
  */
-KeywordAttribute -> {
+CallingConventionAttributeSpecifier -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), $offset);
+    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
 }
-  : <T_KEYWORD_ATTRIBUTE>
+  : <T_CALLING_CONVENTION>
+  ;
+
+/**
+ * A modifier of a pointer after "*" and among the specifiers:
+ * "int * __ptr64 p;", "typedef __w64 int INT_PTR;"
+ */
+PointerModifierAttributeSpecifier -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
+}
+  : <T_POINTER_MODIFIER>
+  ;
+
+/**
+ * A modifier of a pointer with arguments, after "*" and among the
+ * specifiers: "void * __ptrauth(1, 0, 0) p;", "char __based(base) *p;"
+ */
+PointerModifierWithArgumentsAttributeSpecifier -> {
+    /** @var array{TokenInterface, Attribute\Attribute\ArgumentList} $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    $name = new Node\Identifier($children[0]->value, $offset);
+
+    return new Attribute\KeywordAttribute($name, $children[1], $offset);
+}
+  : <T_POINTER_MODIFIER_WITH_ARGUMENTS> AttributeArgumentList()
+  ;
+
+/**
+ * The nullability of a pointer after "*" and among the specifiers:
+ * "char * _Nonnull s;", "CFStringRef _Nonnull s;"
+ */
+NullabilityAttributeSpecifier -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
+}
+  : <T_NULLABILITY>
+  ;
+
+/**
+ * The __forceinline function specifier among the specifiers:
+ * "static __forceinline int f(void);"
+ */
+ForceInlineAttributeSpecifier -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
+}
+  : <T_FORCE_INLINE>
   ;
 
 /**
@@ -129,12 +176,12 @@ AttributeName -> {
     return new Node\Identifier($children->value, $offset);
 }
   : <T_IDENTIFIER>
-  | <T_ALIGNAS> | <T_ALIGNOF> | <T_AUTO> | <T_BOOL> | <T_CHAR> | <T_CONST> | <T_CONSTEXPR> | <T_DOUBLE>
+  | <T_ALIGNAS> | <T_ALIGNOF> | <T_AUTO> | <T_BOOL> | <T_CHAR> | <T_CONST> | <T_CONSTEXPR> | <T_DEFAULT> | <T_DOUBLE>
   | <T_ENUM> | <T_EXTERN> | <T_FALSE> | <T_FLOAT> | <T_INLINE> | <T_INT> | <T_LONG> | <T_NULLPTR>
   | <T_REGISTER> | <T_RESTRICT> | <T_SHORT> | <T_SIGNED> | <T_SIZEOF> | <T_STATIC_ASSERT> | <T_STATIC>
   | <T_STRUCT> | <T_THREAD_LOCAL> | <T_TRUE> | <T_TYPEDEF> | <T_TYPEOF_UNQUAL> | <T_TYPEOF> | <T_UNION>
   | <T_UNSIGNED> | <T_VOID> | <T_VOLATILE> | <T_ATOMIC> | <T_BITINT> | <T_COMPLEX> | <T_DECIMAL128>
-  | <T_DECIMAL32> | <T_DECIMAL64> | <T_IMAGINARY> | <T_NORETURN> | <T_RESERVED_KEYWORD>
+  | <T_DECIMAL32> | <T_DECIMAL64> | <T_GENERIC> | <T_IMAGINARY> | <T_NORETURN> | <T_RESERVED_KEYWORD>
   ;
 
 /**
@@ -150,7 +197,9 @@ AttributeName -> {
  */
 
 /**
- * (), (8) or (printf, 1, 2). The parenthesis marks the start of the list.
+ * (), (8) or (printf, 1, 2). A clause with an empty argument, (1, , 2), is
+ * a single sequence of its tokens. The parenthesis marks the start of the
+ * list.
  */
 AttributeArgumentList -> {
     /**
@@ -167,7 +216,10 @@ AttributeArgumentList -> {
 
     return new Attribute\Attribute\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
 }
-  : <T_LPAREN> (AttributeArgument() (::T_COMMA:: AttributeArgument())*)? ::T_RPAREN::
+  : <T_LPAREN> (
+        (AttributeArgument() (::T_COMMA:: AttributeArgument())*)? ::T_RPAREN::
+      | ArgumentClauseTokenSequence() ::T_RPAREN::
+    )
   ;
 
 AttributeArgument
@@ -197,6 +249,19 @@ BalancedTokenSequence -> {
   ;
 
 /**
+ * The text of the tokens of the whole argument clause, the commas included
+ */
+ArgumentClauseTokenSequence -> {
+    $raw = \substr($content, $offset, $length);
+    // The sequence holds at least one token, and no token is empty
+    \assert($raw !== '');
+
+    return new Attribute\Attribute\ArgumentList\BalancedTokenSequence($raw, $offset);
+}
+  : (BalancedToken() | <T_COMMA>)+
+  ;
+
+/**
  * A token other than a comma, or a sequence in brackets with any tokens
  * inside. Also reads the body of a function definition.
  */
@@ -206,7 +271,8 @@ BalancedToken
   | <T_ATTRIBUTE_START> (BalancedToken() | <T_COMMA>)* <T_RBRACKET> <T_RBRACKET>
   | <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   | AttributeName()
-  | <T_ATTRIBUTE> | <T_ASM> | <T_BUILTIN_CALL> | <T_DECLSPEC> | <T_KEYWORD_ATTRIBUTE>
+  | <T_ATTRIBUTE> | <T_ASM> | <T_BUILTIN_CALL> | <T_DECLSPEC> | <T_CALLING_CONVENTION> | <T_POINTER_MODIFIER>
+  | <T_POINTER_MODIFIER_WITH_ARGUMENTS> | <T_NULLABILITY> | <T_FORCE_INLINE>
   | <T_HEX_FLOAT_LITERAL> | <T_DEC_FLOAT_LITERAL> | <T_HEX_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL> | <T_PP_NUMBER>
   | <T_ELLIPSIS> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT> | <T_SHL_ASSIGN> | <T_SHR_ASSIGN> | <T_SHL>

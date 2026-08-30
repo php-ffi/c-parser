@@ -3,9 +3,9 @@
  *  Constant expressions, 6.5 and 6.6.
  * -----------------------------------------------------------------------------
  *
- *  The constant expressions of 6.6p3 without the assignment, the increment,
- *  the decrement and the function call: "(T)(x)" is always a cast. The comma
- *  operator is included. _Generic (6.5.2.1) is not supported.
+ *  The expressions of 6.5 without the assignment, the increment and the
+ *  decrement, with the comma operator and the statement expression of GCC.
+ *  "(T)(x)" with a lone identifier T is always a cast.
  *
  *  A node starts where its rule does ($offset): the parentheses belong to no
  *  node, and the node that contains them starts at them. The binary
@@ -191,8 +191,11 @@ CastExpression -> {
 
     return new Expression\CastExpression($children[1], $children[2], $offset);
 }
-  : <T_LPAREN> (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN::
-        (CompoundLiteral() | CastOrUnaryExpression())
+  : <T_LPAREN> (
+        (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN::
+            (CompoundLiteral() | CastOrUnaryExpression())
+      | TypeName() ::T_RPAREN:: CompoundLiteral()
+    )
   ;
 
 LoneIdentifier
@@ -208,7 +211,7 @@ CastStart
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
-  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_CALL> | <T_LBRACE>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_CALL> | <T_GENERIC> | <T_LBRACE>
   ;
 
 /**
@@ -338,8 +341,10 @@ SizeOfTypeExpression -> {
 
     return new Expression\SizeOfTypeExpression($children[2], $offset);
 }
-  : <T_SIZEOF> <T_LPAREN> !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
-        (CompoundLiteral() | !PostfixOperatorStart())
+  : <T_SIZEOF> <T_LPAREN> (
+        !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
+      | TypeName() ::T_RPAREN:: CompoundLiteral()
+    )
   ;
 
 /**
@@ -373,8 +378,10 @@ AlignOfTypeExpression -> {
 
     return new Expression\AlignOfTypeExpression($children[2], $offset);
 }
-  : <T_ALIGNOF> <T_LPAREN> !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
-        (CompoundLiteral() | !PostfixOperatorStart())
+  : <T_ALIGNOF> <T_LPAREN> (
+        !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
+      | TypeName() ::T_RPAREN:: CompoundLiteral()
+    )
   ;
 
 /**
@@ -388,8 +395,8 @@ AlignOfExpression -> {
   ;
 
 /**
- * 6.5.3 Postfix operators, a[i], s.member, p->member. Every node of the
- * chain starts where the whole expression does.
+ * 6.5.3 Postfix operators, a[i], f(x), s.member, p->member. Every node of
+ * the chain starts where the whole expression does.
  */
 PostfixExpression -> {
     /**
@@ -416,6 +423,7 @@ PostfixExpression -> {
  */
 PostfixOperator
   : SubscriptOperator()
+  | CallOperator()
   | DirectMemberOperator()
   | PointerMemberOperator()
   ;
@@ -429,6 +437,29 @@ SubscriptOperator -> {
     };
 }
   : ::T_LBRACKET:: Expression() ::T_RBRACKET::
+  ;
+
+/**
+ * 6.5.3.3 Function calls, f(), f(x, y). The parenthesis marks the start of
+ * an empty argument list.
+ */
+CallOperator -> {
+    /** @var list{TokenInterface, ...<Expression\ExpressionInterface>} $children */
+    $arguments = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $arguments[] = $children[$i];
+    }
+
+    $list = new Expression\CallExpression\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
+
+    return static function (Expression\ExpressionInterface $operand, int $start) use ($list): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new Expression\CallExpression($operand, $list, $start);
+    };
+}
+  : <T_LPAREN> (ConditionalExpression() (::T_COMMA:: ConditionalExpression())*)? ::T_RPAREN::
   ;
 
 DirectMemberOperator -> {
@@ -454,7 +485,7 @@ PointerMemberOperator -> {
   ;
 
 PostfixOperatorStart
-  : <T_LBRACKET> | <T_DOT> | <T_ARROW>
+  : <T_LBRACKET> | <T_LPAREN> | <T_DOT> | <T_ARROW>
   ;
 
 /**
@@ -464,8 +495,64 @@ PrimaryExpression
   : IdentifierExpression()
   | Constant()
   | ConcatenatedStringLiteral()
+  | StatementExpression()
   | ParenthesizedExpression()
   | BuiltinCallExpression()
+  | GenericSelectionExpression()
+  ;
+
+/**
+ * GCC: a statement expression, ({ int y = x; y * 2; })
+ */
+StatementExpression -> {
+    /** @var array{TokenInterface, non-empty-string} $children */
+    return new Expression\StatementExpression($children[1], $offset);
+}
+  : <T_LPAREN> CompoundStatement() ::T_RPAREN::
+  ;
+
+/**
+ * 6.5.2.1 Generic selection, _Generic(x, int: 1, default: 0)
+ */
+GenericSelectionExpression -> {
+    /**
+     * @var array{
+     *     TokenInterface,
+     *     Expression\ExpressionInterface|Type\TypeInterface,
+     *     Expression\GenericSelectionExpression\GenericAssociationList
+     * } $children
+     */
+    return new Expression\GenericSelectionExpression($children[1], $children[2], $offset);
+}
+  : <T_GENERIC> ::T_LPAREN:: GenericControllingOperand() ::T_COMMA:: GenericAssociationList() ::T_RPAREN::
+  ;
+
+/**
+ * An expression, or a type name where it cannot be one (Clang and C2y)
+ */
+GenericControllingOperand
+  : ConditionalExpression() &<T_COMMA>
+  | TypeName()
+  ;
+
+GenericAssociationList -> {
+    /** @var non-empty-list<Expression\GenericSelectionExpression\GenericAssociation> $children */
+    return new Expression\GenericSelectionExpression\GenericAssociationList($children, $offset);
+}
+  : GenericAssociation() (::T_COMMA:: GenericAssociation())*
+  ;
+
+/**
+ * A type name and the expression selected for it, int: 1, or the default
+ * one, default: 0
+ */
+GenericAssociation -> {
+    /** @var array{Type\TypeInterface|TokenInterface, Expression\ExpressionInterface} $children */
+    $type = $children[0] instanceof TokenInterface ? null : $children[0];
+
+    return new Expression\GenericSelectionExpression\GenericAssociation($type, $children[1], $offset);
+}
+  : (<T_DEFAULT> | TypeName()) ::T_COLON:: ConditionalExpression()
   ;
 
 /**

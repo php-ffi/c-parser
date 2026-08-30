@@ -92,6 +92,7 @@ final class FloatParser
             mantissa: $parts[1],
             exponent: $exponent,
             suffix: self::parseSuffix($parts[3]),
+            isImaginary: self::isImaginary($parts[3]),
         );
     }
 
@@ -106,6 +107,7 @@ final class FloatParser
             mantissa: $parts[1],
             exponent: $parts[2],
             suffix: self::parseSuffix($parts[3]),
+            isImaginary: self::isImaginary($parts[3]),
         );
     }
 
@@ -209,7 +211,7 @@ final class FloatParser
 
     private static function parseSuffix(string $suffix): ?FloatTypeSuffix
     {
-        return match (\strtolower($suffix)) {
+        return match (\strtolower(\str_ireplace(['i', 'j'], '', $suffix))) {
             'f' => FloatTypeSuffix::Float,
             'l' => FloatTypeSuffix::LongDouble,
             'f16' => FloatTypeSuffix::Float16,
@@ -226,5 +228,10 @@ final class FloatParser
             'd128x' => FloatTypeSuffix::Decimal128x,
             default => null,
         };
+    }
+
+    private static function isImaginary(string $suffix): bool
+    {
+        return \strpbrk($suffix, 'iIjJ') !== false;
     }
 }

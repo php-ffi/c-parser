@@ -31,5 +31,9 @@ final class IntParserResult
          * The type suffix or {@see null} in case of there is none
          */
         public readonly ?IntTypeSuffix $suffix,
+        /**
+         * Whether the imaginary suffix of GCC is written
+         */
+        public readonly bool $isImaginary,
     ) {}
 }

@@ -48,6 +48,8 @@ final class DeclaratorsTest extends TestCase
         yield 'array of arrays' => ['int a[2][3];', '(array (array int 3) 2) a'];
         yield 'array of pointers' => ['int *a[3];', '(array (ptr int) 3) a'];
         yield 'pointer to an array' => ['int (*a)[3];', '(ptr (array int 3)) a'];
+        yield 'block pointer' => ['void (^cb)(int);', '(block (fn void (int))) cb'];
+        yield 'qualified block pointer' => ['int (^const b)(void);', '[const (block (fn int (void)))] b'];
         yield 'flexible array member' => ['int a[];', '(array int) a'];
         yield 'array of unspecified size' => ['int a[*];', '(array int *) a'];
         yield 'size that starts with an asterisk' => ['int a[*p];', '(array int (*u p)) a'];
@@ -170,6 +172,7 @@ final class DeclaratorsTest extends TestCase
         yield 'function with void' => ['int (void)', '(fn int (void))'];
         yield 'variadic function without parameters' => ['int (...)', '(fn int (...))'];
         yield 'pointer to a function' => ['void (*)(int, ...)', '(ptr (fn void (int, ...)))'];
+        yield 'block pointer' => ['void (^)(int)', '(block (fn void (int)))'];
         yield 'parenthesized pointer' => ['int ((*))', '(ptr int)'];
         yield 'parenthesized function' => ['int ((int))', '(fn int (int))'];
         yield 'typedef name and a pointer' => ['T *', '(ptr T)'];
@@ -199,6 +202,10 @@ final class DeclaratorsTest extends TestCase
         // the expression is allowed too
         yield 'typeof of a subscript' => ['typeof(T[3]);', '(type typeof(([] T 3)))'];
         yield 'typeof of a product' => ['typeof(a * (b));', '(type typeof((* a b)))'];
+        yield 'typeof of a call without arguments' => ['typeof(f());', '(type typeof((call f)))'];
+        yield 'typeof of a call' => ['typeof(f(x));', '(type typeof((call f x)))'];
+        yield 'typeof of a call with a constant' => ['typeof(f(1));', '(type typeof((call f 1)))'];
+        yield 'typeof of a function type' => ['typeof(T(int));', '(type typeof((fn T (int))))'];
         yield 'typeof_unqual of a subscript' => ['typeof_unqual(T[3]);', '(type typeof_unqual(([] T 3)))'];
         yield 'alignas of a subscript' => ['alignas(T[3]) int;', '(type alignas(([] T 3)) int)'];
         yield 'alignas of a product' => ['alignas(a * (b)) int;', '(type alignas((* a b)) int)'];
@@ -350,7 +357,7 @@ final class DeclaratorsTest extends TestCase
             30,
             'restrict',
         ];
-        yield 'atomic type specifier after a pointer' => ['struct S { int *_Atomic(p); };', 16, '_Atomic'];
+        yield 'atomic type specifier after a pointer' => ['struct S { int *_Atomic(p); };', 23, '('];
         yield 'abstract pointer to a function member' => ['struct S { int (*)(void); };', 17, ')'];
         yield 'unclosed parameters' => ['struct S { int f(int; };', 20, ';'];
         yield 'unclosed parenthesized declarator' => ['struct S { int (*p; };', 18, ';'];

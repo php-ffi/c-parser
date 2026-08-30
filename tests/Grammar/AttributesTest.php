@@ -70,10 +70,10 @@ final class AttributesTest extends TestCase
         ];
         yield 'empty __declspec' => ['__declspec();', '(attributes )'];
 
-        // Keywords
+        // Keywords allowed among the specifiers
         foreach ([
-            '__cdecl', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__ptr32', '__ptr64',
-            '_Nonnull', '_Nullable', '_Nullable_result', '_Null_unspecified',
+            '__cdecl', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__ptr32', '__ptr64', '__w64',
+            '__forceinline',
         ] as $keyword) {
             yield 'keyword attribute ' . $keyword => [$keyword . ';', '(attributes ' . $keyword . ')'];
         }
@@ -112,8 +112,12 @@ final class AttributesTest extends TestCase
         yield 'expression followed by tokens' => ['a(1 2)', '[[a((tokens 1 2))]]'];
         yield 'keywords and punctuators' => ['a(int * -> ; :: ...)', '[[a((tokens int * -> ; :: ...))]]'];
         yield 'nested brackets with commas' => ['a([1, 2] {3, (4, 5)})', '[[a((tokens [1, 2] {3, (4, 5)}))]]'];
-        yield 'nested parentheses after a name' => ['a(b(c, d), e)', '[[a((tokens b(c, d)), e)]]'];
+        yield 'function call' => ['a(b(c, d), e)', '[[a((call b c d), e)]]'];
+        yield 'nested parentheses after a name' => ['a(b(c, d) e)', '[[a((tokens b(c, d) e))]]'];
         yield 'whitespace and comments are kept' => ['a(x  /* y */ = 1)', '[[a((tokens x  /* y */ = 1))]]'];
+        yield 'empty argument' => ['a(1, , 2)', '[[a((tokens 1, , 2))]]'];
+        yield 'empty last argument' => ['a(1,)', '[[a((tokens 1,))]]'];
+        yield 'empty first argument' => ['a(, b)', '[[a((tokens , b))]]'];
         yield 'keyword of the extensions as an argument' => ['a(__asm__)', '[[a((tokens __asm__))]]'];
         yield 'non-ASCII text' => ["a(\"\xC3\xA9\", \\u00E9)", "[[a(\"\xC3\xA9\", \\u00E9)]]"];
         yield 'invalid UTF-8 in a string' => ["a(\"\xFF\")", "[[a(\"\xFF\")]]"];
@@ -154,6 +158,38 @@ final class AttributesTest extends TestCase
             'static __attribute__((a)) const int __declspec(b) x;',
             ['(variable static __attribute__((a)) __declspec(b) [const int] x)'],
         ];
+        yield 'nullability after a typedef name' => ['CFStringRef _Nonnull s;', ['(variable _Nonnull CFStringRef s)']];
+        yield 'nullability before the type' => ['_Nonnull int *p;', ['(variable _Nonnull (ptr int) p)']];
+        yield 'calling convention at the end of a parameter' => ['void g(int * __cdecl);', [
+            '(function (fn void ((ptr int __cdecl))) g)',
+        ]];
+        yield 'calling convention after a pointer' => ['void (* __stdcall f)(int);', [
+            '(variable (ptr (fn void (int)) __stdcall) f)',
+        ]];
+        yield 'modifier of a 16-bit pointer among the specifiers' => ['char __far *p;', [
+            '(variable __far (ptr char) p)',
+        ]];
+        yield 'modifier of a 16-bit pointer after a pointer' => ['char * __near p;', [
+            '(variable (ptr char __near) p)',
+        ]];
+        yield 'based pointer' => ['char __based(base) *p;', ['(variable __based(base) (ptr char) p)']];
+        yield 'based pointer of void' => ['char __based(void) *p;', ['(variable __based((tokens void)) (ptr char) p)']];
+        yield 'pointer authentication' => ['void * __ptrauth(1, 0, 0x1234) p;', [
+            '(variable (ptr void __ptrauth(1, 0, 0x1234)) p)',
+        ]];
+        yield 'attribute of GCC in the brackets of an array' => ['void g(int a[__attribute__((x)) 3]);', [
+            '(function (fn void ((array int 3 __attribute__((x))) a)) g)',
+        ]];
+        yield 'attributes in and after the brackets of an array' => [
+            'void g(int a[const __attribute__((x)) static 3] [[y]]);',
+            ['(function (fn void ((array int static const 3 __attribute__((x)) [[y]]) a)) g)'],
+        ];
+        yield 'attribute in the brackets of an array without a size' => ['void g(int a[__attribute__((x))]);', [
+            '(function (fn void ((array int __attribute__((x))) a)) g)',
+        ]];
+        yield 'attribute in the brackets of an array of unspecified size' => ['void g(int a[__declspec(x) *]);', [
+            '(function (fn void ((array int * __declspec(x)) a)) g)',
+        ]];
         yield 'calling convention among the specifiers' => ['void __stdcall f(void);', [
             '(function __stdcall (fn void (void)) f)',
         ]];
@@ -383,7 +419,6 @@ final class AttributesTest extends TestCase
         yield 'single closing bracket' => ['[[a] int x;', 5, 'int'];
         yield 'unbalanced parenthesis in the arguments' => ['[[a(b]] int x;', 5, ']'];
         yield 'unbalanced bracket in the arguments' => ['[[a([b)]] int x;', 6, ')'];
-        yield 'empty argument' => ['[[a(1, , 2)]];', 7, ','];
         yield 'missing prefixed name' => ['[[a::]];', 5, ']'];
         yield 'missing prefix' => ['[[::a]];', 2, '::'];
         yield 'two prefixes' => ['[[a::b::c]];', 6, '::'];
@@ -391,6 +426,7 @@ final class AttributesTest extends TestCase
         yield 'single closing parenthesis of GCC' => ['__attribute__((a) int x;', 18, 'int'];
         yield 'attributes of __declspec separated by a comma' => ['__declspec(a, b);', 12, ','];
         yield 'keyword attribute with arguments' => ['__stdcall(1);', 10, '1'];
+        yield 'calling convention after the name' => ['int f __cdecl (void);', 6, '__cdecl'];
         yield 'assembler label of a name' => ['int f(void) __asm__(f);', 20, 'f'];
         yield 'assembler label of a member' => ['struct S { int a __asm__("a"); };', 17, '__asm__'];
         yield 'two assembler labels' => ['int f(void) __asm__("a") __asm__("b");', 25, '__asm__'];
@@ -409,7 +445,6 @@ final class AttributesTest extends TestCase
         yield 'attribute before a static assertion' => ['[[a]] static_assert(1);', 6, 'static_assert'];
         yield 'attribute before an initializer' => ['int x [[a]] = [[b]] 1;', 14, '[['];
         yield 'attributes between the tag and the body' => ['struct S [[a]] { int a; };', 15, '{'];
-        yield 'empty last argument' => ['[[a(1,)]];', 6, ')'];
         yield 'keyword of the extensions as a name' => ['__attribute__((__declspec));', 15, '__declspec'];
         yield 'extra closing parenthesis of GCC' => ['__attribute__((a))) int x;', 18, ')'];
         yield 'empty assembler label' => ['int f(void) __asm__();', 20, ')'];

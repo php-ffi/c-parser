@@ -198,19 +198,36 @@ InitDeclarator -> {
     };
 }
   : AttributeSpecifier()* Declarator() AttributeSpecifier()* (AsmLabel() AttributeSpecifier()*)?
-        (::T_ASSIGN:: Initializer())?
+        (::T_ASSIGN:: Initializer() !FunctionBodyStart())?
   ;
 
 /**
- * 6.9.1 The body of a function definition, the compound statement in braces:
- * any sequence of tokens with balanced brackets, kept as text
+ * The start of a function body, which may not follow an initializer
+ */
+FunctionBodyStart
+  : <T_LBRACE>
+  ;
+
+/**
+ * 6.9.1 The body of a function definition
  */
 FunctionBody -> {
+    /** @var array{non-empty-string} $children */
+    return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody($children[0], $offset);
+}
+  : CompoundStatement()
+  ;
+
+/**
+ * 6.8.3 A compound statement as text: any sequence of tokens with balanced
+ * brackets in braces
+ */
+CompoundStatement -> {
     $raw = \substr($content, $offset, $length);
-    // The body holds at least its braces
+    // The statement holds at least its braces
     \assert($raw !== '');
 
-    return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody($raw, $offset);
+    return $raw;
 }
   : <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   ;

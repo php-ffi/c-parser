@@ -47,7 +47,7 @@ PointerDeclarator -> {
 
     return $result;
 }
-  : (Pointer() | DeclaratorAttributes()) Declarator()
+  : (Pointer() | BlockPointer() | DeclaratorAttributes()) Declarator()
   ;
 
 /**
@@ -71,7 +71,7 @@ DeclaratorAttributes -> {
         $offset,
     );
 }
-  : AttributeSpecifier()+
+  : (AttributeSpecifier() | CallingConventionAttributeSpecifier())+
   ;
 
 /**
@@ -170,7 +170,7 @@ AbstractPointerDeclarator -> {
 
     return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[1]($children[0]($type));
 }
-  : Pointer() AbstractDeclarator()?
+  : (Pointer() | BlockPointer()) AbstractDeclarator()?
   | DeclaratorAttributes() AbstractDeclarator()
   ;
 
@@ -224,7 +224,53 @@ Pointer -> {
         $offset,
     );
 }
-  : <T_ASTERISK> (TypeQualifier() | AttributeSpecifier())*
+  : <T_ASTERISK> PointerQualifier()*
+  ;
+
+/**
+ * Clang: a block pointer, written by the "^" of a declarator:
+ * "void (^callback)(int)". Its qualifiers and attributes are the ones of a
+ * pointer.
+ */
+BlockPointer -> {
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
+    $qualifiers = [];
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
+    }
+
+    $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
+
+    if ($qualifiers === []) {
+        return static fn(?Type\TypeInterface $type): Type\TypeInterface
+            => new Type\BlockPointerType($type, $attributeList, $offset);
+    }
+
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
+        $qualifiers,
+        new Type\BlockPointerType($type, $attributeList, $offset),
+        $offset,
+    );
+}
+  : <T_CARET> PointerQualifier()*
+  ;
+
+/**
+ * A qualifier or an attribute after "*" or "^"
+ */
+PointerQualifier
+  : TypeQualifier()
+  | AttributeSpecifier()
+  | PointerModifierAttributeSpecifier()
+  | PointerModifierWithArgumentsAttributeSpecifier()
+  | NullabilityAttributeSpecifier()
+  | CallingConventionAttributeSpecifier()
   ;
 
 /**
@@ -282,16 +328,24 @@ SizedArrayDeclarator -> {
     /**
      * @var list{
      *     TokenInterface,
-     *     ...<TokenInterface|Type\QualifiedType\TypeQualifier|Expression\ExpressionInterface>
+     *     ...<
+     *         TokenInterface
+     *         |Type\QualifiedType\TypeQualifier
+     *         |Attribute\AttributeInterface
+     *         |Expression\ExpressionInterface
+     *     >
      * } $children
      */
     $qualifiers = [];
+    $attributes = [];
     $isStatic = false;
     $last = \count($children) - 1;
 
     for ($i = 1; $i < $last; ++$i) {
         if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
             $qualifiers[] = $children[$i];
+        } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
+            $attributes[] = $children[$i];
         } else {
             $isStatic = true;
         }
@@ -300,20 +354,27 @@ SizedArrayDeclarator -> {
     // The size ends the rule
     \assert($children[$last] instanceof Expression\ExpressionInterface);
 
-    return static fn(
+    return static function (
         ?Type\TypeInterface $type,
-        ?Attribute\AttributeList $attributes = null,
-    ): Type\TypeInterface => new Type\ArrayType\SizedArrayType(
-        $type,
-        $children[$last],
-        $isStatic,
-        $qualifiers,
-        $attributes,
-        $offset,
-    );
+        ?Attribute\AttributeList $after = null,
+    ) use ($children, $last, $isStatic, $qualifiers, $attributes, $offset): Type\TypeInterface {
+        // The attributes after the brackets follow the ones in them
+        foreach ($after ?? [] as $attribute) {
+            $attributes[] = $attribute;
+        }
+
+        return new Type\ArrayType\SizedArrayType(
+            $type,
+            $children[$last],
+            $isStatic,
+            $qualifiers,
+            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+            $offset,
+        );
+    };
 }
   : <T_LBRACKET>
-        (<T_STATIC> TypeQualifier()* | TypeQualifier()* <T_STATIC>?)
+        (<T_STATIC> ArrayQualifier()* | ArrayQualifier()* <T_STATIC>?)
         ConditionalExpression()
     ::T_RBRACKET::
   ;
@@ -323,48 +384,81 @@ SizedArrayDeclarator -> {
  * as GCC does (C allows them only in a declarator with a name)
  */
 UnspecifiedSizeArrayDeclarator -> {
-    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
     $qualifiers = [];
+    $attributes = [];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        $qualifiers[] = $children[$i];
+        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
     }
 
-    return static fn(
+    return static function (
         ?Type\TypeInterface $type,
-        ?Attribute\AttributeList $attributes = null,
-    ): Type\TypeInterface => new Type\ArrayType\UnspecifiedSizeArrayType(
-        $type,
-        $qualifiers,
-        $attributes,
-        $offset,
-    );
+        ?Attribute\AttributeList $after = null,
+    ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
+        // The attributes after the brackets follow the ones in them
+        foreach ($after ?? [] as $attribute) {
+            $attributes[] = $attribute;
+        }
+
+        return new Type\ArrayType\UnspecifiedSizeArrayType(
+            $type,
+            $qualifiers,
+            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+            $offset,
+        );
+    };
 }
-  : <T_LBRACKET> TypeQualifier()* ::T_ASTERISK:: ::T_RBRACKET::
+  : <T_LBRACKET> ArrayQualifier()* ::T_ASTERISK:: ::T_RBRACKET::
   ;
 
 /**
  * [] and [const]
  */
 IncompleteArrayDeclarator -> {
-    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier>} $children */
+    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
     $qualifiers = [];
+    $attributes = [];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        $qualifiers[] = $children[$i];
+        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
+        }
     }
 
-    return static fn(
+    return static function (
         ?Type\TypeInterface $type,
-        ?Attribute\AttributeList $attributes = null,
-    ): Type\TypeInterface => new Type\ArrayType\IncompleteArrayType(
-        $type,
-        $qualifiers,
-        $attributes,
-        $offset,
-    );
+        ?Attribute\AttributeList $after = null,
+    ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
+        // The attributes after the brackets follow the ones in them
+        foreach ($after ?? [] as $attribute) {
+            $attributes[] = $attribute;
+        }
+
+        return new Type\ArrayType\IncompleteArrayType(
+            $type,
+            $qualifiers,
+            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
+            $offset,
+        );
+    };
 }
-  : <T_LBRACKET> TypeQualifier()* ::T_RBRACKET::
+  : <T_LBRACKET> ArrayQualifier()* ::T_RBRACKET::
+  ;
+
+/**
+ * A qualifier in the brackets of an array, or an attribute among them, as
+ * GCC has: "int a[__attribute__((x)) 3]"
+ */
+ArrayQualifier
+  : TypeQualifier()
+  | AttributeSpecifier()
   ;
 
 /**
@@ -468,21 +562,23 @@ TypeName -> {
 
 /**
  * The first tokens of a type name that reads as an expression as well,
- * other than a lone identifier: an array with a size "a[3]" or a function
- * returning a pointer whose first parameter starts with a typedef name and
- * reads as an expression too, "a * (b)", "a * ((b), c)", "a * (b[2])" or
- * "a * (b * c)". Where an expression is allowed too (a cast, sizeof,
- * typeof, typeof_unqual and alignas), such a type name is read as the
- * expression: "sizeof(a[0])" is the size of an element, "(a * (b)) + 1" is
- * a product. Only the first tokens are checked: "typeof(T[3])" and
- * "typeof(T *(U, V))" are expressions as well, though a typedef name T
- * makes them valid types. The arrays without a size and the parameters
- * that cannot be an expression ("T[]", "T[static 3]", "T *(U *)") stay
- * type names.
+ * other than a lone identifier: an array with a size "a[3]", a function
+ * without parameters "f()", and a function or a function returning a
+ * pointer whose first parameter starts with a typedef name and reads as an
+ * expression too, "f(x)", "f(x, y)", "a * (b)", "a * ((b), c)",
+ * "a * (b[2])" or "a * (b * c)". Where an expression is allowed too (a
+ * cast, sizeof, typeof, typeof_unqual and alignas), such a type name is
+ * read as the expression: "sizeof(a[0])" is the size of an element,
+ * "typeof(f())" is the type of a call, "(a * (b)) + 1" is a product. Only
+ * the first tokens are checked: "typeof(T[3])" and "typeof(T *(U, V))" are
+ * expressions as well, though a typedef name T makes them valid types. The
+ * arrays without a size and the parameters that cannot be an expression
+ * ("T[]", "T[static 3]", "T(U *)", "T *(U *)") stay type names.
  */
 ExpressionLikeTypeName
   : <T_IDENTIFIER> <T_LBRACKET> !ArrayDeclaratorStart()
-  | <T_IDENTIFIER> <T_ASTERISK>+ <T_LPAREN>+ <T_IDENTIFIER> ExpressionLikeParameterEnd()
+  | <T_IDENTIFIER> <T_LPAREN> <T_RPAREN>
+  | <T_IDENTIFIER> <T_ASTERISK>* <T_LPAREN>+ <T_IDENTIFIER> ExpressionLikeParameterEnd()
   ;
 
 /**
@@ -491,6 +587,8 @@ ExpressionLikeTypeName
  */
 ArrayDeclaratorStart
   : <T_RBRACKET>
+  | <T_ATTRIBUTE>
+  | <T_DECLSPEC>
   | <T_STATIC>
   | <T_CONST>
   | <T_VOLATILE>

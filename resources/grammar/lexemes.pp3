@@ -52,7 +52,13 @@
 %fragment OCT_INT           0(?:'?[0-7])*+
 %fragment DEC_INT           [1-9](?:'?[0-9])*+
 %fragment INT_SIZE          ll|LL|[lL]|wb|WB
-%fragment INT_SUFFIX        [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
+%fragment INT_TYPE_SUFFIX   [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
+/**
+ * GCC: the suffix of an imaginary constant, 2.0i or 3j, before or after the
+ * suffix of the type
+ */
+%fragment IMAGINARY_SUFFIX  [iIjJ]
+%fragment INT_SUFFIX        (?&INT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&INT_TYPE_SUFFIX)?
 
 /**
  * Floating constants, 6.4.4.3
@@ -64,18 +70,19 @@
 %fragment DEC_FLOAT         (?&DEC_FRACTION)(?&DEC_EXPONENT)?|(?&DEC_DIGITS)(?&DEC_EXPONENT)
 %fragment HEX_FLOAT         0[xX](?&HEX_SIGNIFICAND)(?&BIN_EXPONENT)
 %fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
-%fragment FLOAT_SUFFIX      [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
+%fragment FLOAT_TYPE_SUFFIX [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
+%fragment FLOAT_SUFFIX      (?&FLOAT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&FLOAT_TYPE_SUFFIX)?
 
 /**
- * Keywords of statements, 6.4.1
+ * Keywords of statements other than "default", 6.4.1
  */
-%fragment STATEMENT_KEYWORD break|case|continue|default|do|else|for|goto|if|return|switch|while
+%fragment STATEMENT_KEYWORD break|case|continue|do|else|for|goto|if|return|switch|while
 
 /**
  * Keywords of the compiler extensions that are attributes by themselves
  */
 %fragment CALLING_CONVENTION __cdecl|__clrcall|__stdcall|__fastcall|__thiscall|__vectorcall|__regcall|__pascal|_cdecl|_stdcall|_fastcall
-%fragment POINTER_MODIFIER   __ptr32|__ptr64|__sptr|__uptr|__unaligned|__w64
+%fragment POINTER_MODIFIER   __ptr32|__ptr64|__sptr|__uptr|__unaligned|__w64|__far|__near|__huge
 %fragment NULLABILITY        _Nonnull|_Nullable_result|_Nullable|_Null_unspecified
 
 /**
@@ -95,6 +102,17 @@
 %fragment LINE_START       ^|(?<=\A\xEF\xBB\xBF)
 %fragment DIRECTIVE_BODY   (?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+
 %token T_DIRECTIVE          (?&LINE_START)[\x20\t\f\x0B]*+(?:\x23|%:)(?&DIRECTIVE_BODY) -> channel(Directive)
+
+/**
+ * The pragma operator, _Pragma("pack(1)") of C (6.10.11) and
+ * __pragma(pack(1)) of MSVC, a directive written inside a line: the
+ * keyword and its operand in balanced parentheses, nested at most three
+ * levels deep
+ */
+%fragment PRAGMA_ATOM      [^()"']++|"(?:[^"\\\n]|\\.)*+"|'(?:[^'\\\n]|\\.)*+'
+%fragment PRAGMA_GROUP     \((?:(?&PRAGMA_ATOM)|\((?:(?&PRAGMA_ATOM))*+\))*+\)
+%fragment PRAGMA_OPERAND   \((?:(?&PRAGMA_ATOM)|(?&PRAGMA_GROUP))*+\)
+%token T_PRAGMA_OPERATOR    (?:_Pragma|__pragma)[\x20\t\r\n\f\x0B]*+(?&PRAGMA_OPERAND) -> channel(Directive)
 
 /**
  * -----------------------------------------------------------------------------
@@ -233,6 +251,7 @@
 %token T_CHAR               char(?&KEYWORD_END)
 %token T_CONST              (?:const|__const__|__const)(?&KEYWORD_END)
 %token T_CONSTEXPR          constexpr(?&KEYWORD_END)
+%token T_DEFAULT            default(?&KEYWORD_END)
 %token T_DOUBLE             double(?&KEYWORD_END)
 %token T_ENUM               enum(?&KEYWORD_END)
 %token T_EXTERN             extern(?&KEYWORD_END)
@@ -265,6 +284,7 @@
 %token T_DECIMAL128         _Decimal128(?&KEYWORD_END)
 %token T_DECIMAL32          _Decimal32(?&KEYWORD_END)
 %token T_DECIMAL64          _Decimal64(?&KEYWORD_END)
+%token T_GENERIC            _Generic(?&KEYWORD_END)
 %token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
@@ -273,7 +293,7 @@
  * MSVC attributes
  */
 %token T_ATTRIBUTE          (?:__attribute__|__attribute)(?&KEYWORD_END)
-%token T_ASM                (?:__asm__|__asm)(?&KEYWORD_END)
+%token T_ASM                (?:__asm__|__asm|asm)(?&KEYWORD_END)
 %token T_DECLSPEC           __declspec(?&KEYWORD_END)
 
 /**
@@ -288,7 +308,16 @@
  * calling conventions, modifiers of pointers, the nullability of Clang
  * and __forceinline
  */
-%token T_KEYWORD_ATTRIBUTE  (?:(?&CALLING_CONVENTION)|(?&POINTER_MODIFIER)|(?&NULLABILITY)|__forceinline)(?&KEYWORD_END)
+%token T_CALLING_CONVENTION (?:(?&CALLING_CONVENTION))(?&KEYWORD_END)
+%token T_POINTER_MODIFIER   (?:(?&POINTER_MODIFIER))(?&KEYWORD_END)
+/**
+ * Modifiers of a pointer with arguments: the based pointers of MSVC,
+ * __based(base), and the pointer authentication of Clang,
+ * __ptrauth(key, address, discriminator)
+ */
+%token T_POINTER_MODIFIER_WITH_ARGUMENTS (?:__based|__ptrauth)(?&KEYWORD_END)
+%token T_NULLABILITY        (?:(?&NULLABILITY))(?&KEYWORD_END)
+%token T_FORCE_INLINE       __forceinline(?&KEYWORD_END)
 
 /**
  * The marker of GCC that silences the warnings about the extensions in what
@@ -297,9 +326,9 @@
 %skip T_EXTENSION           __extension__(?&KEYWORD_END)
 
 /**
- * Keywords of statements and of _Generic: reserved, not identifiers
+ * Keywords of statements: reserved, not identifiers
  */
-%token T_RESERVED_KEYWORD   (?:(?&STATEMENT_KEYWORD)|_Generic)(?&KEYWORD_END)
+%token T_RESERVED_KEYWORD   (?:(?&STATEMENT_KEYWORD))(?&KEYWORD_END)
 
 /**
  * -----------------------------------------------------------------------------

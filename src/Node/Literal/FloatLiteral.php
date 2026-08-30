@@ -60,6 +60,12 @@ abstract class FloatLiteral extends Literal
          * `double`
          */
         public readonly ?FloatTypeSuffix $suffix = null,
+        /**
+         * GCC: whether the constant is imaginary, written with the suffix
+         * `i` or `j` (`2.0i`, `3j`), its type is then the complex type of
+         * the constant
+         */
+        public readonly bool $isImaginary = false,
         ?string $raw = null,
         int $offset = 0,
     ) {
@@ -92,7 +98,8 @@ abstract class FloatLiteral extends Literal
     private function representAsRawValue(): string
     {
         return $this->representAsRawNumber()
-            . $this->suffix?->value;
+            . $this->suffix?->value
+            . ($this->isImaginary ? 'i' : '');
     }
 
     /**
@@ -128,6 +135,7 @@ abstract class FloatLiteral extends Literal
             mantissa: $result->mantissa,
             exponent: $result->exponent,
             suffix: $result->suffix,
+            isImaginary: $result->isImaginary,
             raw: $raw,
             offset: $offset,
         );

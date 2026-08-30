@@ -40,6 +40,7 @@ final class IntParser
             // the exact one and the digits have to be converted
             decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
             suffix: self::parseSuffix(\substr($literal, $suffixOffset)),
+            isImaginary: \strpbrk(\substr($literal, $suffixOffset), 'iIjJ') !== false,
         );
     }
 
@@ -71,7 +72,7 @@ final class IntParser
         while ($offset > 1) {
             $char = $literal[$offset - 1];
 
-            if (\str_contains('uUlL', $char)) {
+            if (\str_contains('uUlLiIjJ', $char)) {
                 --$offset;
             } elseif (\str_contains('bB', $char) && \str_contains('wW', $literal[$offset - 2])) {
                 $offset -= 2;
@@ -115,7 +116,7 @@ final class IntParser
     {
         $isUnsigned = \stripos($suffix, 'u') !== false;
 
-        return match (\strtolower(\str_ireplace('u', '', $suffix))) {
+        return match (\strtolower(\str_ireplace(['u', 'i', 'j'], '', $suffix))) {
             'l' => $isUnsigned ? IntTypeSuffix::UnsignedLong : IntTypeSuffix::Long,
             'll' => $isUnsigned ? IntTypeSuffix::UnsignedLongLong : IntTypeSuffix::LongLong,
             'wb' => $isUnsigned ? IntTypeSuffix::UnsignedBitPrecise : IntTypeSuffix::BitPrecise,

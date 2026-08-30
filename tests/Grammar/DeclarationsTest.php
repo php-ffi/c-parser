@@ -130,7 +130,9 @@ final class DeclarationsTest extends TestCase
         // The typedef name rule
         yield 'name after a modifier' => ['unsigned T;', ['(variable (unsigned _) T)']];
         yield 'typedef name after a modifier' => ['unsigned __int64 x;', ['(variable (unsigned __int64) x)']];
-        yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', ['(variable (ptr (unsigned T)) p)']];
+        yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', [
+            '(variable (ptr (unsigned T)) p)',
+        ]];
         yield 'name after a typedef name' => ['T T;', ['(variable T T)']];
         yield 'name after a base' => ['int T;', ['(variable int T)']];
         yield 'name after a modifier and a base' => ['unsigned int T;', ['(variable (unsigned int) T)']];
@@ -172,6 +174,17 @@ final class DeclarationsTest extends TestCase
             '(variable (ptr [const struct S]) p = (&u (compound struct S {1})))',
         ]];
         yield 'compound literal of a typedef name' => ['int x = (T){1};', ['(variable int x = (compound T {1}))']];
+        yield 'compound literal of a type that reads as an expression' => ['int a[] = (T[3]){1};', [
+            '(variable (array int) a = (compound (array T 3) {1}))',
+        ]];
+        yield 'size of a compound literal of a type that reads as an expression' => [
+            'int x = sizeof (T[2]){0};',
+            ['(variable int x = (sizeof (compound (array T 2) {0})))'],
+        ];
+        yield 'alignment of a compound literal of a type that reads as an expression' => [
+            'int x = alignof (T[2]){0};',
+            ['(variable int x = (alignof (compound (array T 2) {0})))'],
+        ];
         yield 'size of a compound literal' => ['int x = sizeof (int){1};', [
             '(variable int x = (sizeof (compound int {1})))',
         ]];
@@ -204,10 +217,17 @@ final class DeclarationsTest extends TestCase
             '(function (fn int (void)) g)',
         ]];
         yield 'body after a declarator of no function' => ['int x { 1 }', ['(definition int x { 1 })']];
-        yield 'body after an initializer' => ['int x = {1} {2}', ['(definition int x = {1} {2})']];
 
         // Extensions of GCC
         yield 'assembler label' => ['int f(void) __asm__("_f");', ['(function (fn int (void)) f asm("_f"))']];
+        yield 'assembler label without underscores' => ['int f(void) asm("_f");', [
+            '(function (fn int (void)) f asm("_f"))',
+        ]];
+        yield 'pragma operator of MSVC' => ['__pragma(warning(push)) int x;', ['(variable int x)']];
+        yield 'pragma operator' => ['int y _Pragma("weak y");', ['(variable int y)']];
+        yield 'nested parentheses in a pragma operator' => ['__pragma(warning(disable: 4996; (a))) int z;', [
+            '(variable int z)',
+        ]];
         yield 'assembler label of adjacent strings' => ['extern int x __asm("_" "x") = 1;', [
             '(variable extern int x asm((concat "_" "x")) = 1)',
         ]];
@@ -323,6 +343,8 @@ final class DeclarationsTest extends TestCase
         yield 'unbalanced function body' => ['int f(void) { g(); ) }', 19, ')'];
         yield 'body after a declarator but the first' => ['int a, f(void) { }', 15, '{'];
         yield 'body after a semicolon' => ['int f(void); { }', 13, '{'];
+        yield 'body after an initializer' => ['int a = x {1};', 10, '{'];
+        yield 'body after an initializer list' => ['int x = {1} {2};', 12, '{'];
         yield 'missing initializer' => ['int x = ;', 8, ';'];
         yield 'missing initializer of a typedef' => ['typedef int T = ;', 16, ';'];
         yield 'unclosed initializer list' => ['int a[] = {1, 2;', 15, ';'];

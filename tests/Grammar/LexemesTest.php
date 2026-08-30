@@ -39,6 +39,7 @@ final class LexemesTest extends TestCase
             'T_CHAR' => ['char'],
             'T_CONST' => ['const', '__const__', '__const'],
             'T_CONSTEXPR' => ['constexpr'],
+            'T_DEFAULT' => ['default'],
             'T_DOUBLE' => ['double'],
             'T_ENUM' => ['enum'],
             'T_EXTERN' => ['extern'],
@@ -71,21 +72,24 @@ final class LexemesTest extends TestCase
             'T_DECIMAL128' => ['_Decimal128'],
             'T_DECIMAL32' => ['_Decimal32'],
             'T_DECIMAL64' => ['_Decimal64'],
+            'T_GENERIC' => ['_Generic'],
             'T_IMAGINARY' => ['_Imaginary'],
             'T_NORETURN' => ['_Noreturn'],
             'T_ATTRIBUTE' => ['__attribute__', '__attribute'],
-            'T_ASM' => ['__asm__', '__asm'],
+            'T_ASM' => ['__asm__', '__asm', 'asm'],
             'T_DECLSPEC' => ['__declspec'],
-            'T_KEYWORD_ATTRIBUTE' => [
+            'T_CALLING_CONVENTION' => [
                 '__cdecl', '__clrcall', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__regcall',
                 '__pascal', '_cdecl', '_stdcall', '_fastcall',
-                '__ptr32', '__ptr64', '__sptr', '__uptr', '__unaligned', '__w64',
-                '_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified',
-                '__forceinline',
             ],
+            'T_POINTER_MODIFIER' => [
+                '__ptr32', '__ptr64', '__sptr', '__uptr', '__unaligned', '__w64', '__far', '__near', '__huge',
+            ],
+            'T_POINTER_MODIFIER_WITH_ARGUMENTS' => ['__based', '__ptrauth'],
+            'T_NULLABILITY' => ['_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified'],
+            'T_FORCE_INLINE' => ['__forceinline'],
             'T_RESERVED_KEYWORD' => [
-                'break', 'case', 'continue', 'default', 'do', 'else', 'for',
-                'goto', 'if', 'return', 'switch', 'while', '_Generic',
+                'break', 'case', 'continue', 'do', 'else', 'for', 'goto', 'if', 'return', 'switch', 'while',
             ],
         ];
 
@@ -119,7 +123,9 @@ final class LexemesTest extends TestCase
         yield 'identifier with digits' => ['x86_64', [['T_IDENTIFIER', 'x86_64']]];
         yield 'integer type of a compiler' => ['__int64', [['T_IDENTIFIER', '__int64']]];
         yield 'typedef name after an integer type of a compiler' => ['__int128_t', [['T_IDENTIFIER', '__int128_t']]];
-        yield 'built-in function' => ['__builtin_expect (', [['T_BUILTIN_CALL', '__builtin_expect'], ['T_LPAREN', '(']]];
+        yield 'built-in function' => ['__builtin_expect (', [
+            ['T_BUILTIN_CALL', '__builtin_expect'], ['T_LPAREN', '('],
+        ]];
         yield 'built-in name without a parenthesis' => ['__builtin_va_list', [['T_IDENTIFIER', '__builtin_va_list']]];
         yield 'identifier in UTF-8' => ["caf\xC3\xA9", [['T_IDENTIFIER', "caf\xC3\xA9"]]];
         yield 'identifier of universal character names' => ['\\u00E9t\\U0001F600', [
@@ -136,7 +142,7 @@ final class LexemesTest extends TestCase
         $constants = [
             'T_DEC_INT_LITERAL' => [
                 '42', "1'000'000", '1u', '1U', '1l', '1L', '1ll', '1LL', '1ul', '1lu', '1ULL', '1llu', '1wb', '1WB',
-                '1uwb', '1wbU', '1Ull',
+                '1uwb', '1wbU', '1Ull', '1i', '1J', '1uli', '1iul',
             ],
             'T_OCT_INT_LITERAL' => ['0', '00', '017', "0'7"],
             'T_HEX_INT_LITERAL' => ['0x1', '0x1F', "0x1F'FF", '0XabCD', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '0x1uwb'],
@@ -145,7 +151,7 @@ final class LexemesTest extends TestCase
                 '1.5', '.5', '1.', '1e10', '1E+10', '1.5e-3', "1'000.000'1", '1.5f', '1.5F', '1.5l', '1.5L',
                 '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x',
                 '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1.0d128x', '1e999', "1e1'0", '08.5', '09e1',
-                '0.5', '0e1',
+                '0.5', '0e1', '2.0i', '2.0fi', '2.0if', '1e3J',
             ],
             'T_HEX_FLOAT_LITERAL' => [
                 '0x1.8p3', '0x.8p1', '0x1p-1074', '0X1P+4', '0x1.fffffffffffffp1023', '0x1p3f', "0x1p1'0", '0x1.p1',
@@ -220,6 +226,15 @@ final class LexemesTest extends TestCase
         yield 'define' => ["#define FFI_SCOPE \"x\"\nx", [
             ['T_DIRECTIVE', '#define FFI_SCOPE "x"'],
             ['T_IDENTIFIER', 'x'],
+        ]];
+        yield 'pragma operator' => ['x _Pragma("once") y', [
+            ['T_IDENTIFIER', 'x'], ['T_PRAGMA_OPERATOR', '_Pragma("once")'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'pragma operator of MSVC' => ['__pragma (pack(push, 1))', [
+            ['T_PRAGMA_OPERATOR', '__pragma (pack(push, 1))'],
+        ]];
+        yield 'parenthesis in a string of a pragma operator' => ['_Pragma("message(\")\")")', [
+            ['T_PRAGMA_OPERATOR', '_Pragma("message(\")\")")'],
         ]];
         yield 'indented directive' => ["x\n \t#pragma once\ny", [
             ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', " \t#pragma once"], ['T_IDENTIFIER', 'y'],

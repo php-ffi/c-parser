@@ -36,5 +36,9 @@ final class FloatParserResult
          * The type suffix or {@see null} in case of there is none
          */
         public readonly ?FloatTypeSuffix $suffix,
+        /**
+         * Whether the imaginary suffix of GCC is written
+         */
+        public readonly bool $isImaginary,
     ) {}
 }

@@ -49,13 +49,19 @@ abstract class IntLiteral extends Literal
          * the first type it fits in, starting from `int`
          */
         public readonly ?IntTypeSuffix $suffix = null,
+        /**
+         * GCC: whether the constant is imaginary, written with the suffix
+         * `i` or `j` (`2.0i`, `3j`), its type is then the complex type of
+         * the constant
+         */
+        public readonly bool $isImaginary = false,
         ?string $raw = null,
         int $offset = 0,
     ) {
         $this->decimal = $decimal ?? (string) $value;
 
         parent::__construct(
-            raw: $raw ?? $this->representValue() . $this->suffix?->value,
+            raw: $raw ?? $this->representValue() . $this->suffix?->value . ($this->isImaginary ? 'i' : ''),
             offset: $offset,
         );
     }
@@ -83,6 +89,7 @@ abstract class IntLiteral extends Literal
             value: $result->value,
             decimal: $result->decimal,
             suffix: $result->suffix,
+            isImaginary: $result->isImaginary,
             raw: $raw,
             offset: $offset,
         );
