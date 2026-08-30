@@ -23,6 +23,21 @@ use Phplrt\Parser\Exception\ParserSourceException;
  */
 final class ParserExecutor extends CompiledParserExecutor
 {
+    public function __construct(
+        protected ParserConfiguration $config,
+    ) {
+        parent::__construct();
+    }
+
+    public function withConfiguration(ParserConfiguration $config): self
+    {
+        $self = clone $this;
+        /** @phpstan-ignore-next-line : Allow readonly modification */
+        $self->config = $config;
+
+        return $self;
+    }
+
     /**
      * Checks the syntax of the source without building the syntax tree.
      *

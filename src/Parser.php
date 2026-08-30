@@ -8,6 +8,7 @@ use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Parser\ParserConfiguration;
 use FFI\Parser\Parser\ParserExecutor;
 use FFI\Parser\Validator\ValidatorInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
@@ -52,7 +53,9 @@ final class Parser
 
     private function createExecutor(): ParserExecutor
     {
-        return new ParserExecutor();
+        return new ParserExecutor(
+            config: new ParserConfiguration(),
+        );
     }
 
     private function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
