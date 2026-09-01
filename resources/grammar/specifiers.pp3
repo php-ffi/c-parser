@@ -276,7 +276,7 @@ AtomicType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\AtomicType($children[1], $offset);
 }
-  : <T_ATOMIC> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_ATOMIC_SPECIFIER> ::T_LPAREN:: TypeName() ::T_RPAREN::
   ;
 
 /**
@@ -708,15 +708,8 @@ RestrictQualifier -> { return Type\QualifiedType\TypeQualifier::Restrict; }
   : <T_RESTRICT>
   ;
 
-/**
- * 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type specifier
- */
 AtomicQualifier -> { return Type\QualifiedType\TypeQualifier::Atomic; }
-  : <T_ATOMIC> !LeftParenthesis()
-  ;
-
-LeftParenthesis
-  : <T_LPAREN>
+  : <T_ATOMIC>
   ;
 
 /**

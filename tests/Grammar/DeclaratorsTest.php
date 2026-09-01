@@ -357,7 +357,7 @@ final class DeclaratorsTest extends TestCase
             30,
             'restrict',
         ];
-        yield 'atomic type specifier after a pointer' => ['struct S { int *_Atomic(p); };', 23, '('];
+        yield 'atomic type specifier after a pointer' => ['struct S { int *_Atomic(p); };', 16, '_Atomic'];
         yield 'abstract pointer to a function member' => ['struct S { int (*)(void); };', 17, ')'];
         yield 'unclosed parameters' => ['struct S { int f(int; };', 20, ';'];
         yield 'unclosed parenthesized declarator' => ['struct S { int (*p; };', 18, ';'];

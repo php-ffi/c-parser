@@ -180,7 +180,8 @@ AttributeName -> {
   | <T_ENUM> | <T_EXTERN> | <T_FALSE> | <T_FLOAT> | <T_INLINE> | <T_INT> | <T_LONG> | <T_NULLPTR>
   | <T_REGISTER> | <T_RESTRICT> | <T_SHORT> | <T_SIGNED> | <T_SIZEOF> | <T_STATIC_ASSERT> | <T_STATIC>
   | <T_STRUCT> | <T_THREAD_LOCAL> | <T_TRUE> | <T_TYPEDEF> | <T_TYPEOF_UNQUAL> | <T_TYPEOF> | <T_UNION>
-  | <T_UNSIGNED> | <T_VOID> | <T_VOLATILE> | <T_ATOMIC> | <T_BITINT> | <T_COMPLEX> | <T_DECIMAL128>
+  | <T_UNSIGNED> | <T_VOID> | <T_VOLATILE> | <T_ATOMIC_SPECIFIER> | <T_ATOMIC> | <T_BITINT> | <T_COMPLEX>
+  | <T_DECIMAL128>
   | <T_DECIMAL32> | <T_DECIMAL64> | <T_GENERIC> | <T_IMAGINARY> | <T_NORETURN> | <T_RESERVED_KEYWORD>
   ;
 
@@ -217,22 +218,26 @@ AttributeArgumentList -> {
     return new Attribute\Attribute\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
 }
   : <T_LPAREN> (
-        (AttributeArgument() (::T_COMMA:: AttributeArgument())*)? ::T_RPAREN::
+        ::T_RPAREN::
+      | AttributeArgumentBeforeComma()* LastAttributeArgument()
       | ArgumentClauseTokenSequence() ::T_RPAREN::
     )
   ;
 
-AttributeArgument
-  : ConditionalExpression() &ArgumentEnd()
-  | BalancedTokenSequence()
+/**
+ * An argument of an attribute followed by a comma
+ */
+AttributeArgumentBeforeComma
+  : ConditionalExpression() ::T_COMMA::
+  | BalancedTokenSequence() ::T_COMMA::
   ;
 
 /**
- * The end of an argument of an attribute or of a built-in function
+ * The last argument of an attribute and the closing parenthesis
  */
-ArgumentEnd
-  : <T_COMMA>
-  | <T_RPAREN>
+LastAttributeArgument
+  : ConditionalExpression() ::T_RPAREN::
+  | BalancedTokenSequence() ::T_RPAREN::
   ;
 
 /**

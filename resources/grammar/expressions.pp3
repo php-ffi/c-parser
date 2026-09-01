@@ -524,15 +524,16 @@ GenericSelectionExpression -> {
      */
     return new Expression\GenericSelectionExpression($children[1], $children[2], $offset);
 }
-  : <T_GENERIC> ::T_LPAREN:: GenericControllingOperand() ::T_COMMA:: GenericAssociationList() ::T_RPAREN::
+  : <T_GENERIC> ::T_LPAREN:: GenericControllingOperand() GenericAssociationList() ::T_RPAREN::
   ;
 
 /**
- * An expression, or a type name where it cannot be one (Clang and C2y)
+ * An expression, or a type name where it cannot be one (Clang and C2y),
+ * and the comma after it
  */
 GenericControllingOperand
-  : ConditionalExpression() &<T_COMMA>
-  | TypeName()
+  : ConditionalExpression() ::T_COMMA::
+  | TypeName() ::T_COMMA::
   ;
 
 GenericAssociationList -> {
@@ -583,15 +584,25 @@ BuiltinArgumentList -> {
 
     return new Expression\BuiltinCallExpression\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
 }
-  : <T_LPAREN> (BuiltinArgument() (::T_COMMA:: BuiltinArgument())*)? ::T_RPAREN::
+  : <T_LPAREN> (::T_RPAREN:: | BuiltinArgumentBeforeComma()* LastBuiltinArgument())
   ;
 
 /**
- * An expression, or a type name where it cannot be one
+ * An expression, or a type name where it cannot be one, followed by a
+ * comma
  */
-BuiltinArgument
-  : ConditionalExpression() &ArgumentEnd()
-  | TypeName()
+BuiltinArgumentBeforeComma
+  : ConditionalExpression() ::T_COMMA::
+  | TypeName() ::T_COMMA::
+  ;
+
+/**
+ * The last argument, an expression or a type name, and the closing
+ * parenthesis
+ */
+LastBuiltinArgument
+  : ConditionalExpression() ::T_RPAREN::
+  | TypeName() ::T_RPAREN::
   ;
 
 ParenthesizedExpression -> {

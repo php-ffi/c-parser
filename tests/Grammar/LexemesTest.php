@@ -127,6 +127,8 @@ final class LexemesTest extends TestCase
             ['T_BUILTIN_CALL', '__builtin_expect'], ['T_LPAREN', '('],
         ]];
         yield 'built-in name without a parenthesis' => ['__builtin_va_list', [['T_IDENTIFIER', '__builtin_va_list']]];
+        yield 'atomic type specifier' => ["_Atomic \n(", [['T_ATOMIC_SPECIFIER', '_Atomic'], ['T_LPAREN', '(']]];
+        yield 'atomic qualifier' => ['_Atomic int', [['T_ATOMIC', '_Atomic'], ['T_INT', 'int']]];
         yield 'identifier in UTF-8' => ["caf\xC3\xA9", [['T_IDENTIFIER', "caf\xC3\xA9"]]];
         yield 'identifier of universal character names' => ['\\u00E9t\\U0001F600', [
             ['T_IDENTIFIER', '\\u00E9t\\U0001F600'],

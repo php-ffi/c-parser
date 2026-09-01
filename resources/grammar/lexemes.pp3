@@ -278,6 +278,11 @@
 %token T_UNSIGNED           unsigned(?&KEYWORD_END)
 %token T_VOID               void(?&KEYWORD_END)
 %token T_VOLATILE           (?:volatile|__volatile__|__volatile)(?&KEYWORD_END)
+/**
+ * 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type
+ * specifier, _Atomic(T), any other _Atomic is the qualifier
+ */
+%token T_ATOMIC_SPECIFIER   _Atomic(?=[\x20\t\r\n\f\x0B]*+\()
 %token T_ATOMIC             _Atomic(?&KEYWORD_END)
 %token T_BITINT             _BitInt(?&KEYWORD_END)
 %token T_COMPLEX            (?:_Complex|__complex__|__complex)(?&KEYWORD_END)

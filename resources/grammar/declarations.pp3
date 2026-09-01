@@ -20,8 +20,8 @@ ExternalDeclaration
  * is the declaration of its tag (6.7.3.4p11), attributes alone are an
  * attribute declaration, "[[deprecated]];", anything else is a declaration
  * of the specifiers alone: "int;", "const struct S;". A body after the
- * first declarator makes the declaration a function definition (6.9.1),
- * whose statements are kept as text.
+ * first declarator without an initializer makes the declaration a function
+ * definition (6.9.1), whose statements are kept as text.
  */
 Declaration -> {
     /**
@@ -33,9 +33,12 @@ Declaration -> {
      *             Type\TypeInterface|null,
      *             Specifier\SpecifierList,
      *             int<0, max>,
-     *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=
+     *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
+     *             Expression\ExpressionInterface|Initializer\InitializerList|null=
      *         ): SpecifiedDeclaration\DeclaratorDeclaration
      *         |SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody
+     *         |Expression\ExpressionInterface
+     *         |Initializer\InitializerList
      *     >
      * } $children
      */
@@ -66,17 +69,28 @@ Declaration -> {
         return new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
     }
 
+    \assert($children[2] instanceof \Closure);
+
     if (($children[3] ?? null) instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody) {
         // The body follows the only declarator
-        \assert($children[2] instanceof \Closure);
-
         return $children[2]($children[0], $children[1], $offset, $children[3]);
     }
 
-    $declarations = [];
+    $initializer = null;
+    $first = 3;
 
-    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
-        // A declaration without a body is a list of declarators
+    if (isset($children[3])
+        && ($children[3] instanceof Expression\ExpressionInterface || $children[3] instanceof Initializer\InitializerList)
+    ) {
+        // The initializer of the first declarator
+        $initializer = $children[3];
+        $first = 4;
+    }
+
+    $declarations = [$children[2]($children[0], $children[1], $offset, null, $initializer)];
+
+    for ($i = $first, $count = \count($children); $i < $count; ++$i) {
+        // The other declarators of the list
         \assert($children[$i] instanceof \Closure);
 
         $declarations[] = $children[$i]($children[0], $children[1], $offset);
@@ -85,37 +99,70 @@ Declaration -> {
     return $declarations;
 }
   : DeclarationSpecifiers() (
-        InitDeclarator() (FunctionBody() | (::T_COMMA:: InitDeclarator())* ::T_SEMICOLON::)
-            @error("Syntax error, unexpected {token} in the declaration, \";\" expected")
+        DeclarationDeclarator() (
+            FunctionBody()
+          | (::T_ASSIGN:: Initializer())? (::T_COMMA:: InitDeclarator())* ::T_SEMICOLON::
+        ) @error("Syntax error, unexpected {token} in the declaration, \";\" expected")
       | ::T_SEMICOLON::
     )
   ;
 
 /**
+ * A declarator of the list and its initializer
+ */
+InitDeclarator -> {
+    /**
+     * @var array{
+     *     \Closure(
+     *         Type\TypeInterface|null,
+     *         Specifier\SpecifierList,
+     *         int<0, max>,
+     *         SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
+     *         Expression\ExpressionInterface|Initializer\InitializerList|null=
+     *     ): SpecifiedDeclaration\DeclaratorDeclaration,
+     *     1?: Expression\ExpressionInterface|Initializer\InitializerList
+     * } $children
+     */
+    if (!isset($children[1])) {
+        return $children[0];
+    }
+
+    return static function (
+        ?Type\TypeInterface $type,
+        Specifier\SpecifierList $specifiers,
+        int $start,
+    ) use ($children): SpecifiedDeclaration\DeclaratorDeclaration {
+        \assert($start >= 0);
+
+        return $children[0]($type, $specifiers, $start, null, $children[1]);
+    };
+}
+  : DeclarationDeclarator() (::T_ASSIGN:: Initializer())?
+  ;
+
+/**
  * The declarator of a declaration is a function from the type and the
- * other specifiers of the declaration and its start to the declared one.
- * "typedef" among the specifiers gives a typedef name, a function type a
+ * other specifiers of the declaration, its start, the body and the
+ * initializer to the declared one. A body gives a function definition,
+ * "typedef" among the specifiers a typedef name, a function type a
  * function, anything else an object, and each keeps the initializer, even
  * where C allows none. The attributes of GCC before the declarator (other
  * than the first one of the declaration, whose attributes go to the
  * specifiers) and after it, around the assembler label, belong to the
  * declared one.
  */
-InitDeclarator -> {
+DeclarationDeclarator -> {
     /**
      * @var list<
      *     Attribute\AttributeInterface
      *     |Node\Identifier
      *     |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
      *     |SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel
-     *     |Expression\ExpressionInterface
-     *     |Initializer\InitializerList
      * > $children
      */
     $name = null;
     $declarator = null;
     $asmLabel = null;
-    $initializer = null;
     $attributes = [];
 
     for ($i = 0, $count = \count($children); $i < $count; ++$i) {
@@ -125,10 +172,8 @@ InitDeclarator -> {
             $declarator = $children[$i];
         } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
             $attributes[] = $children[$i];
-        } elseif ($children[$i] instanceof SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel) {
-            $asmLabel = $children[$i];
         } else {
-            $initializer = $children[$i];
+            $asmLabel = $children[$i];
         }
     }
 
@@ -142,7 +187,8 @@ InitDeclarator -> {
         Specifier\SpecifierList $specifiers,
         int $start,
         ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
-    ) use ($name, $declarator, $asmLabel, $initializer, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
+        Expression\ExpressionInterface|Initializer\InitializerList|null $initializer = null,
+    ) use ($name, $declarator, $asmLabel, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
         \assert($start >= 0);
 
         $type = $declarator($type);
@@ -198,14 +244,6 @@ InitDeclarator -> {
     };
 }
   : AttributeSpecifier()* Declarator() AttributeSpecifier()* (AsmLabel() AttributeSpecifier()*)?
-        (::T_ASSIGN:: Initializer() !FunctionBodyStart())?
-  ;
-
-/**
- * The start of a function body, which may not follow an initializer
- */
-FunctionBodyStart
-  : <T_LBRACE>
   ;
 
 /**
