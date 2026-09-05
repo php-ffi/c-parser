@@ -45,31 +45,9 @@ final class Parser
         ?SourceFactoryInterface $sources = null,
         ?iterable $validators = null,
     ) {
-        $this->parser = $this->createExecutor();
-        $this->sources = $this->createSourceFactory($sources);
-        $this->validator = $this->createValidator($validators);
-    }
-
-    private function createExecutor(): ParserExecutor
-    {
-        return new ParserExecutor();
-    }
-
-    private function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
-    {
-        return $sources ?? SourceFactory::createDefault();
-    }
-
-    /**
-     * @param iterable<mixed, ValidatorInterface>|null $rules
-     */
-    private function createValidator(?iterable $rules): Validator
-    {
-        if ($rules === null) {
-            return Validator::createDefault();
-        }
-
-        return new Validator($rules);
+        $this->parser = new ParserExecutor();
+        $this->sources = $sources ?? SourceFactory::createDefault();
+        $this->validator = $validators === null ? Validator::createDefault() : new Validator($validators);
     }
 
     /**
@@ -96,19 +74,6 @@ final class Parser
         $this->validateOrFail($declarations, $source);
 
         return $declarations;
-    }
-
-    /**
-     * @param list<RootDeclarationInterface> $declarations
-     * @throws ValidationException
-     */
-    private function validateOrFail(array $declarations, ReadableInterface $source): void
-    {
-        $violations = $this->validator->validate($declarations);
-
-        if ($violations !== []) {
-            throw ValidationException::becauseValidationFailed($source, $violations);
-        }
     }
 
     /**
@@ -149,6 +114,20 @@ final class Parser
             throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (ParserException $e) {
             throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
+        }
+    }
+
+    /**
+     * @param list<RootDeclarationInterface> $declarations
+     * @throws ValidationException in case of the syntax tree breaks a rule of
+     *         a validator
+     */
+    private function validateOrFail(array $declarations, ReadableInterface $source): void
+    {
+        $violations = $this->validator->validate($declarations);
+
+        if ($violations !== []) {
+            throw ValidationException::becauseValidationFailed($source, $violations);
         }
     }
 

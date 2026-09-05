@@ -7,10 +7,10 @@
  *  reducers return no node, but a function from the type of the specifiers
  *  to the declared type, which the reducer of the declaration applies. The
  *  parts nearest to the name apply last: in "*a[3]" the pointer applies to
- *  the base, the array to the pointer. A
- *  concrete declarator gives its parent the name, the function and the
- *  attributes written after the name, which belong to the declaration, an
- *  abstract one gives the function alone.
+ *  the base, the array to the pointer. A concrete declarator gives its
+ *  parent the name, the function and the attributes written after the name,
+ *  which belong to the declaration, an abstract one gives the function
+ *  alone.
  */
 
 /**
@@ -194,37 +194,20 @@ DirectAbstractDeclarator -> {
   ;
 
 /**
- * 6.7.7.2 Pointer declarators. The qualifiers of the pointer wrap it, and
- * its attributes wrap them, written before the qualifiers in C23 and
- * anywhere among them in GCC.
+ * 6.7.7.2 Pointer declarators
  */
 Pointer -> {
-    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
-    $qualifiers = [];
-    $attributes = [];
-
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
-            $qualifiers[] = $children[$i];
-        } else {
-            $attributes[] = $children[$i];
-        }
-    }
-
-    $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
-
-    if ($qualifiers === []) {
-        return static fn(?Type\TypeInterface $type): Type\TypeInterface
-            => new Type\PointerType($type, $attributeList, $offset);
-    }
-
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
-        $qualifiers,
-        new Type\PointerType($type, $attributeList, $offset),
-        $offset,
-    );
+    /**
+     * @var array{
+     *     TokenInterface,
+     *     Attribute\AttributeList|null,
+     *     \Closure(Type\TypeInterface): Type\TypeInterface
+     * } $children
+     */
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface
+        => $children[2](new Type\PointerType($type, $children[1], $offset));
 }
-  : <T_ASTERISK> PointerQualifier()*
+  : <T_ASTERISK> PointerQualifiers()
   ;
 
 /**
@@ -233,11 +216,32 @@ Pointer -> {
  * pointer.
  */
 BlockPointer -> {
-    /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
+    /**
+     * @var array{
+     *     TokenInterface,
+     *     Attribute\AttributeList|null,
+     *     \Closure(Type\TypeInterface): Type\TypeInterface
+     * } $children
+     */
+    return static fn(?Type\TypeInterface $type): Type\TypeInterface
+        => $children[2](new Type\BlockPointerType($type, $children[1], $offset));
+}
+  : <T_CARET> PointerQualifiers()
+  ;
+
+/**
+ * The qualifiers and the attributes after "*" or "^", the attributes
+ * written before the qualifiers in C23 and anywhere among them in GCC. The
+ * attributes belong to the pointer, and the qualifiers wrap it. Passed to
+ * the parent as two children: the attributes, null in case of none is
+ * written, and the function from the pointer to the qualified one.
+ */
+PointerQualifiers -> {
+    /** @var list<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface> $children */
     $qualifiers = [];
     $attributes = [];
 
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+    for ($i = 0, $count = \count($children); $i < $count; ++$i) {
         if ($children[$i] instanceof Type\QualifiedType\TypeQualifier) {
             $qualifiers[] = $children[$i];
         } else {
@@ -248,17 +252,16 @@ BlockPointer -> {
     $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
 
     if ($qualifiers === []) {
-        return static fn(?Type\TypeInterface $type): Type\TypeInterface
-            => new Type\BlockPointerType($type, $attributeList, $offset);
+        return [$attributeList, static fn(Type\TypeInterface $pointer): Type\TypeInterface => $pointer];
     }
 
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\QualifiedType(
+    return [$attributeList, static fn(Type\TypeInterface $pointer): Type\TypeInterface => new Type\QualifiedType(
         $qualifiers,
-        new Type\BlockPointerType($type, $attributeList, $offset),
-        $offset,
-    );
+        $pointer,
+        $pointer->offset,
+    )];
 }
-  : <T_CARET> PointerQualifier()*
+  : PointerQualifier()*
   ;
 
 /**

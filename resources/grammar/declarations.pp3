@@ -42,30 +42,29 @@ Declaration -> {
      *     >
      * } $children
      */
-    if (\count($children) === 2
-        && ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType)
-    ) {
-        return new SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
-    }
+    if (\count($children) === 2) {
+        // The specifiers alone, without declarators
+        if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
+            return new SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
+        }
 
-    if (\count($children) === 2 && $children[0] === null) {
-        $attributes = [];
+        if ($children[0] === null) {
+            $attributes = [];
 
-        foreach ($children[1] as $specifier) {
-            if ($specifier instanceof Attribute\AttributeInterface) {
-                $attributes[] = $specifier;
+            foreach ($children[1] as $specifier) {
+                if ($specifier instanceof Attribute\AttributeInterface) {
+                    $attributes[] = $specifier;
+                }
+            }
+
+            if (\count($attributes) === \count($children[1])) {
+                return new Declaration\AttributeDeclaration(
+                    new Attribute\AttributeList($attributes, $children[1]->offset),
+                    $offset,
+                );
             }
         }
 
-        if (\count($attributes) === \count($children[1])) {
-            return new Declaration\AttributeDeclaration(
-                new Attribute\AttributeList($attributes, $children[1]->offset),
-                $offset,
-            );
-        }
-    }
-
-    if (\count($children) === 2) {
         return new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
     }
 
@@ -352,6 +351,7 @@ DesignatorList -> {
 Designator
   : MemberDesignator()
   | IndexDesignator()
+  | RangeDesignator()
   ;
 
 MemberDesignator -> {
@@ -362,17 +362,23 @@ MemberDesignator -> {
   ;
 
 /**
- * [2] and the range of GCC [0 ... 3]
+ * [2]
  */
 IndexDesignator -> {
-    /** @var array{TokenInterface, Expression\ExpressionInterface, 2?: Expression\ExpressionInterface} $children */
-    if (isset($children[2])) {
-        return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[2], $offset);
-    }
-
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new DesignatedInitializer\Designator\IndexDesignator($children[1], $offset);
 }
-  : <T_LBRACKET> ConditionalExpression() (::T_ELLIPSIS:: ConditionalExpression())? ::T_RBRACKET::
+  : <T_LBRACKET> ConditionalExpression() ::T_RBRACKET::
+  ;
+
+/**
+ * GCC: a range of elements, [0 ... 3]
+ */
+RangeDesignator -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface, Expression\ExpressionInterface} $children */
+    return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[2], $offset);
+}
+  : <T_LBRACKET> ConditionalExpression() ::T_ELLIPSIS:: ConditionalExpression() ::T_RBRACKET::
   ;
 
 /**

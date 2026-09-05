@@ -101,7 +101,7 @@ final class TreeWalker
     {
         $children = [];
 
-        foreach ($this->getProperties($node) as $value) {
+        foreach (\get_object_vars($node) as $value) {
             if ($value instanceof NodeInterface) {
                 $children[] = $value;
             } elseif (\is_array($value)) {
@@ -114,13 +114,5 @@ final class TreeWalker
         }
 
         return $children;
-    }
-
-    /**
-     * @return array<array-key, mixed>
-     */
-    private function getProperties(NodeInterface $node): array
-    {
-        return \get_object_vars($node);
     }
 }

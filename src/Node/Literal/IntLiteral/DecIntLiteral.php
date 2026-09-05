@@ -13,7 +13,7 @@ use FFI\Parser\Node\Literal\IntLiteral;
  */
 final class DecIntLiteral extends IntLiteral
 {
-    protected function representValue(): string
+    protected function representAsRawNumber(): string
     {
         return $this->decimal;
     }

@@ -268,7 +268,6 @@ BitIntType -> {
   : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
   ;
 
-
 /**
  * 6.7.3.5 Atomic type specifiers, _Atomic(T)
  */
@@ -279,11 +278,6 @@ AtomicType -> {
   : <T_ATOMIC_SPECIFIER> ::T_LPAREN:: TypeName() ::T_RPAREN::
   ;
 
-/**
- * A typedef name, of an unknown kind of type. A name before "=" is the
- * declarator of a declaration whose type is inferred (6.7.10), "static x = 1;"
- * and "constexpr auto n = 1;".
- */
 /**
  * A typedef name after the modifiers, followed by a declarator:
  * "unsigned __int64 x", "unsigned T *p". Without a declarator after it the
@@ -298,6 +292,11 @@ ModifiedNamedTypeEnd
   | <T_ASTERISK>
   ;
 
+/**
+ * A typedef name, of an unknown kind of type. A name before "=" is the
+ * declarator of a declaration whose type is inferred (6.7.10), "static x = 1;"
+ * and "constexpr auto n = 1;".
+ */
 NamedType -> {
     /** @var array{TokenInterface} $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
@@ -316,53 +315,47 @@ InitializerStart
  * -----------------------------------------------------------------------------
  */
 
-/**
- * A tag, a body or both, with the attributes after the keyword and after
- * the body
- */
 StructType -> {
     /**
-     * @var list{
+     * @var array{
      *     TokenInterface,
-     *     ...<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList>
+     *     Node\Identifier|null,
+     *     Type\RecordType\MemberDeclarationList|null,
+     *     Attribute\AttributeList|null
      * } $children
      */
-    $name = null;
-    $members = null;
-    $attributes = [];
-
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        if ($children[$i] instanceof Node\Identifier) {
-            $name = $children[$i];
-        } elseif ($children[$i] instanceof Type\RecordType\MemberDeclarationList) {
-            $members = $children[$i];
-        } else {
-            $attributes[] = $children[$i];
-        }
-    }
-
-    return new Type\RecordType\StructType(
-        $name,
-        $members,
-        $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
-        $offset,
-    );
+    return new Type\RecordType\StructType($children[1], $children[2], $children[3], $offset);
 }
-  : <T_STRUCT> AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
+  : <T_STRUCT> RecordTypeContents()
   ;
 
 UnionType -> {
     /**
-     * @var list{
+     * @var array{
      *     TokenInterface,
-     *     ...<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList>
+     *     Node\Identifier|null,
+     *     Type\RecordType\MemberDeclarationList|null,
+     *     Attribute\AttributeList|null
      * } $children
      */
+    return new Type\RecordType\UnionType($children[1], $children[2], $children[3], $offset);
+}
+  : <T_UNION> RecordTypeContents()
+  ;
+
+/**
+ * What follows "struct" or "union": a tag, a body or both, with the
+ * attributes after the keyword and after the body. Passed to the parent as
+ * three children: the tag, the members and the attributes, each null in
+ * case of none is written.
+ */
+RecordTypeContents -> {
+    /** @var list<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList> $children */
     $name = null;
     $members = null;
     $attributes = [];
 
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+    for ($i = 0, $count = \count($children); $i < $count; ++$i) {
         if ($children[$i] instanceof Node\Identifier) {
             $name = $children[$i];
         } elseif ($children[$i] instanceof Type\RecordType\MemberDeclarationList) {
@@ -372,14 +365,13 @@ UnionType -> {
         }
     }
 
-    return new Type\RecordType\UnionType(
+    return [
         $name,
         $members,
         $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
-        $offset,
-    );
+    ];
 }
-  : <T_UNION> AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
+  : AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
   ;
 
 /**

@@ -61,9 +61,19 @@ abstract class IntLiteral extends Literal
         $this->decimal = $decimal ?? (string) $value;
 
         parent::__construct(
-            raw: $raw ?? $this->representValue() . $this->suffix?->value . ($this->isImaginary ? 'i' : ''),
+            raw: $raw ?? $this->representAsRawValue(),
             offset: $offset,
         );
+    }
+
+    /**
+     * @return non-empty-string
+     */
+    private function representAsRawValue(): string
+    {
+        return $this->representAsRawNumber()
+            . $this->suffix?->value
+            . ($this->isImaginary ? 'i' : '');
     }
 
     /**
@@ -71,7 +81,7 @@ abstract class IntLiteral extends Literal
      *
      * @return non-empty-string
      */
-    abstract protected function representValue(): string;
+    abstract protected function representAsRawNumber(): string;
 
     /**
      * Builds the constant out of its source text.

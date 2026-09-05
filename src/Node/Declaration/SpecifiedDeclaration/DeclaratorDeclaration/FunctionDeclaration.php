@@ -14,7 +14,7 @@ use FFI\Parser\Node\Type\FunctionType;
 
 /**
  * Declaration of a function, its prototype `int printf(const char *, ...);`.
- * A definition with a body is not a part of a header and is a syntax error.
+ * A declaration with a body is a {@see FunctionDefinition}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.7.4 Function declarators
  */

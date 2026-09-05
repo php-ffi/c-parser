@@ -320,10 +320,7 @@ AddressOfExpression -> {
   ;
 
 /**
- * 6.5.4.4 The sizeof and alignof operators, sizeof(T). A single name in
- * parentheses is read as a type unless a postfix operator follows it:
- * sizeof(x)[0] is sizeof((x)[0]). A brace after the type name makes the
- * operand a compound literal, sizeof (int){1}.
+ * 6.5.4.4 The sizeof and alignof operators, sizeof(T)
  */
 SizeOfTypeExpression -> {
     /**
@@ -341,10 +338,7 @@ SizeOfTypeExpression -> {
 
     return new Expression\SizeOfTypeExpression($children[2], $offset);
 }
-  : <T_SIZEOF> <T_LPAREN> (
-        !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
-      | TypeName() ::T_RPAREN:: CompoundLiteral()
-    )
+  : <T_SIZEOF> TypeOperand()
   ;
 
 /**
@@ -359,8 +353,7 @@ SizeOfExpression -> {
 
 /**
  * 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled
- * _Alignof and __alignof__. The operand is read as in sizeof, an
- * expression is allowed as well, as GCC does.
+ * _Alignof and __alignof__. An expression is allowed as well, as GCC does.
  */
 AlignOfTypeExpression -> {
     /**
@@ -378,7 +371,18 @@ AlignOfTypeExpression -> {
 
     return new Expression\AlignOfTypeExpression($children[2], $offset);
 }
-  : <T_ALIGNOF> <T_LPAREN> (
+  : <T_ALIGNOF> TypeOperand()
+  ;
+
+/**
+ * The type name in parentheses of sizeof and alignof. A single name is read
+ * as a type unless a postfix operator follows it: sizeof(x)[0] is
+ * sizeof((x)[0]). A brace after the type name makes the operand a compound
+ * literal, sizeof (int){1}. Passed to the parent as the parenthesis, the
+ * type name and the compound literal, if one is written.
+ */
+TypeOperand
+  : <T_LPAREN> (
         !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
       | TypeName() ::T_RPAREN:: CompoundLiteral()
     )

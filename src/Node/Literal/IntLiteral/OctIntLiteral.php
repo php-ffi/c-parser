@@ -13,7 +13,7 @@ use FFI\Parser\Node\Literal\IntLiteral;
  */
 final class OctIntLiteral extends IntLiteral
 {
-    protected function representValue(): string
+    protected function representAsRawNumber(): string
     {
         return '0' . \decoct($this->value);
     }

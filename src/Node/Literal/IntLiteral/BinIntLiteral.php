@@ -13,7 +13,7 @@ use FFI\Parser\Node\Literal\IntLiteral;
  */
 final class BinIntLiteral extends IntLiteral
 {
-    protected function representValue(): string
+    protected function representAsRawNumber(): string
     {
         return '0b' . \decbin($this->value);
     }

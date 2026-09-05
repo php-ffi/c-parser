@@ -31,6 +31,7 @@ final class IntParser
 
         $suffixOffset = self::getSuffixOffset($literal);
         $digits = self::trimLeadingZeros(\substr($literal, 0, $suffixOffset));
+        $suffix = \substr($literal, $suffixOffset);
         /** @var int<0, max> */
         $value = \intval($digits, $base->value);
 
@@ -39,8 +40,8 @@ final class IntParser
             // The value saturates at PHP_INT_MAX, only then it differs from
             // the exact one and the digits have to be converted
             decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
-            suffix: self::parseSuffix(\substr($literal, $suffixOffset)),
-            isImaginary: \strpbrk(\substr($literal, $suffixOffset), 'iIjJ') !== false,
+            suffix: self::parseSuffix($suffix),
+            isImaginary: \strpbrk($suffix, 'iIjJ') !== false,
         );
     }
 
@@ -105,7 +106,10 @@ final class IntParser
      */
     private static function toDecimal(string $digits, IntBase $base): string
     {
-        if ($base === IntBase::Decimal && \is_numeric($digits)) {
+        if ($base === IntBase::Decimal) {
+            // Decimal digits are the decimal number itself
+            \assert(\is_numeric($digits));
+
             return $digits;
         }
 

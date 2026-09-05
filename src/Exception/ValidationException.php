@@ -23,13 +23,11 @@ final class ValidationException extends ParseRuntimeException
          */
         public readonly array $violations,
     ) {
-        $violation = \array_first($violations);
-
         parent::__construct(
             message: $message,
             source: $source,
-            offset: $violation->offset,
-            length: $violation->length,
+            offset: $violations[0]->offset,
+            length: $violations[0]->length,
         );
     }
 
