@@ -218,39 +218,30 @@ AttributeArgumentList -> {
     return new Attribute\Attribute\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
 }
   : <T_LPAREN> (
-        ::T_RPAREN::
-      | AttributeArgumentBeforeComma()* LastAttributeArgument()
+        (AttributeArgument() (::T_COMMA:: AttributeArgument())*)? ::T_RPAREN::
       | ArgumentClauseTokenSequence() ::T_RPAREN::
     )
   ;
 
 /**
- * An argument of an attribute followed by a comma
+ * An argument of an attribute: a constant expression alone gives its node,
+ * any other sequence of balanced tokens its text, with the whitespace and
+ * the comments between the tokens
  */
-AttributeArgumentBeforeComma
-  : ConditionalExpression() ::T_COMMA::
-  | BalancedTokenSequence() ::T_COMMA::
-  ;
+AttributeArgument -> {
+    /** @var non-empty-list<Expression\ExpressionInterface|Node\Identifier|TokenInterface> $children */
+    if (\count($children) === 1 && $children[0] instanceof Expression\ExpressionInterface) {
+        return $children[0];
+    }
 
-/**
- * The last argument of an attribute and the closing parenthesis
- */
-LastAttributeArgument
-  : ConditionalExpression() ::T_RPAREN::
-  | BalancedTokenSequence() ::T_RPAREN::
-  ;
-
-/**
- * The text of the tokens, with the whitespace and the comments between them
- */
-BalancedTokenSequence -> {
     $raw = \substr($content, $offset, $length);
     // The sequence holds at least one token, and no token is empty
     \assert($raw !== '');
 
     return new Attribute\Attribute\ArgumentList\BalancedTokenSequence($raw, $offset);
 }
-  : BalancedToken()+
+  : ConditionalExpression() BalancedToken()*
+  | BalancedToken()+
   ;
 
 /**
