@@ -20,8 +20,9 @@
 %include grammar/attributes
 
 /**
- * A sequence of external declarations
+ * A sequence of external declarations. Its message describes what no rule
+ * inside it does: a token that cannot start a declaration.
  */
-TranslationUnit
+TranslationUnit @error("Syntax error, unexpected {token}, a declaration expected")
   : ExternalDeclaration()*
   ;

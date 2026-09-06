@@ -265,7 +265,10 @@ BitIntType -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\BuiltinType\BitIntType($children[1], $offset);
 }
-  : <T_BITINT> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
+  : <T_BITINT>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the bit-precise integer type, \"(\" expected")
+    ConditionalExpression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the bit-precise integer type, \")\" expected")
   ;
 
 /**
@@ -275,7 +278,9 @@ AtomicType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\AtomicType($children[1], $offset);
 }
-  : <T_ATOMIC_SPECIFIER> ::T_LPAREN:: TypeName() ::T_RPAREN::
+  : <T_ATOMIC_SPECIFIER> ::T_LPAREN::
+    TypeName() @error("Syntax error, unexpected {token} in the atomic type specifier, a type name expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the atomic type specifier, \")\" expected")
   ;
 
 /**
@@ -326,7 +331,8 @@ StructType -> {
      */
     return new Type\RecordType\StructType($children[1], $children[2], $children[3], $offset);
 }
-  : <T_STRUCT> RecordTypeContents()
+  : <T_STRUCT>
+    RecordTypeContents() @error("Syntax error, unexpected {token} in the structure specifier, a tag or \"{{\" expected")
   ;
 
 UnionType -> {
@@ -340,7 +346,8 @@ UnionType -> {
      */
     return new Type\RecordType\UnionType($children[1], $children[2], $children[3], $offset);
 }
-  : <T_UNION> RecordTypeContents()
+  : <T_UNION>
+    RecordTypeContents() @error("Syntax error, unexpected {token} in the union specifier, a tag or \"{{\" expected")
   ;
 
 /**
@@ -585,18 +592,20 @@ EnumType -> {
   : <T_ENUM> AttributeSpecifier()* (
         Identifier() EnumUnderlyingType()? EnumBody()?
       | EnumUnderlyingType()? EnumBody()
-    )
+    ) @error("Syntax error, unexpected {token} in the enumeration specifier, a tag, \":\" or \"{{\" expected")
   ;
 
 EnumUnderlyingType
-  : ::T_COLON:: TypeNameSpecifiers()
+  : ::T_COLON::
+    TypeNameSpecifiers() @error("Syntax error, unexpected {token} in the enumeration specifier, an underlying type expected")
   ;
 
 /**
  * The enumerators and the attributes GCC allows after the body
  */
 EnumBody
-  : ::T_LBRACE:: EnumeratorList()
+  : ::T_LBRACE::
+    EnumeratorList() @error("Syntax error, unexpected {token} in the enumerators, an enumerator expected")
     ::T_RBRACE:: @error("Syntax error, unexpected {token} in the enumerators, \",\" or \"}\" expected")
     AttributeSpecifier()*
   ;
@@ -651,28 +660,38 @@ TypeOfTypeType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\TypeOfTypeType($children[1], $offset);
 }
-  : <T_TYPEOF> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
+  : <T_TYPEOF> ::T_LPAREN:: !ExpressionLikeTypeName()
+    TypeName() @error("Syntax error, unexpected {token} in the typeof specifier, a type name or an expression expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the typeof specifier, \")\" expected")
   ;
 
 TypeOfType -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\TypeOfType($children[1], $offset);
 }
-  : <T_TYPEOF> ::T_LPAREN:: Expression() ::T_RPAREN::
+  : <T_TYPEOF>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the typeof specifier, \"(\" expected")
+    Expression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the typeof specifier, \")\" expected")
   ;
 
 TypeOfUnqualTypeType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Type\TypeOfUnqualTypeType($children[1], $offset);
 }
-  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
+  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: !ExpressionLikeTypeName()
+    TypeName() @error("Syntax error, unexpected {token} in the typeof_unqual specifier, a type name or an expression expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the typeof_unqual specifier, \")\" expected")
   ;
 
 TypeOfUnqualType -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Type\TypeOfUnqualType($children[1], $offset);
 }
-  : <T_TYPEOF_UNQUAL> ::T_LPAREN:: Expression() ::T_RPAREN::
+  : <T_TYPEOF_UNQUAL>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the typeof_unqual specifier, \"(\" expected")
+    Expression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the typeof_unqual specifier, \")\" expected")
   ;
 
 /**
@@ -738,12 +757,17 @@ AlignAsTypeSpecifier -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
     return new Specifier\AlignmentSpecifier\AlignAsTypeSpecifier($children[1], $offset);
 }
-  : <T_ALIGNAS> ::T_LPAREN:: !ExpressionLikeTypeName() TypeName() ::T_RPAREN::
+  : <T_ALIGNAS> ::T_LPAREN:: !ExpressionLikeTypeName()
+    TypeName() @error("Syntax error, unexpected {token} in the alignment specifier, a type name or an expression expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the alignment specifier, \")\" expected")
   ;
 
 AlignAsSpecifier -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new Specifier\AlignmentSpecifier\AlignAsSpecifier($children[1], $offset);
 }
-  : <T_ALIGNAS> ::T_LPAREN:: ConditionalExpression() ::T_RPAREN::
+  : <T_ALIGNAS>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the alignment specifier, \"(\" expected")
+    ConditionalExpression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the alignment specifier, \")\" expected")
   ;

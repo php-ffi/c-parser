@@ -23,7 +23,7 @@ ExternalDeclaration
  * first declarator without an initializer makes the declaration a function
  * definition (6.9.1), whose statements are kept as text.
  */
-Declaration -> {
+Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
@@ -109,7 +109,7 @@ Declaration -> {
 /**
  * A declarator of the list and its initializer
  */
-InitDeclarator -> {
+InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
     /**
      * @var array{
      *     \Closure(
@@ -266,7 +266,8 @@ CompoundStatement -> {
 
     return $raw;
 }
-  : <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
+  : <T_LBRACE> (BalancedToken() | <T_COMMA>)*
+    <T_RBRACE> @error("Syntax error, unexpected {token} in the compound statement, \"}\" expected")
   ;
 
 /**
@@ -277,7 +278,10 @@ AsmLabel -> {
     /** @var array{TokenInterface, Literal\StringLiteral|Literal\ConcatenatedStringLiteral} $children */
     return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
 }
-  : <T_ASM> ::T_LPAREN:: ConcatenatedStringLiteral() ::T_RPAREN::
+  : <T_ASM>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \"(\" expected")
+    ConcatenatedStringLiteral() @error("Syntax error, unexpected {token} in the assembler label, a string literal expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \")\" expected")
   ;
 
 /**
@@ -338,7 +342,9 @@ DesignatedInitializer -> {
      */
     return new DesignatedInitializer($children[0], $children[1], $offset);
 }
-  : DesignatorList() ::T_ASSIGN:: Initializer()
+  : DesignatorList()
+    ::T_ASSIGN:: @error("Syntax error, unexpected {token} in the designated initializer, \"=\" expected")
+    Initializer()
   ;
 
 DesignatorList -> {
@@ -358,7 +364,7 @@ MemberDesignator -> {
     /** @var array{TokenInterface, Node\Identifier} $children */
     return new DesignatedInitializer\Designator\MemberDesignator($children[1], $offset);
 }
-  : <T_DOT> Identifier()
+  : <T_DOT> Identifier() @error("Syntax error, unexpected {token} in the designator, a member name expected")
   ;
 
 /**
@@ -368,7 +374,8 @@ IndexDesignator -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return new DesignatedInitializer\Designator\IndexDesignator($children[1], $offset);
 }
-  : <T_LBRACKET> ConditionalExpression() ::T_RBRACKET::
+  : <T_LBRACKET> ConditionalExpression()
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the designator, \"]\" or \"...\" expected")
   ;
 
 /**
@@ -378,7 +385,8 @@ RangeDesignator -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface, Expression\ExpressionInterface} $children */
     return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[2], $offset);
 }
-  : <T_LBRACKET> ConditionalExpression() ::T_ELLIPSIS:: ConditionalExpression() ::T_RBRACKET::
+  : <T_LBRACKET> ConditionalExpression() ::T_ELLIPSIS:: ConditionalExpression()
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the designator, \"]\" expected")
   ;
 
 /**
@@ -395,8 +403,18 @@ StaticAssertDeclaration -> {
      */
     return new Declaration\StaticAssertDeclaration($children[1], $children[2] ?? null, $offset);
 }
-  : <T_STATIC_ASSERT> ::T_LPAREN::
+  : <T_STATIC_ASSERT>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the static assertion, \"(\" expected")
         ConditionalExpression()
-        (::T_COMMA:: ConcatenatedStringLiteral())?
-    ::T_RPAREN:: ::T_SEMICOLON::
+        StaticAssertMessage()?
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the static assertion, \",\" or \")\" expected")
+    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} after the static assertion, \";\" expected")
+  ;
+
+/**
+ * The comma and the message of a static assertion
+ */
+StaticAssertMessage
+  : ::T_COMMA::
+    ConcatenatedStringLiteral() @error("Syntax error, unexpected {token} in the static assertion, a string literal expected")
   ;

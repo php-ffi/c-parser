@@ -49,10 +49,16 @@ ConditionalExpression @error("Syntax error, unexpected {token} in the expression
 
     return new Expression\ConditionalExpression($children[0], $children[1], $children[2], $offset);
 }
-  : BinaryExpression() (
-        ::T_QUESTION:: Expression()
-        ::T_COLON:: ConditionalExpression()
-    )?
+  : BinaryExpression() ConditionalBranches()?
+  ;
+
+/**
+ * The expressions after "?" and after ":"
+ */
+ConditionalBranches
+  : ::T_QUESTION:: Expression()
+    ::T_COLON:: @error("Syntax error, unexpected {token} in the conditional expression, \":\" expected")
+    ConditionalExpression()
   ;
 
 /**
@@ -440,7 +446,8 @@ SubscriptOperator -> {
         return new Expression\SubscriptExpression($operand, $children[0], $start);
     };
 }
-  : ::T_LBRACKET:: Expression() ::T_RBRACKET::
+  : ::T_LBRACKET:: Expression()
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the subscript, \"]\" expected")
   ;
 
 /**
@@ -463,7 +470,8 @@ CallOperator -> {
         return new Expression\CallExpression($operand, $list, $start);
     };
 }
-  : <T_LPAREN> (ConditionalExpression() (::T_COMMA:: ConditionalExpression())*)? ::T_RPAREN::
+  : <T_LPAREN> (ConditionalExpression() (::T_COMMA:: ConditionalExpression())*)?
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
   ;
 
 DirectMemberOperator -> {
@@ -474,7 +482,7 @@ DirectMemberOperator -> {
         return new MemberExpression\DirectMemberExpression($operand, $children[0], $start);
     };
 }
-  : ::T_DOT:: Identifier()
+  : ::T_DOT:: Identifier() @error("Syntax error, unexpected {token} in the member access, a member name expected")
   ;
 
 PointerMemberOperator -> {
@@ -485,7 +493,7 @@ PointerMemberOperator -> {
         return new MemberExpression\PointerMemberExpression($operand, $children[0], $start);
     };
 }
-  : ::T_ARROW:: Identifier()
+  : ::T_ARROW:: Identifier() @error("Syntax error, unexpected {token} in the member access, a member name expected")
   ;
 
 PostfixOperatorStart
@@ -512,7 +520,8 @@ StatementExpression -> {
     /** @var array{TokenInterface, non-empty-string} $children */
     return new Expression\StatementExpression($children[1], $offset);
 }
-  : <T_LPAREN> CompoundStatement() ::T_RPAREN::
+  : <T_LPAREN> CompoundStatement()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the statement expression, \")\" expected")
   ;
 
 /**
@@ -528,16 +537,22 @@ GenericSelectionExpression -> {
      */
     return new Expression\GenericSelectionExpression($children[1], $children[2], $offset);
 }
-  : <T_GENERIC> ::T_LPAREN:: GenericControllingOperand() GenericAssociationList() ::T_RPAREN::
+  : <T_GENERIC>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the generic selection, \"(\" expected")
+    GenericControllingOperand()
+    GenericAssociationList()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the generic selection, \",\" or \")\" expected")
   ;
 
 /**
  * An expression, or a type name where it cannot be one (Clang and C2y),
  * and the comma after it
  */
-GenericControllingOperand
-  : ConditionalExpression() ::T_COMMA::
-  | TypeName() ::T_COMMA::
+GenericControllingOperand @error("Syntax error, unexpected {token} in the generic selection, an expression or a type name expected")
+  : ConditionalExpression()
+    ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
+  | TypeName()
+    ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
   ;
 
 GenericAssociationList -> {
@@ -557,7 +572,9 @@ GenericAssociation -> {
 
     return new Expression\GenericSelectionExpression\GenericAssociation($type, $children[1], $offset);
 }
-  : (<T_DEFAULT> | TypeName()) ::T_COLON:: ConditionalExpression()
+  : (<T_DEFAULT> | TypeName()) @error("Syntax error, unexpected {token} in the generic selection, a type name or \"default\" expected")
+    ::T_COLON:: @error("Syntax error, unexpected {token} in the generic association, \":\" expected")
+    ConditionalExpression()
   ;
 
 /**
@@ -604,16 +621,19 @@ BuiltinArgumentBeforeComma
  * The last argument, an expression or a type name, and the closing
  * parenthesis
  */
-LastBuiltinArgument
-  : ConditionalExpression() ::T_RPAREN::
-  | TypeName() ::T_RPAREN::
+LastBuiltinArgument @error("Syntax error, unexpected {token} in the arguments, an expression or a type name expected")
+  : ConditionalExpression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
+  | TypeName()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
   ;
 
 ParenthesizedExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
     return $children[1];
 }
-  : <T_LPAREN> Expression() ::T_RPAREN::
+  : <T_LPAREN> Expression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the parenthesized expression, \")\" expected")
   ;
 
 IdentifierExpression -> {

@@ -37,7 +37,8 @@ AttributeSpecifier -> {
 StandardAttributeSpecifier
   : <T_ATTRIBUTE_START>
         StandardAttribute()? (::T_COMMA:: StandardAttribute()?)*
-    ::T_RBRACKET:: ::T_RBRACKET::
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the attribute specifier, \",\" or \"]]\" expected")
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the attribute specifier, \"]]\" expected")
   ;
 
 StandardAttribute
@@ -58,7 +59,9 @@ PrefixedStandardAttribute -> {
      */
     return new Attribute\StandardAttribute($children[0], $children[1], $children[2] ?? null, $offset);
 }
-  : AttributeName() ::T_DOUBLE_COLON:: AttributeName() AttributeArgumentList()?
+  : AttributeName() ::T_DOUBLE_COLON::
+    AttributeName() @error("Syntax error, unexpected {token} in the attribute, a name after \"::\" expected")
+    AttributeArgumentList()?
   ;
 
 /**
@@ -76,9 +79,12 @@ UnprefixedStandardAttribute -> {
  * attribute in the list is allowed: __attribute__((a, , b)).
  */
 GnuAttributeSpecifier
-  : <T_ATTRIBUTE> ::T_LPAREN:: ::T_LPAREN::
+  : <T_ATTRIBUTE>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"((\" expected")
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"((\" expected")
         GnuAttribute()? (::T_COMMA:: GnuAttribute()?)*
-    ::T_RPAREN:: ::T_RPAREN::
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \",\" or \"))\" expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"))\" expected")
   ;
 
 GnuAttribute -> {
@@ -93,7 +99,10 @@ GnuAttribute -> {
  * spaces
  */
 DeclSpecAttributeSpecifier
-  : <T_DECLSPEC> ::T_LPAREN:: DeclSpecAttribute()* ::T_RPAREN::
+  : <T_DECLSPEC>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the __declspec specifier, \"(\" expected")
+        DeclSpecAttribute()*
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the __declspec specifier, \")\" expected")
   ;
 
 DeclSpecAttribute -> {
@@ -139,7 +148,8 @@ PointerModifierWithArgumentsAttributeSpecifier -> {
 
     return new Attribute\KeywordAttribute($name, $children[1], $offset);
 }
-  : <T_POINTER_MODIFIER_WITH_ARGUMENTS> AttributeArgumentList()
+  : <T_POINTER_MODIFIER_WITH_ARGUMENTS>
+    AttributeArgumentList() @error("Syntax error, unexpected {token} in the pointer modifier, \"(\" expected")
   ;
 
 /**
@@ -219,8 +229,9 @@ AttributeArgumentList -> {
 }
   : <T_LPAREN> (
         (AttributeArgument() (::T_COMMA:: AttributeArgument())*)? ::T_RPAREN::
-      | ArgumentClauseTokenSequence() ::T_RPAREN::
-    )
+      | ArgumentClauseTokenSequence()
+        ::T_RPAREN:: @error("Syntax error, unexpected {token} in the attribute arguments, \")\" expected")
+    ) @error("Syntax error, unexpected {token} in the attribute arguments")
   ;
 
 /**

@@ -142,7 +142,9 @@ NestedDeclarator -> {
         return $children[1]($type);
     }, ...$attributes];
 }
-  : ::T_LPAREN:: Declarator() ::T_RPAREN:: DeclaratorSuffix()*
+  : ::T_LPAREN:: Declarator()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the declarator, \")\" expected")
+    DeclaratorSuffix()*
   ;
 
 /**
@@ -379,7 +381,7 @@ SizedArrayDeclarator -> {
   : <T_LBRACKET>
         (<T_STATIC> ArrayQualifier()* | ArrayQualifier()* <T_STATIC>?)
         ConditionalExpression()
-    ::T_RBRACKET::
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the array declarator, \"]\" expected")
   ;
 
 /**
@@ -416,7 +418,8 @@ UnspecifiedSizeArrayDeclarator -> {
         );
     };
 }
-  : <T_LBRACKET> ArrayQualifier()* ::T_ASTERISK:: ::T_RBRACKET::
+  : <T_LBRACKET> ArrayQualifier()* ::T_ASTERISK::
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the array declarator, \"]\" expected")
   ;
 
 /**
@@ -452,7 +455,8 @@ IncompleteArrayDeclarator -> {
         );
     };
 }
-  : <T_LBRACKET> ArrayQualifier()* ::T_RBRACKET::
+  : <T_LBRACKET> ArrayQualifier()*
+    ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the array declarator, a size or \"]\" expected")
   ;
 
 /**
