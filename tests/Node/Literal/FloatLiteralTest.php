@@ -118,7 +118,12 @@ final class FloatLiteralTest extends TestCase
         yield 'd128' => [DecFloatLiteral::class, '1.5d128', FloatTypeSuffix::Decimal128];
         yield 'd64x' => [DecFloatLiteral::class, '1.5d64x', FloatTypeSuffix::Decimal64x];
         yield 'D128x' => [DecFloatLiteral::class, '1.5D128x', FloatTypeSuffix::Decimal128x];
+        yield 'q' => [DecFloatLiteral::class, '1.5q', FloatTypeSuffix::GnuFloat128];
+        yield 'Q' => [DecFloatLiteral::class, '1.5Q', FloatTypeSuffix::GnuFloat128];
+        yield 'w' => [DecFloatLiteral::class, '1.5w', FloatTypeSuffix::GnuFloat80];
+        yield 'W' => [DecFloatLiteral::class, '1.5W', FloatTypeSuffix::GnuFloat80];
         yield 'hexadecimal with f' => [HexFloatLiteral::class, '0x1p3f', FloatTypeSuffix::Float];
+        yield 'hexadecimal with q' => [HexFloatLiteral::class, '0x1p3q', FloatTypeSuffix::GnuFloat128];
         yield 'hexadecimal digit f is not a suffix' => [HexFloatLiteral::class, '0x1.fp3', null];
     }
 

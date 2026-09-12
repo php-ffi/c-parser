@@ -161,6 +161,16 @@ final class IntLiteralTest extends TestCase
         yield 'wbU' => [DecIntLiteral::class, '1wbU', IntTypeSuffix::UnsignedBitPrecise];
         yield 'hexadecimal digit b is not a suffix' => [HexIntLiteral::class, '0x1b', null];
         yield 'hexadecimal digit b before wb' => [HexIntLiteral::class, '0x1bwb', IntTypeSuffix::BitPrecise];
+        yield 'i8' => [DecIntLiteral::class, '1i8', IntTypeSuffix::Int8];
+        yield 'I16' => [DecIntLiteral::class, '1I16', IntTypeSuffix::Int16];
+        yield 'i32' => [DecIntLiteral::class, '1i32', IntTypeSuffix::Int32];
+        yield 'i64' => [DecIntLiteral::class, '1i64', IntTypeSuffix::Int64];
+        yield 'ui8' => [DecIntLiteral::class, '1ui8', IntTypeSuffix::UnsignedInt8];
+        yield 'Ui16' => [DecIntLiteral::class, '1Ui16', IntTypeSuffix::UnsignedInt16];
+        yield 'uI32' => [DecIntLiteral::class, '1uI32', IntTypeSuffix::UnsignedInt32];
+        yield 'UI64' => [DecIntLiteral::class, '1UI64', IntTypeSuffix::UnsignedInt64];
+        yield 'hexadecimal with i64' => [HexIntLiteral::class, '0xFFi64', IntTypeSuffix::Int64];
+        yield 'octal with ui64' => [OctIntLiteral::class, '017ui64', IntTypeSuffix::UnsignedInt64];
     }
 
     /**
@@ -182,6 +192,7 @@ final class IntLiteralTest extends TestCase
         yield 'J' => ['1J', null, true];
         yield 'i after the type' => ['1uli', IntTypeSuffix::UnsignedLong, true];
         yield 'i before the type' => ['1iul', IntTypeSuffix::UnsignedLong, true];
+        yield 'i of an MSVC suffix' => ['1i64', IntTypeSuffix::Int64, false];
     }
 
     #[DataProvider('imaginarySuffixesDataProvider')]
@@ -211,6 +222,7 @@ final class IntLiteralTest extends TestCase
     {
         yield 'decimal' => [new DecIntLiteral(42), '42'];
         yield 'decimal with a suffix' => [new DecIntLiteral(42, suffix: IntTypeSuffix::UnsignedLong), '42ul'];
+        yield 'decimal with an MSVC suffix' => [new DecIntLiteral(42, suffix: IntTypeSuffix::UnsignedInt64), '42ui64'];
         yield 'decimal beyond the native integer' => [
             new DecIntLiteral(\PHP_INT_MAX, '18446744073709551615', IntTypeSuffix::Unsigned),
             '18446744073709551615u',

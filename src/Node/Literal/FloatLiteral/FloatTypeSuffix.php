@@ -12,6 +12,7 @@ namespace FFI\Parser\Node\Literal\FloatLiteral;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), Annex H, interchange and extended types
+ * @link https://gcc.gnu.org/onlinedocs/gcc/Floating-Types.html GCC, additional floating types
  */
 enum FloatTypeSuffix: string
 {
@@ -84,4 +85,14 @@ enum FloatTypeSuffix: string
      * `d128x` or `D128x`.
      */
     case Decimal128x = 'd128x';
+
+    /**
+     * GCC: `q` or `Q`, the `__float128` type.
+     */
+    case GnuFloat128 = 'q';
+
+    /**
+     * GCC: `w` or `W`, the `__float80` type (`__ibm128` on PowerPC).
+     */
+    case GnuFloat80 = 'w';
 }

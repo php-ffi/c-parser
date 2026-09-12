@@ -226,6 +226,8 @@ final class FloatParser
             'dl', 'd128' => FloatTypeSuffix::Decimal128,
             'd64x' => FloatTypeSuffix::Decimal64x,
             'd128x' => FloatTypeSuffix::Decimal128x,
+            'q' => FloatTypeSuffix::GnuFloat128,
+            'w' => FloatTypeSuffix::GnuFloat80,
             default => null,
         };
     }

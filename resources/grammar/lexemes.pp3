@@ -38,9 +38,10 @@
 %fragment HEX_DIGITS        [0-9A-Fa-f](?:'?[0-9A-Fa-f])*+
 
 /**
- * Escape sequences, 6.4.4.5
+ * Escape sequences, 6.4.4.5, and the escape character of GCC, "\e" and
+ * "\E" (U+001B)
  */
-%fragment SIMPLE_ESCAPE     ['"?\\abfnrtv]
+%fragment SIMPLE_ESCAPE     ['"?\\abefnrtvE]
 %fragment NUMERIC_ESCAPE    [0-7]{1,3}|x[0-9A-Fa-f]++
 %fragment ESCAPE            \\(?:(?&SIMPLE_ESCAPE)|(?&NUMERIC_ESCAPE))|(?&UCN)
 
@@ -58,7 +59,11 @@
  * suffix of the type
  */
 %fragment IMAGINARY_SUFFIX  [iIjJ]
-%fragment INT_SUFFIX        (?&INT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&INT_TYPE_SUFFIX)?
+/**
+ * MSVC: the suffixes of the sized integer types, 1i64 and 1ui64, alone
+ */
+%fragment MSVC_INT_SUFFIX   [uU]?[iI](?:8|16|32|64)
+%fragment INT_SUFFIX        (?&MSVC_INT_SUFFIX)|(?&INT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&INT_TYPE_SUFFIX)?
 
 /**
  * Floating constants, 6.4.4.3
@@ -70,7 +75,11 @@
 %fragment DEC_FLOAT         (?&DEC_FRACTION)(?&DEC_EXPONENT)?|(?&DEC_DIGITS)(?&DEC_EXPONENT)
 %fragment HEX_FLOAT         0[xX](?&HEX_SIGNIFICAND)(?&BIN_EXPONENT)
 %fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
-%fragment FLOAT_TYPE_SUFFIX [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]
+/**
+ * GCC: "q" gives __float128 and "w" gives __float80 (__ibm128 on PowerPC)
+ */
+%fragment GNU_FLOAT_SUFFIX  [qQwW]
+%fragment FLOAT_TYPE_SUFFIX [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]|(?&GNU_FLOAT_SUFFIX)
 %fragment FLOAT_SUFFIX      (?&FLOAT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&FLOAT_TYPE_SUFFIX)?
 
 /**

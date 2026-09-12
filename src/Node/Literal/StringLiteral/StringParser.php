@@ -32,12 +32,13 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
 final class StringParser
 {
     /**
-     * Matches an escape sequence: a simple escape, an octal one, a
-     * hexadecimal one and a universal character name of either size.
+     * Matches an escape sequence: a simple escape (with `\e` and `\E` of
+     * GCC), an octal one, a hexadecimal one and a universal character name
+     * of either size.
      *
      * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
      */
-    private const ESCAPE_PATTERN = '/\\\\(?:([\'"?\\\\abfnrtv])|([0-7]{1,3})|x([0-9A-Fa-f]++)'
+    private const ESCAPE_PATTERN = '/\\\\(?:([\'"?\\\\abefnrtvE])|([0-7]{1,3})|x([0-9A-Fa-f]++)'
         . '|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8}))/';
 
     /**
@@ -53,6 +54,8 @@ final class StringParser
         '\\' => '\\',
         'a' => "\x07",
         'b' => "\x08",
+        'e' => "\e",
+        'E' => "\e",
         'f' => "\f",
         'n' => "\n",
         'r' => "\r",

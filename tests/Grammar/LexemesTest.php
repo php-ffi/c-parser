@@ -144,7 +144,7 @@ final class LexemesTest extends TestCase
         $constants = [
             'T_DEC_INT_LITERAL' => [
                 '42', "1'000'000", '1u', '1U', '1l', '1L', '1ll', '1LL', '1ul', '1lu', '1ULL', '1llu', '1wb', '1WB',
-                '1uwb', '1wbU', '1Ull', '1i', '1J', '1uli', '1iul',
+                '1uwb', '1wbU', '1Ull', '1i', '1J', '1uli', '1iul', '1i8', '1I16', '1i32', '1i64', '1ui64', '1UI64',
             ],
             'T_OCT_INT_LITERAL' => ['0', '00', '017', "0'7"],
             'T_HEX_INT_LITERAL' => ['0x1', '0x1F', "0x1F'FF", '0XabCD', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '0x1uwb'],
@@ -153,10 +153,11 @@ final class LexemesTest extends TestCase
                 '1.5', '.5', '1.', '1e10', '1E+10', '1.5e-3', "1'000.000'1", '1.5f', '1.5F', '1.5l', '1.5L',
                 '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x',
                 '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1.0d128x', '1e999', "1e1'0", '08.5', '09e1',
-                '0.5', '0e1', '2.0i', '2.0fi', '2.0if', '1e3J',
+                '0.5', '0e1', '2.0i', '2.0fi', '2.0if', '1e3J', '1.0q', '1.0Q', '1.0w', '1.0W', '1.0qi',
             ],
             'T_HEX_FLOAT_LITERAL' => [
                 '0x1.8p3', '0x.8p1', '0x1p-1074', '0X1P+4', '0x1.fffffffffffffp1023', '0x1p3f', "0x1p1'0", '0x1.p1',
+                '0x1p3q',
             ],
         ];
 
@@ -167,7 +168,7 @@ final class LexemesTest extends TestCase
         }
 
         foreach ([
-            "'a'", "'ab'", "'\\n'", "'\\''", "'\"'", "'\\0'", "'\\x41'", "'\\u00E9'",
+            "'a'", "'ab'", "'\\n'", "'\\''", "'\"'", "'\\0'", "'\\x41'", "'\\u00E9'", "'\\e'", "'\\E'",
             "u8'a'", "u'a'", "U'a'", "L'a'",
         ] as $literal) {
             yield 'character ' . $literal => [$literal, [['T_CHAR_LITERAL', $literal]]];
@@ -290,7 +291,7 @@ final class LexemesTest extends TestCase
         foreach ([
             '08', '09', '0b2', '0b', '0x', '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b', '1.5ff', '1.5fl', '1.5dF',
             '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8', '0xE+1', '10.13.4', '.5.5',
-            "1'a",
+            "1'a", '1q', '1i128', '1i64i', '1i64l', '1.0i64',
         ] as $number) {
             yield 'number of the preprocessor ' . $number => [$number, [['T_PP_NUMBER', $number]]];
         }

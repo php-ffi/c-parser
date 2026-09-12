@@ -18,6 +18,13 @@ use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntParserResult;
 final class IntParser
 {
     /**
+     * Matches the MSVC suffix of a sized integer type at the end of the
+     * literal, `i64` or `ui64`. It ends with digits and is never combined
+     * with another suffix.
+     */
+    private const MSVC_SUFFIX_PATTERN = '/[uU]?[iI](?:8|16|32|64)$/';
+
+    /**
      * @param non-empty-string $raw text of an integer constant
      */
     public static function parse(string $raw): IntParserResult
@@ -41,8 +48,17 @@ final class IntParser
             // the exact one and the digits have to be converted
             decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
             suffix: self::parseSuffix($suffix),
-            isImaginary: \strpbrk($suffix, 'iIjJ') !== false,
+            isImaginary: self::isImaginary($suffix),
         );
+    }
+
+    /**
+     * The `i` of an MSVC suffix (`i64`) is followed by digits, the one of an
+     * imaginary constant is not.
+     */
+    private static function isImaginary(string $suffix): bool
+    {
+        return !\ctype_digit(\substr($suffix, -1)) && \strpbrk($suffix, 'iIjJ') !== false;
     }
 
     private static function parseBase(string $literal): IntBase
@@ -66,6 +82,10 @@ final class IntParser
      */
     private static function getSuffixOffset(string $literal): int
     {
+        if (\preg_match(self::MSVC_SUFFIX_PATTERN, $literal, $matches, \PREG_OFFSET_CAPTURE) === 1) {
+            return $matches[0][1];
+        }
+
         $offset = \strlen($literal);
 
         // A suffix letter is not a digit of any base, except "b", which is a
@@ -118,13 +138,33 @@ final class IntParser
 
     private static function parseSuffix(string $suffix): ?IntTypeSuffix
     {
-        $isUnsigned = \stripos($suffix, 'u') !== false;
+        $suffix = \strtolower(\str_ireplace(['u', 'i', 'j'], '', $suffix));
 
-        return match (\strtolower(\str_ireplace(['u', 'i', 'j'], '', $suffix))) {
-            'l' => $isUnsigned ? IntTypeSuffix::UnsignedLong : IntTypeSuffix::Long,
-            'll' => $isUnsigned ? IntTypeSuffix::UnsignedLongLong : IntTypeSuffix::LongLong,
-            'wb' => $isUnsigned ? IntTypeSuffix::UnsignedBitPrecise : IntTypeSuffix::BitPrecise,
-            default => $isUnsigned ? IntTypeSuffix::Unsigned : null,
+        // is unsigned?
+        if (\stripos($suffix, 'u') !== false) {
+            return match ($suffix) {
+                'l' => IntTypeSuffix::UnsignedLong,
+                'll' => IntTypeSuffix::UnsignedLongLong,
+                'wb' => IntTypeSuffix::UnsignedBitPrecise,
+                // The MSVC suffixes without the "i"
+                '8' => IntTypeSuffix::UnsignedInt8,
+                '16' => IntTypeSuffix::UnsignedInt16,
+                '32' => IntTypeSuffix::UnsignedInt32,
+                '64' => IntTypeSuffix::UnsignedInt64,
+                default => IntTypeSuffix::Unsigned,
+            };
+        }
+
+        return match ($suffix) {
+            'l' => IntTypeSuffix::Long,
+            'll' => IntTypeSuffix::LongLong,
+            'wb' => IntTypeSuffix::BitPrecise,
+            // The MSVC suffixes without the "i"
+            '8' => IntTypeSuffix::Int8,
+            '16' => IntTypeSuffix::Int16,
+            '32' => IntTypeSuffix::Int32,
+            '64' => IntTypeSuffix::Int64,
+            default => null,
         };
     }
 }

@@ -30,6 +30,7 @@ final class StringLiteralTest extends TestCase
         yield 'backslash' => ['"\\\\"', '\\'];
         yield 'escaped backslash before a letter' => ['"\\\\n"', '\\n'];
         yield 'control characters' => ['"\\a\\b\\f\\n\\r\\t\\v"', "\x07\x08\f\n\r\t\v"];
+        yield 'escape character of GCC' => ['"\\e\\E"', "\e\e"];
 
         yield 'octal' => ['"\\101"', 'A'];
         yield 'octal of one digit' => ['"\\0"', "\0"];
