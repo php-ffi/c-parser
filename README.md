@@ -18,7 +18,14 @@ generating wrappers and stubs or checking a header before loading it.
 This implementation of a C-parser based on
 [ISO/IEC 9899:2024 - N3220](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf).
 
+## Requirements
+
+- PHP ^8.1
+
 ## Installation
+
+Library is available as a Composer repository and can be installed using the
+following command in the root of your project.
 
 ```sh
 $ composer require ffi/parser

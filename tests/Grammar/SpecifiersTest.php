@@ -109,6 +109,7 @@ final class SpecifiersTest extends TestCase
             '[const volatile (signed _Complex double)]',
         ];
         yield '__typeof__' => ['__typeof__(int)', 'typeof(int)'];
+        yield '__typeof_unqual__' => ['__typeof_unqual__(const int)', 'typeof_unqual([const int])'];
         yield 'type names of GCC are typedef names' => ['__builtin_va_list', '__builtin_va_list'];
         yield 'floating types of TS 18661 are typedef names' => ['_Float128', '_Float128'];
     }

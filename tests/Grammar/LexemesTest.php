@@ -60,7 +60,7 @@ final class LexemesTest extends TestCase
             'T_THREAD_LOCAL' => ['thread_local', '_Thread_local', '__thread'],
             'T_TRUE' => ['true'],
             'T_TYPEDEF' => ['typedef'],
-            'T_TYPEOF_UNQUAL' => ['typeof_unqual'],
+            'T_TYPEOF_UNQUAL' => ['typeof_unqual', '__typeof_unqual__', '__typeof_unqual'],
             'T_TYPEOF' => ['typeof', '__typeof__', '__typeof'],
             'T_UNION' => ['union'],
             'T_UNSIGNED' => ['unsigned'],
