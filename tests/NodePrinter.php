@@ -22,6 +22,7 @@ use FFI\Parser\Node\Expression\BuiltinCallExpression;
 use FFI\Parser\Node\Expression\CallExpression;
 use FFI\Parser\Node\Expression\CastExpression;
 use FFI\Parser\Node\Expression\CompoundLiteralExpression;
+use FFI\Parser\Node\Expression\ConcatenatedStringExpression;
 use FFI\Parser\Node\Expression\ConditionalExpression;
 use FFI\Parser\Node\Expression\GenericSelectionExpression;
 use FFI\Parser\Node\Expression\GenericSelectionExpression\GenericAssociation;
@@ -39,7 +40,6 @@ use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\IndexDesignator;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\MemberDesignator;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\Designator\RangeDesignator;
-use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
 use FFI\Parser\Node\Literal\Literal;
 use FFI\Parser\Node\Node;
 use FFI\Parser\Node\NodeList;
@@ -243,7 +243,7 @@ final class NodePrinter
                 $this->format($node->object),
                 $this->format($node->member),
             ),
-            $node instanceof ConcatenatedStringLiteral => \sprintf(
+            $node instanceof ConcatenatedStringExpression => \sprintf(
                 '(concat %s)',
                 \implode(' ', \array_map($this->format(...), $node->parts)),
             ),
