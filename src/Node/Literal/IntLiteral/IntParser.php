@@ -138,10 +138,10 @@ final class IntParser
 
     private static function parseSuffix(string $suffix): ?IntTypeSuffix
     {
+        $isUnsigned = \stripos($suffix, 'u') !== false;
         $suffix = \strtolower(\str_ireplace(['u', 'i', 'j'], '', $suffix));
 
-        // is unsigned?
-        if (\stripos($suffix, 'u') !== false) {
+        if ($isUnsigned) {
             return match ($suffix) {
                 'l' => IntTypeSuffix::UnsignedLong,
                 'll' => IntTypeSuffix::UnsignedLongLong,
