@@ -6,9 +6,8 @@ namespace FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration
 
 use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration;
-use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
-use FFI\Parser\Node\Initializer\InitializerList;
+use FFI\Parser\Node\Initializer\InitializerInterface;
 use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\TypeInterface;
 
@@ -35,7 +34,7 @@ final class TypeDefDeclaration extends DeclaratorDeclaration
         Identifier $name,
         ?AttributeList $attributes = null,
         ?AsmLabel $asmLabel = null,
-        ExpressionInterface|InitializerList|null $initializer = null,
+        ?InitializerInterface $initializer = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

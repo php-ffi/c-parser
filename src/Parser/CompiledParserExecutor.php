@@ -11471,7 +11471,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 463 => self::reduceTrueLiteral(...),
                 464 => self::reduceFalseLiteral(...),
                 465 => self::reduceNullptrLiteral(...),
-                466 => self::reduceConcatenatedStringLiteral(...),
+                466 => self::reduceConcatenatedStringExpression(...),
                 467 => self::reduceStringLiteral(...),
                 468 => self::reduceStatementExpression(...),
                 469 => self::reduceCompoundStatement(...),
@@ -11510,7 +11510,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
          * @var array{
          *     TokenInterface,
          *     Expression\ExpressionInterface,
-         *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
+         *     2?: Literal\StringLiteral|Expression\ConcatenatedStringExpression
          * } $children
          */
         return new Declaration\StaticAssertDeclaration($children[1], $children[2] ?? null, $offset);
@@ -12877,7 +12877,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var list{
          *     TokenInterface,
-         *     ...<Expression\ExpressionInterface|Initializer\InitializerList|DesignatedInitializer>
+         *     ...<Initializer\InitializerInterface|DesignatedInitializer>
          * } $children
          */
         $items = [];
@@ -12897,7 +12897,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var array{
          *     DesignatedInitializer\DesignatorList,
-         *     Expression\ExpressionInterface|Initializer\InitializerList
+         *     Initializer\InitializerInterface
          * } $children
          */
         return new DesignatedInitializer($children[0], $children[1], $offset);
@@ -13233,7 +13233,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         return new Literal\NullptrLiteral($children->value, $offset);
     }
 
-    private static function reduceConcatenatedStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
+    private static function reduceConcatenatedStringExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
@@ -13243,7 +13243,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             return $children[0];
         }
 
-        return new Literal\ConcatenatedStringLiteral($children, $offset);
+        return new Expression\ConcatenatedStringExpression($children, $offset);
     }
 
     private static function reduceStringLiteral(\Phplrt\Parser\Context $ctx, mixed $children): mixed
@@ -13362,11 +13362,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
          *             Specifier\SpecifierList,
          *             int<0, max>,
          *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
-         *             Expression\ExpressionInterface|Initializer\InitializerList|null=
+         *             Initializer\InitializerInterface|null=
          *         ): SpecifiedDeclaration\DeclaratorDeclaration
          *         |SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody
-         *         |Expression\ExpressionInterface
-         *         |Initializer\InitializerList
+         *         |Initializer\InitializerInterface
          *     >
          * } $children
          */
@@ -13406,9 +13405,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $initializer = null;
         $first = 3;
 
-        if (isset($children[3])
-            && ($children[3] instanceof Expression\ExpressionInterface || $children[3] instanceof Initializer\InitializerList)
-        ) {
+        if (($children[3] ?? null) instanceof Initializer\InitializerInterface) {
             // The initializer of the first declarator
             $initializer = $children[3];
             $first = 4;
@@ -13463,7 +13460,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             Specifier\SpecifierList $specifiers,
             int $start,
             ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
-            Expression\ExpressionInterface|Initializer\InitializerList|null $initializer = null,
+            ?Initializer\InitializerInterface $initializer = null,
         ) use ($name, $declarator, $asmLabel, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
             \assert($start >= 0);
 
@@ -13525,7 +13522,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{TokenInterface, Literal\StringLiteral|Literal\ConcatenatedStringLiteral} $children */
+        /** @var array{TokenInterface, Literal\StringLiteral|Expression\ConcatenatedStringExpression} $children */
         return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
     }
 
@@ -13547,9 +13544,9 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
          *         Specifier\SpecifierList,
          *         int<0, max>,
          *         SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
-         *         Expression\ExpressionInterface|Initializer\InitializerList|null=
+         *         Initializer\InitializerInterface|null=
          *     ): SpecifiedDeclaration\DeclaratorDeclaration,
-         *     1?: Expression\ExpressionInterface|Initializer\InitializerList
+         *     1?: Initializer\InitializerInterface
          * } $children
          */
         if (!isset($children[1])) {

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Initializer\InitializerList;
 
-use FFI\Parser\Node\Expression\ExpressionInterface;
-use FFI\Parser\Node\Initializer\InitializerList;
+use FFI\Parser\Node\Initializer\InitializerInterface;
 use FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer\DesignatorList;
 use FFI\Parser\Node\Node;
 
@@ -28,7 +27,7 @@ final class DesignatedInitializer extends Node
         /**
          * The initializer of the named subobject
          */
-        public readonly ExpressionInterface|InitializerList $initializer,
+        public readonly InitializerInterface $initializer,
         int $offset = 0,
     ) {
         parent::__construct($offset);

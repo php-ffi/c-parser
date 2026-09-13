@@ -104,13 +104,13 @@ NullptrLiteral -> {
  * 6.4.5 String literals, adjacent ones are joined by C: "a" "b". A lone one
  * is not wrapped.
  */
-ConcatenatedStringLiteral -> {
+ConcatenatedStringExpression -> {
     /** @var non-empty-list<Literal\StringLiteral> $children */
     if (\count($children) === 1) {
         return $children[0];
     }
 
-    return new Literal\ConcatenatedStringLiteral($children, $offset);
+    return new Expression\ConcatenatedStringExpression($children, $offset);
 }
   : StringLiteral()+
   ;

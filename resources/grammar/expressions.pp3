@@ -506,7 +506,7 @@ PostfixOperatorStart
 PrimaryExpression
   : IdentifierExpression()
   | Constant()
-  | ConcatenatedStringLiteral()
+  | ConcatenatedStringExpression()
   | StatementExpression()
   | ParenthesizedExpression()
   | BuiltinCallExpression()

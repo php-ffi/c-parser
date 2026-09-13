@@ -34,11 +34,10 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
      *             Specifier\SpecifierList,
      *             int<0, max>,
      *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
-     *             Expression\ExpressionInterface|Initializer\InitializerList|null=
+     *             Initializer\InitializerInterface|null=
      *         ): SpecifiedDeclaration\DeclaratorDeclaration
      *         |SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody
-     *         |Expression\ExpressionInterface
-     *         |Initializer\InitializerList
+     *         |Initializer\InitializerInterface
      *     >
      * } $children
      */
@@ -78,9 +77,7 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
     $initializer = null;
     $first = 3;
 
-    if (isset($children[3])
-        && ($children[3] instanceof Expression\ExpressionInterface || $children[3] instanceof Initializer\InitializerList)
-    ) {
+    if (($children[3] ?? null) instanceof Initializer\InitializerInterface) {
         // The initializer of the first declarator
         $initializer = $children[3];
         $first = 4;
@@ -117,9 +114,9 @@ InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
      *         Specifier\SpecifierList,
      *         int<0, max>,
      *         SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
-     *         Expression\ExpressionInterface|Initializer\InitializerList|null=
+     *         Initializer\InitializerInterface|null=
      *     ): SpecifiedDeclaration\DeclaratorDeclaration,
-     *     1?: Expression\ExpressionInterface|Initializer\InitializerList
+     *     1?: Initializer\InitializerInterface
      * } $children
      */
     if (!isset($children[1])) {
@@ -186,7 +183,7 @@ DeclarationDeclarator -> {
         Specifier\SpecifierList $specifiers,
         int $start,
         ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
-        Expression\ExpressionInterface|Initializer\InitializerList|null $initializer = null,
+        ?Initializer\InitializerInterface $initializer = null,
     ) use ($name, $declarator, $asmLabel, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
         \assert($start >= 0);
 
@@ -275,12 +272,12 @@ CompoundStatement -> {
  * spelled __asm
  */
 AsmLabel -> {
-    /** @var array{TokenInterface, Literal\StringLiteral|Literal\ConcatenatedStringLiteral} $children */
+    /** @var array{TokenInterface, Literal\StringLiteral|Expression\ConcatenatedStringExpression} $children */
     return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
 }
   : <T_ASM>
     ::T_LPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \"(\" expected")
-    ConcatenatedStringLiteral() @error("Syntax error, unexpected {token} in the assembler label, a string literal expected")
+    ConcatenatedStringExpression() @error("Syntax error, unexpected {token} in the assembler label, a string literal expected")
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \")\" expected")
   ;
 
@@ -306,7 +303,7 @@ InitializerList -> {
     /**
      * @var list{
      *     TokenInterface,
-     *     ...<Expression\ExpressionInterface|Initializer\InitializerList|DesignatedInitializer>
+     *     ...<Initializer\InitializerInterface|DesignatedInitializer>
      * } $children
      */
     $items = [];
@@ -337,7 +334,7 @@ DesignatedInitializer -> {
     /**
      * @var array{
      *     DesignatedInitializer\DesignatorList,
-     *     Expression\ExpressionInterface|Initializer\InitializerList
+     *     Initializer\InitializerInterface
      * } $children
      */
     return new DesignatedInitializer($children[0], $children[1], $offset);
@@ -398,7 +395,7 @@ StaticAssertDeclaration -> {
      * @var array{
      *     TokenInterface,
      *     Expression\ExpressionInterface,
-     *     2?: Literal\StringLiteral|Literal\ConcatenatedStringLiteral
+     *     2?: Literal\StringLiteral|Expression\ConcatenatedStringExpression
      * } $children
      */
     return new Declaration\StaticAssertDeclaration($children[1], $children[2] ?? null, $offset);
@@ -416,5 +413,5 @@ StaticAssertDeclaration -> {
  */
 StaticAssertMessage
   : ::T_COMMA::
-    ConcatenatedStringLiteral() @error("Syntax error, unexpected {token} in the static assertion, a string literal expected")
+    ConcatenatedStringExpression() @error("Syntax error, unexpected {token} in the static assertion, a string literal expected")
   ;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration;
 
-use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
+use FFI\Parser\Node\Expression\ConcatenatedStringExpression;
 use FFI\Parser\Node\Literal\StringLiteral;
 use FFI\Parser\Node\Node;
 
@@ -23,7 +23,7 @@ final class AsmLabel extends Node
         /**
          * The name of the symbol
          */
-        public readonly StringLiteral|ConcatenatedStringLiteral $name,
+        public readonly StringLiteral|ConcatenatedStringExpression $name,
         int $offset = 0,
     ) {
         parent::__construct($offset);

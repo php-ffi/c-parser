@@ -8,9 +8,8 @@ use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel;
-use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Identifier;
-use FFI\Parser\Node\Initializer\InitializerList;
+use FFI\Parser\Node\Initializer\InitializerInterface;
 use FFI\Parser\Node\Specifier\SpecifierList;
 
 /**
@@ -53,7 +52,7 @@ abstract class DeclaratorDeclaration extends SpecifiedDeclaration implements Roo
          * C allows it only in the declaration of an object, but the parser
          * accepts it after any declarator and keeps it for a validator
          */
-        public readonly ExpressionInterface|InitializerList|null $initializer = null,
+        public readonly ?InitializerInterface $initializer = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

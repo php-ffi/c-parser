@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Node\Declaration;
 
+use FFI\Parser\Node\Expression\ConcatenatedStringExpression;
 use FFI\Parser\Node\Expression\ExpressionInterface;
-use FFI\Parser\Node\Literal\ConcatenatedStringLiteral;
 use FFI\Parser\Node\Literal\StringLiteral;
 
 /**
@@ -29,7 +29,7 @@ final class StaticAssertDeclaration extends Declaration implements
          * The message reported when the assertion fails, {@see null} in case
          * of it is omitted, which C23 allows
          */
-        public readonly StringLiteral|ConcatenatedStringLiteral|null $message = null,
+        public readonly StringLiteral|ConcatenatedStringExpression|null $message = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

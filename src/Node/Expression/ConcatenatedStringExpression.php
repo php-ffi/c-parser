@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace FFI\Parser\Node\Literal;
+namespace FFI\Parser\Node\Expression;
 
-use FFI\Parser\Node\Expression\Expression;
+use FFI\Parser\Node\Literal\StringLiteral;
 
 /**
  * Adjacent string literals, which C joins into one: `"a" "b"`.
@@ -14,7 +14,7 @@ use FFI\Parser\Node\Expression\Expression;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.5 String literals
  */
-final class ConcatenatedStringLiteral extends Expression
+final class ConcatenatedStringExpression extends Expression
 {
     /**
      * @param int<0, max> $offset
