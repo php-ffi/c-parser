@@ -11,21 +11,11 @@
     <a href="https://github.com/php-ffi/parser/actions/workflows/tests.yml"><img src="https://github.com/php-ffi/parser/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
 </p>
 
-
-Parses C headers (the ones you pass to `FFI::cdef()`) into an AST. Useful for 
+Parses C headers (the ones you pass to `FFI::cdef()`) into an AST. Useful for
 generating wrappers and stubs or checking a header before loading it.
 
-This implementation of a C-parser based on
-[ISO/IEC 9899:2024 - N3220](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf).
-
-## Requirements
-
-- PHP ^8.1
-
+Based on C23, [ISO/IEC 9899:2024 (N3220)](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf).
 ## Installation
-
-Library is available as a Composer repository and can be installed using the
-following command in the root of your project.
 
 ```sh
 $ composer require ffi/parser
@@ -36,104 +26,52 @@ $ composer require ffi/parser
 ```php
 $parser = new FFI\Parser\Parser();
 
-// Parse file
-$declarations = $parser->parse(new SplFileInfo(__DIR__ . '/header.h'));
-// Parse string
 $declarations = $parser->parse('void move(int dx, int dy);');
+// or $parser->parse(new SplFileInfo('header.h'));
 
-echo $declarations[0]->name->name; // "move"
+echo $declarations[0]->name->value; // "move"
 ```
 
 An invalid header throws `FFI\Parser\Exception\ParserException`, which points
 to the error in the source.
 
-### The syntax tree
+## Extensions
 
-`parse()` returns the declarations of the header in the order they are
-written, one for each declarator: `int a, *b;` gives two of them. Every node
-is immutable and knows its byte offset in the source (`$node->offset`).
-
-| Node (`FFI\Parser\Node\Declaration\...`)                  | Example                      |
-|-----------------------------------------------------------|------------------------------|
-| `SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration` | `int printf(const char *, ...);` |
-| `SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition`  | `static inline int f(void) { ... }` |
-| `SpecifiedDeclaration\DeclaratorDeclaration\VariableDeclaration` | `extern int errno;`          |
-| `SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration`  | `typedef struct S S;`        |
-| `SpecifiedDeclaration\TagDeclaration`                     | `struct S { int a; };`       |
-| `SpecifiedDeclaration\TypeDeclaration`                    | `int;`                       |
-| `StaticAssertDeclaration`                                 | `static_assert(sizeof(int) == 4);` |
-| `AttributeDeclaration`                                    | `[[deprecated]];`            |
-
-A declaration with a declarator has a `name`, a `type` and the `specifiers`
-that are not a part of the type (`extern`, `static`, attributes). Types
-(`FFI\Parser\Node\Type\...`) are nested the way C reads them: `int *a[3]` is
-an `ArrayType` of a `PointerType` to an `IntType`.
-
-```php
-use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\FunctionDeclaration;
-
-foreach ($parser->parse('int printf(const char *format, ...);') as $declaration) {
-    if ($declaration instanceof FunctionDeclaration) {
-        foreach ($declaration->type->parameters as $parameter) {
-            echo $parameter->name?->name; // "format"
-        }
-
-        var_dump($declaration->type->isVariadic); // true
-    }
-}
-```
-
-### Errors
-
-Everything the parser throws is a `FFI\Parser\Exception\ParserException`:
-
-- `SyntaxErrorException` - the header is not syntactically valid;
-- `ValidationException` - a validator rejected the tree, the reasons are in
-  `$violations`;
-- `InternalException` - the source cannot be read or analyzed.
-
-The first two point to the error: `$offset` and `$length` in bytes and the
-`$source`, and cast to a string they print the message with a snippet of the
-source.
-
-```php
-try {
-    $parser->parse('int x');
-} catch (FFI\Parser\Exception\SyntaxErrorException $e) {
-    echo $e->getMessage(); // Syntax error, unexpected end of input in the declaration, ";" expected
-    echo $e->offset;       // 5
-}
-```
-
-### Validation
-
-`validate()` only checks the syntax, without building the tree and without
-the validators, and returns a `bool`. `parse()` runs the validators over the
-tree it builds. A validator implements `FFI\Parser\Validator\ValidatorInterface`,
-gets every node of the tree once and returns the `Violation`s it finds:
-
-```php
-$parser = new FFI\Parser\Parser(validators: [new MyValidator()]);
-```
+| Extension                  | Example                                         | From        |
+|----------------------------|-------------------------------------------------|-------------|
+| Attributes                 | `__attribute__((packed))`                       | GCC, Clang  |
+| Declspec                   | `__declspec(dllimport)`                         | MSVC        |
+| Calling conventions        | `__cdecl`, `__stdcall`, `__fastcall`            | MSVC        |
+| Pointer modifiers          | `__ptr64`, `__unaligned`, `__based(b)`          | MSVC        |
+| Pointer authentication     | `__ptrauth(k, a, d)`                            | Clang       |
+| Nullability                | `_Nonnull`, `_Nullable`                         | Clang       |
+| Block pointers             | `void (^cb)(int)`                               | Clang       |
+| Assembler labels           | `int f(void) __asm__("_f");`                    | GCC, Clang  |
+| Keyword spellings          | `__const__`, `__inline__`, `__typeof__`         | GCC, Clang  |
+| `__forceinline`            | `__forceinline int f(void);`                    | MSVC        |
+| `__extension__`            | `__extension__ typedef long long i64;`          | GCC, Clang  |
+| Built-in calls             | `__builtin_offsetof(struct S, x)`               | GCC, Clang  |
+| Statement expressions      | `({ int y = 1; y; })`                           | GCC, Clang  |
+| Range designators          | `{ [0 ... 3] = 1 }`                             | GCC, Clang  |
+| `__alignof__` expressions  | `__alignof__ x`                                 | GCC, Clang  |
+| Literal suffixes           | `1i64`, `1.0q`, `1.0w`                          | MSVC, GCC   |
+| Empty `struct` and `;`     | `struct S {};`, `;`                             | GCC, Clang  |
 
 ## Limitations
 
-The parser reads C23 with the extensions of GCC, Clang and MSVC, after the
-preprocessor (`gcc -E`). Directives (`#pragma`, `#define` of `gcc -dD`, line
-markers) are skipped, macros are not expanded.
+The parser does not track typedef names, so code whose meaning depends on
+whether `T` is a type is always parsed one way:
 
-- **No table of typedef names.** Whether an identifier is a type is decided
-  by the syntax alone:
-  - without another type specifier an identifier is a typedef name:
-    `static x;` is a declaration of the type `x` without a declarator, and
-    `static x[3];` with an implicit `int` is a syntax error;
-  - `(T)-x`, `(T)+x`, `(T)*x` and `(T)&x` with a single identifier are
-    binary expressions, `(T)(x)` and `(T)~x` are casts;
-  - a type name that reads as an expression is an expression:
-    `sizeof(T[3])` is the size of an element, `typeof(T())` is the type of a
-    call.
-- **Preprocessed input.** A backslash at the end of a line continues a
-  directive only, not a comment or a token. Lines that end with a lone CR are
-  not supported. Old-style (K&R) function definitions are not supported.
-- **Function bodies** are kept as text (`FunctionBody`), their statements
-  are not parsed.
+| Code           | Current AST                      | Expected AST if `T` is a typedef |
+|----------------|----------------------------------|----------------------------------|
+| `(T)-x*y`      | `Sub(Paren(T), Mul(x, y))`       | `Mul(Cast(T, Minus(x)), y)`      |
+| `(T)*x`        | `Mul(Paren(T), x)`               | `Cast(T, Dereference(x))`        |
+| `(T)&x`        | `BitwiseAnd(Paren(T), x)`        | `Cast(T, AddressOf(x))`          |
+| `sizeof(T[3])` | `SizeOf(Paren(Subscript(T, 3)))` | `SizeOfType(SizedArray(T, 3))`   |
+| `typeof(T())`  | `TypeOf(Call(T))`                | `TypeOfType(Function(T))`        |
+
+And the other way round, `(T)(x)` is always `Cast(T, Paren(x))`, even if `T`
+is a function and the code is `Call(Paren(T), x)`.
+
+The parentheses are kept in the tree (`Paren`), so it can be rebuilt once the
+typedef names are known.
