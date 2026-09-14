@@ -201,14 +201,14 @@ final class DeclaratorsTest extends TestCase
         // A type name that reads as an expression is the expression, where
         // the expression is allowed too
         yield 'typeof of a subscript' => ['typeof(T[3]);', '(type typeof(([] T 3)))'];
-        yield 'typeof of a product' => ['typeof(a * (b));', '(type typeof((* a b)))'];
+        yield 'typeof of a product' => ['typeof(a * (b));', '(type typeof((* a (paren b))))'];
         yield 'typeof of a call without arguments' => ['typeof(f());', '(type typeof((call f)))'];
         yield 'typeof of a call' => ['typeof(f(x));', '(type typeof((call f x)))'];
         yield 'typeof of a call with a constant' => ['typeof(f(1));', '(type typeof((call f 1)))'];
         yield 'typeof of a function type' => ['typeof(T(int));', '(type typeof((fn T (int))))'];
         yield 'typeof_unqual of a subscript' => ['typeof_unqual(T[3]);', '(type typeof_unqual(([] T 3)))'];
         yield 'alignas of a subscript' => ['alignas(T[3]) int;', '(type alignas(([] T 3)) int)'];
-        yield 'alignas of a product' => ['alignas(a * (b)) int;', '(type alignas((* a b)) int)'];
+        yield 'alignas of a product' => ['alignas(a * (b)) int;', '(type alignas((* a (paren b))) int)'];
         yield 'atomic array of a typedef name' => ['_Atomic(T[3]);', '(type _Atomic((array T 3)))'];
     }
 
@@ -226,18 +226,24 @@ final class DeclaratorsTest extends TestCase
      */
     public static function typeNamesReadAsExpressionsDataProvider(): iterable
     {
-        yield 'parenthesized subscript' => ['(a[1]) - 1', '(- ([] a 1) 1)'];
-        yield 'parenthesized subscript of a dereference' => ['(a[*p]) - 1', '(- ([] a (*u p)) 1)'];
-        yield 'parenthesized product' => ['(a * (b)) + 1', '(+ (* a b) 1)'];
-        yield 'parenthesized product of a parenthesized operand' => ['(a * ((b))) + 1', '(+ (* a b) 1)'];
-        yield 'parenthesized product of a comma expression' => ['(a * (b, c)) + 1', '(+ (* a (, b c)) 1)'];
-        yield 'parenthesized product of a subscript' => ['(a * (b[1])) + 1', '(+ (* a ([] b 1)) 1)'];
-        yield 'parenthesized product of a product' => ['(a * (b * c)) + 1', '(+ (* a (* b c)) 1)'];
-        yield 'sizeof of a subscript' => ['sizeof(x[0])', '(sizeof ([] x 0))'];
-        yield 'sizeof of an array of a typedef name' => ['sizeof(T[3])', '(sizeof ([] T 3))'];
-        yield 'sizeof of a product' => ['sizeof(a * (b))', '(sizeof (* a b))'];
-        yield 'sizeof of a product of a dereference' => ['sizeof(a ** (b))', '(sizeof (* a (*u b)))'];
-        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof ([] T 3))'];
+        yield 'parenthesized subscript' => ['(a[1]) - 1', '(- (paren ([] a 1)) 1)'];
+        yield 'parenthesized subscript of a dereference' => ['(a[*p]) - 1', '(- (paren ([] a (*u p))) 1)'];
+        yield 'parenthesized product' => ['(a * (b)) + 1', '(+ (paren (* a (paren b))) 1)'];
+        yield 'parenthesized product of a parenthesized operand' => [
+            '(a * ((b))) + 1',
+            '(+ (paren (* a (paren (paren b)))) 1)',
+        ];
+        yield 'parenthesized product of a comma expression' => [
+            '(a * (b, c)) + 1',
+            '(+ (paren (* a (paren (, b c)))) 1)',
+        ];
+        yield 'parenthesized product of a subscript' => ['(a * (b[1])) + 1', '(+ (paren (* a (paren ([] b 1)))) 1)'];
+        yield 'parenthesized product of a product' => ['(a * (b * c)) + 1', '(+ (paren (* a (paren (* b c)))) 1)'];
+        yield 'sizeof of a subscript' => ['sizeof(x[0])', '(sizeof (paren ([] x 0)))'];
+        yield 'sizeof of an array of a typedef name' => ['sizeof(T[3])', '(sizeof (paren ([] T 3)))'];
+        yield 'sizeof of a product' => ['sizeof(a * (b))', '(sizeof (paren (* a (paren b))))'];
+        yield 'sizeof of a product of a dereference' => ['sizeof(a ** (b))', '(sizeof (paren (* a (*u (paren b)))))'];
+        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof (paren ([] T 3)))'];
     }
 
     /**

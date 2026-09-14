@@ -7,9 +7,9 @@
  *  decrement, with the comma operator and the statement expression of GCC.
  *  "(T)(x)" with a lone identifier T is always a cast.
  *
- *  A node starts where its rule does ($offset): the parentheses belong to no
- *  node, and the node that contains them starts at them. The binary
- *  operators are the exception, see BinaryExpression.
+ *  A node starts where its rule does ($offset). The parentheses around an
+ *  expression are a node of their own. The binary operators are the
+ *  exception, see BinaryExpression.
  */
 
 /**
@@ -68,8 +68,8 @@ ConditionalBranches
  * a - b - c is (a - b) - c, a + b * c is a + (b * c).
  *
  * A node starts where its left operand does: the leftmost one at the start
- * of the rule, its parenthesis included, any other one at its own node. In
- * "a + (b) * c" the product starts at "b".
+ * of the rule, any other one at its own node. In "a + b * c" the product
+ * starts at "b".
  */
 BinaryExpression -> {
     /** @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children */
@@ -628,9 +628,12 @@ LastBuiltinArgument @error("Syntax error, unexpected {token} in the arguments, a
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
   ;
 
+/**
+ * 6.5.2 Primary expressions, (x)
+ */
 ParenthesizedExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
-    return $children[1];
+    return new Expression\ParenExpression($children[1], $offset);
 }
   : <T_LPAREN> Expression()
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the parenthesized expression, \")\" expected")

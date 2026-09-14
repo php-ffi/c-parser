@@ -99,7 +99,7 @@ final class AttributesTest extends TestCase
         yield 'constant' => ['aligned(8)', '[[aligned(8)]]'];
         yield 'string' => ['deprecated("use g" " instead")', '[[deprecated((concat "use g" " instead"))]]'];
         yield 'expressions' => ['format(printf, 1, 1 + 1)', '[[format(printf, 1, (+ 1 1))]]'];
-        yield 'parenthesized comma expression' => ['a((b, c))', '[[a((, b c))]]'];
+        yield 'parenthesized comma expression' => ['a((b, c))', '[[a((paren (, b c)))]]'];
         yield 'sizeof of a type' => ['aligned(sizeof(struct S))', '[[aligned((sizeof struct S))]]'];
         yield 'assignment' => [
             'availability(macos, introduced=10.4)',

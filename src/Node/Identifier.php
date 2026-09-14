@@ -22,7 +22,7 @@ final class Identifier extends Node
          *
          * @var non-empty-string
          */
-        public readonly string $name,
+        public readonly string $value,
         int $offset = 0,
     ) {
         parent::__construct($offset);

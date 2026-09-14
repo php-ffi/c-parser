@@ -143,7 +143,7 @@ final class DeclarationsTest extends TestCase
         // Initializers
         yield 'constant expression' => ['constexpr int N = 10;', ['(variable constexpr int N = 10)']];
         yield 'conditional expression' => ['int x = a ? b : c;', ['(variable int x = (? a b c))']];
-        yield 'parenthesized comma expression' => ['int x = (1, 2);', ['(variable int x = (, 1 2))']];
+        yield 'parenthesized comma expression' => ['int x = (1, 2);', ['(variable int x = (paren (, 1 2)))']];
         yield 'string' => ['char s[] = "abc";', ['(variable (array char) s = "abc")']];
         yield 'list with a trailing comma' => ['int a[] = {1, 2, 3,};', ['(variable (array int) a = {1, 2, 3})']];
         yield 'empty list' => ['int a[3] = {};', ['(variable (array int 3) a = {})']];

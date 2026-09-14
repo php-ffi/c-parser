@@ -13281,8 +13281,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
     private static function reduceParenthesizedExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed
     {
+        // The variables below are declared by the compiler
+        $offset = $ctx->begin;
+
         /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
-        return $children[1];
+        return new Expression\ParenExpression($children[1], $offset);
     }
 
     private static function reduceBuiltinCallExpression(\Phplrt\Parser\Context $ctx, mixed $children): mixed

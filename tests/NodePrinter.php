@@ -29,6 +29,7 @@ use FFI\Parser\Node\Expression\GenericSelectionExpression\GenericAssociation;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
+use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Expression\SizeOfExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Expression\StatementExpression;
@@ -182,8 +183,8 @@ final class NodePrinter
         $body = match (true) {
             isset(self::KEYWORDS[$node::class]) => self::KEYWORDS[$node::class],
             $node instanceof Literal => $node->raw,
-            $node instanceof Identifier => $node->name,
-            $node instanceof IdentifierExpression, $node instanceof NamedType => $node->name->name,
+            $node instanceof Identifier => $node->value,
+            $node instanceof IdentifierExpression, $node instanceof NamedType => $node->name->value,
             $node instanceof BinaryExpression => \sprintf(
                 '(%s %s %s)',
                 self::BINARY_OPERATORS[$node::class],
@@ -201,6 +202,7 @@ final class NodePrinter
                 $this->format($node->then),
                 $this->format($node->else),
             ),
+            $node instanceof ParenExpression => '(paren ' . $this->format($node->expression) . ')',
             $node instanceof CastExpression => \sprintf(
                 '(cast %s %s)',
                 $this->format($node->type),
@@ -216,8 +218,8 @@ final class NodePrinter
             $node instanceof AlignOfTypeExpression => '(alignof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfExpression => '(alignof ' . $this->format($node->operand) . ')',
             $node instanceof BuiltinCallExpression => $node->arguments->items === []
-                ? '(' . $node->name->name . ')'
-                : '(' . $node->name->name . ' ' . $this->format($node->arguments) . ')',
+                ? '(' . $node->name->value . ')'
+                : '(' . $node->name->value . ' ' . $this->format($node->arguments) . ')',
             $node instanceof SubscriptExpression => \sprintf(
                 '([] %s %s)',
                 $this->format($node->array),
@@ -336,7 +338,7 @@ final class NodePrinter
                 '%s %s%s%s',
                 $node instanceof RecordType\UnionType ? 'union' : 'struct',
                 $node->attributes === null ? '' : $this->format($node->attributes) . ' ',
-                $node->name->name ?? '_',
+                $node->name->value ?? '_',
                 $node->members === null ? '' : ' { ' . \implode('; ', \array_map(
                     $this->format(...),
                     $node->members->items,
@@ -345,20 +347,20 @@ final class NodePrinter
             $node instanceof MemberDeclaration => \implode(' ', \array_filter([
                 $this->format($node->specifiers),
                 $this->format($node->type),
-                ($node->name->name ?? '_') . ($node->width === null ? '' : ':' . $this->format($node->width)),
+                ($node->name->value ?? '_') . ($node->width === null ? '' : ':' . $this->format($node->width)),
                 $node->attributes === null ? '' : $this->format($node->attributes),
             ])),
             $node instanceof EnumType => \sprintf(
                 'enum %s%s%s%s',
                 $node->attributes === null ? '' : $this->format($node->attributes) . ' ',
-                $node->name->name ?? '_',
+                $node->name->value ?? '_',
                 $node->underlyingType === null ? '' : ' : ' . $this->format($node->underlyingType),
                 $node->enumerators === null ? '' : ' { ' . \implode(', ', \array_map(
                     $this->format(...),
                     $node->enumerators->items,
                 )) . ' }',
             ),
-            $node instanceof Enumerator => $node->name->name
+            $node instanceof Enumerator => $node->name->value
                 . ($node->attributes === null ? '' : ' ' . $this->format($node->attributes))
                 . ($node->value === null ? '' : '=' . $this->format($node->value)),
             $node instanceof StaticAssertDeclaration => \sprintf(

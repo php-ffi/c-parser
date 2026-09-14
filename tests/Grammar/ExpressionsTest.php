@@ -7,6 +7,7 @@ namespace FFI\Parser\Tests\Grammar;
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\Expression;
 use FFI\Parser\Node\Expression\IdentifierExpression;
+use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
 use FFI\Parser\Node\Literal\BoolLiteral;
 use FFI\Parser\Node\Literal\CharLiteral;
@@ -40,9 +41,12 @@ final class ExpressionsTest extends TestCase
     public static function expressionsDataProvider(): iterable
     {
         yield 'identifier' => ['a', 'a@14'];
-        yield 'parenthesized' => ['(a)', 'a@15'];
-        yield 'operation on a parenthesized operand starts at the parenthesis' => ['(a) + b', '(+ a@15 b@20)@14'];
-        yield 'conditional on a parenthesized operand' => ['(a) ? b : c', '(? a@15 b@20 c@24)@14'];
+        yield 'parenthesized' => ['(a)', '(paren a@15)@14'];
+        yield 'operation on a parenthesized operand starts at the parenthesis' => [
+            '(a) + b',
+            '(+ (paren a@15)@14 b@20)@14',
+        ];
+        yield 'conditional on a parenthesized operand' => ['(a) ? b : c', '(? (paren a@15)@14 b@20 c@24)@14'];
         yield 'integer constant' => ['0x1Fu', '0x1Fu@14'];
         yield 'floating constant' => ['1.5f', '1.5f@14'];
         yield 'character constant' => ["'a'", "'a'@14"];
@@ -59,7 +63,7 @@ final class ExpressionsTest extends TestCase
         // Precedence and associativity
         yield 'left associativity' => ['1 - 2 - 3', '(- (- 1@14 2@18)@14 3@22)@14'];
         yield 'multiplication binds tighter' => ['1 + 2 * 3', '(+ 1@14 (* 2@18 3@22)@18)@14'];
-        yield 'parentheses override precedence' => ['(1 + 2) * 3', '(* (+ 1@15 2@19)@15 3@24)@14'];
+        yield 'parentheses override precedence' => ['(1 + 2) * 3', '(* (paren (+ 1@15 2@19)@15)@14 3@24)@14'];
         yield 'unary binds tighter' => ['-x * y', '(* (-u x@15)@14 y@19)@14'];
         yield 'logical and binds tighter' => ['a || b && c', '(|| a@14 (&& b@19 c@24)@19)@14'];
         yield 'equality binds tighter than bitwise and' => ['a & b == c', '(& a@14 (== b@18 c@23)@18)@14'];
@@ -72,7 +76,7 @@ final class ExpressionsTest extends TestCase
         yield 'conditional is right associative' => ['a ? b : c ? d : e', '(? a@14 b@18 (? c@22 d@26 e@30)@22)@14'];
         yield 'conditional binds looser than logical or' => ['a || b ? c : d', '(? (|| a@14 b@19)@14 c@23 d@27)@14'];
         yield 'comma between ? and :' => ['a ? b, c : d', '(? a@14 (, b@18 c@21)@18 d@25)@14'];
-        yield 'comma in parentheses' => ['(a, b, c)', '(, (, a@15 b@18)@15 c@21)@15'];
+        yield 'comma in parentheses' => ['(a, b, c)', '(paren (, (, a@15 b@18)@15 c@21)@15)@14'];
 
         // Unary operators
         yield 'nested unary operators' => ['-~!x', '(-u (~u (!u x@17)@16)@15)@14'];
@@ -82,7 +86,7 @@ final class ExpressionsTest extends TestCase
         // Cast against parentheses
         yield 'cast of a name' => ['(T)x', '(cast T@15 x@17)@14'];
         yield 'cast of a constant' => ['(T)1', '(cast T@15 1@17)@14'];
-        yield 'cast of a parenthesized operand' => ['(T)(x)', '(cast T@15 x@18)@14'];
+        yield 'cast of a parenthesized operand' => ['(T)(x)', '(cast T@15 (paren x@18)@17)@14'];
         yield 'cast of a negation' => ['(T)~x', '(cast T@15 (~u x@18)@17)@14'];
         yield 'cast of sizeof' => ['(T)sizeof x', '(cast T@15 (sizeof x@24)@17)@14'];
         yield 'cast of alignof' => ['(T)alignof(U)', '(cast T@15 (alignof U@25)@17)@14'];
@@ -93,13 +97,13 @@ final class ExpressionsTest extends TestCase
         yield 'cast of true' => ['(T)true', '(cast T@15 true@17)@14'];
         yield 'cast of false' => ['(T)false', '(cast T@15 false@17)@14'];
         yield 'cast of nullptr' => ['(T)nullptr', '(cast T@15 nullptr@17)@14'];
-        yield 'plus after parentheses is an addition' => ['(T)+x', '(+ T@15 x@18)@14'];
-        yield 'ampersand after parentheses is a bitwise and' => ['(T)&x', '(& T@15 x@18)@14'];
+        yield 'plus after parentheses is an addition' => ['(T)+x', '(+ (paren T@15)@14 x@18)@14'];
+        yield 'ampersand after parentheses is a bitwise and' => ['(T)&x', '(& (paren T@15)@14 x@18)@14'];
         yield 'nested casts' => ['(A)(B)x', '(cast A@15 (cast B@18 x@20)@17)@14'];
-        yield 'minus after parentheses is a subtraction' => ['(T)-x', '(- T@15 x@18)@14'];
-        yield 'asterisk after parentheses is a multiplication' => ['(T)*p', '(* T@15 p@18)@14'];
-        yield 'subscript after parentheses' => ['(x)[0]', '([] x@15 0@18)@14'];
-        yield 'member after parentheses' => ['(x).a', '(. x@15 a@18)@14'];
+        yield 'minus after parentheses is a subtraction' => ['(T)-x', '(- (paren T@15)@14 x@18)@14'];
+        yield 'asterisk after parentheses is a multiplication' => ['(T)*p', '(* (paren T@15)@14 p@18)@14'];
+        yield 'subscript after parentheses' => ['(x)[0]', '([] (paren x@15)@14 0@18)@14'];
+        yield 'member after parentheses' => ['(x).a', '(. (paren x@15)@14 a@18)@14'];
         yield 'minus after a keyword type is a cast' => ['(int)-1', '(cast int@15 (-u 1@20)@19)@14'];
         yield 'octal zero after a typedef name is a cast' => ['(T)0', '(cast T@15 0@17)@14'];
         yield 'hexadecimal constant after a typedef name is a cast' => ['(T)0x1', '(cast T@15 0x1@17)@14'];
@@ -126,8 +130,8 @@ final class ExpressionsTest extends TestCase
         yield 'function call' => ['f(1, x)', '(call f@14 1@16 x@19)@14'];
         yield 'function call without arguments' => ['f()', '(call f@14)@14'];
         yield 'call of a call' => ['f(1)(2)[0]', '([] (call (call f@14 1@16)@14 2@19)@14 0@22)@14'];
-        yield 'call in parentheses after a lone identifier is a cast' => ['(T)(1)', '(cast T@15 1@18)@14'];
-        yield 'call of a parenthesized name' => ['(f)()', '(call f@15)@14'];
+        yield 'call in parentheses after a lone identifier is a cast' => ['(T)(1)', '(cast T@15 (paren 1@18)@17)@14'];
+        yield 'call of a parenthesized name' => ['(f)()', '(call (paren f@15)@14)@14'];
         yield 'call in a sum' => ['1 + f(2) * 3', '(+ 1@14 (* (call f@18 2@20)@18 3@25)@18)@14'];
 
         // All the levels of precedence are one rule
@@ -141,31 +145,46 @@ final class ExpressionsTest extends TestCase
             '(- (- (* a@14 b@18)@14 (* c@22 d@26)@22)@14 e@30)@14',
         ];
         yield 'operators of one level' => ['a < b == c > d', '(== (< a@14 b@18)@14 (> c@23 d@27)@23)@14'];
-        yield 'parenthesized operand inside the expression' => ['a + (b) * c', '(+ a@14 (* b@19 c@24)@19)@14'];
+        yield 'parenthesized operand inside the expression' => [
+            'a + (b) * c',
+            '(+ a@14 (* (paren b@19)@18 c@24)@18)@14',
+        ];
 
         // sizeof and alignof
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
         yield 'sizeof of a type' => ['sizeof(T)', '(sizeof T@21)@14'];
-        yield 'sizeof of a subscript in parentheses' => ['sizeof(x)[0]', '(sizeof ([] x@21 0@24)@20)@14'];
-        yield 'sizeof of a member in parentheses' => ['sizeof(x).a', '(sizeof (. x@21 a@24)@20)@14'];
-        yield 'sizeof of a pointer member in parentheses' => ['sizeof(x)->a', '(sizeof (-> x@21 a@25)@20)@14'];
-        yield 'sizeof of a nested product in parentheses' => ['sizeof(a * (b * (c)))', '(sizeof (* a@21 (* b@26 c@31)@26)@21)@14'];
-        yield 'sizeof of a parenthesized expression' => ['sizeof(1 + 2)', '(sizeof (+ 1@21 2@25)@21)@14'];
+        yield 'sizeof of a subscript in parentheses' => ['sizeof(x)[0]', '(sizeof ([] (paren x@21)@20 0@24)@20)@14'];
+        yield 'sizeof of a member in parentheses' => ['sizeof(x).a', '(sizeof (. (paren x@21)@20 a@24)@20)@14'];
+        yield 'sizeof of a pointer member in parentheses' => [
+            'sizeof(x)->a',
+            '(sizeof (-> (paren x@21)@20 a@25)@20)@14',
+        ];
+        yield 'sizeof of a nested product in parentheses' => [
+            'sizeof(a * (b * (c)))',
+            '(sizeof (paren (* a@21 (paren (* b@26 (paren c@31)@30)@26)@25)@21)@20)@14',
+        ];
+        yield 'sizeof of a parenthesized expression' => ['sizeof(1 + 2)', '(sizeof (paren (+ 1@21 2@25)@21)@20)@14'];
         yield 'sizeof of sizeof' => ['sizeof sizeof x', '(sizeof (sizeof x@28)@21)@14'];
         yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof T@21)@14 1@26)@14'];
         yield 'alignof' => ['alignof(T)', '(alignof T@22)@14'];
         yield '_Alignof' => ['_Alignof(T)', '(alignof T@23)@14'];
         yield '__alignof__' => ['__alignof__(T)', '(alignof T@26)@14'];
         yield 'alignof of an expression' => ['__alignof__ x', '(alignof x@26)@14'];
-        yield 'alignof of a subscript in parentheses' => ['__alignof__(x)[0]', '(alignof ([] x@26 0@29)@25)@14'];
+        yield 'alignof of a subscript in parentheses' => [
+            '__alignof__(x)[0]',
+            '(alignof ([] (paren x@26)@25 0@29)@25)@14',
+        ];
         yield 'alignof of an expression that reads as a type' => [
             '__alignof__(x[0])',
-            '(alignof ([] x@26 0@28)@26)@14',
+            '(alignof (paren ([] x@26 0@28)@26)@25)@14',
         ];
         yield 'alignof of a compound literal' => ['alignof(int){1}', '(alignof (compound int@22 {1@27}@26)@21)@14'];
-        yield 'sizeof of a call without arguments' => ['sizeof(f())', '(sizeof (call f@21)@21)@14'];
-        yield 'sizeof of a call' => ['sizeof(f(x, y))', '(sizeof (call f@21 x@23 y@26)@21)@14'];
-        yield 'sizeof of a call of a name in parentheses' => ['sizeof(f)(1)', '(sizeof (call f@21 1@24)@20)@14'];
+        yield 'sizeof of a call without arguments' => ['sizeof(f())', '(sizeof (paren (call f@21)@21)@20)@14'];
+        yield 'sizeof of a call' => ['sizeof(f(x, y))', '(sizeof (paren (call f@21 x@23 y@26)@21)@20)@14'];
+        yield 'sizeof of a call of a name in parentheses' => [
+            'sizeof(f)(1)',
+            '(sizeof (call (paren f@21)@20 1@24)@20)@14',
+        ];
         yield 'sizeof of a function type' => ['sizeof(T(void))', '(sizeof (fn T@21 (void@23@23))@22)@14'];
         yield 'sizeof of a function type with a pointer parameter' => [
             'sizeof(T(U *))',
@@ -223,7 +242,7 @@ final class ExpressionsTest extends TestCase
         // Every operator
         foreach (NodePrinter::BINARY_OPERATORS as $operator) {
             yield 'binary ' . $operator => $operator === ','
-                ? ['(a , b)', '(, a@15 b@19)@15']
+                ? ['(a , b)', '(paren (, a@15 b@19)@15)@14']
                 : ['a ' . $operator . ' b', \sprintf('(%s a@14 b@%d)@14', $operator, 17 + \strlen($operator))];
         }
 
@@ -256,9 +275,10 @@ final class ExpressionsTest extends TestCase
     {
         $node = self::parseCondition('(a)');
 
-        self::assertInstanceOf(IdentifierExpression::class, $node);
-        self::assertSame('a', $node->name->name);
-        self::assertSame(15, $node->name->offset);
+        self::assertInstanceOf(ParenExpression::class, $node);
+        self::assertInstanceOf(IdentifierExpression::class, $node->expression);
+        self::assertSame('a', $node->expression->name->value);
+        self::assertSame(15, $node->expression->name->offset);
     }
 
     /**
