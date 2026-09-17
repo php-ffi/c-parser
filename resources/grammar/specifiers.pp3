@@ -284,17 +284,18 @@ AtomicType -> {
   ;
 
 /**
- * A typedef name after the modifiers, followed by a declarator:
- * "unsigned __int64 x", "unsigned T *p". Without a declarator after it the
- * name is the declarator: "unsigned T;".
+ * A typedef name after the modifiers, followed by a declarator, possibly
+ * after other specifiers: "unsigned __int64 x", "unsigned T *p",
+ * "unsigned __int64 __cdecl f(void)", "unsigned T const *p". Without a
+ * declarator after it the name is the declarator: "unsigned T;",
+ * "unsigned T __attribute__((unused));".
  */
 ModifiedNamedType
   : NamedType() &ModifiedNamedTypeEnd()
   ;
 
 ModifiedNamedTypeEnd
-  : <T_IDENTIFIER>
-  | <T_ASTERISK>
+  : NonTypeSpecifier()* (<T_IDENTIFIER> | <T_ASTERISK> | <T_CARET>)
   ;
 
 /**

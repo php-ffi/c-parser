@@ -133,6 +133,22 @@ final class DeclarationsTest extends TestCase
         yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', [
             '(variable (ptr (unsigned T)) p)',
         ]];
+        yield 'typedef name after a modifier before a block pointer' => ['unsigned T ^b;', [
+            '(variable (block (unsigned T)) b)',
+        ]];
+        yield 'typedef name after a modifier before a calling convention' => [
+            'unsigned __int64 __cdecl f(void);',
+            ['(function __cdecl (fn (unsigned __int64) (void)) f)'],
+        ];
+        yield 'typedef name after a modifier before a qualifier' => ['unsigned T const *p;', [
+            '(variable (ptr [const (unsigned T)]) p)',
+        ]];
+        yield 'typedef name after a modifier before an attribute' => ['unsigned T __attribute__((unused)) x;', [
+            '(variable __attribute__((unused)) (unsigned T) x)',
+        ]];
+        yield 'name after a modifier before an attribute' => ['unsigned T __attribute__((unused));', [
+            '(variable (unsigned _) T __attribute__((unused)))',
+        ]];
         yield 'name after a typedef name' => ['T T;', ['(variable T T)']];
         yield 'name after a base' => ['int T;', ['(variable int T)']];
         yield 'name after a modifier and a base' => ['unsigned int T;', ['(variable (unsigned int) T)']];
