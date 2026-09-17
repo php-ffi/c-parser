@@ -27,7 +27,8 @@
         "php": "^8.1",
         "symfony/polyfill-php85": "^1.43",
         "phplrt/exception": "^4.2",
-        "phplrt/runtime": "^4.2"
+        "phplrt/parser": "^4.2.3",
+        "phplrt/lexer": "^4.2"
     },
     "autoload": {
         "psr-4": {
@@ -42,7 +43,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpat/phpat": "^0.12",
-        "phplrt/compiler": "^4.2",
+        "phplrt/compiler": "^4.2.4",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
