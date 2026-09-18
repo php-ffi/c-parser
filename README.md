@@ -1,25 +1,25 @@
-# FFI Parser
+# FFI C23 Parser
 
 <p align="center">
-    <a href="https://packagist.org/packages/ffi/parser"><img src="https://poser.pugx.org/ffi/parser/require/php?style=for-the-badge" alt="PHP 8.1+"></a>
-    <a href="https://packagist.org/packages/ffi/parser"><img src="https://poser.pugx.org/ffi/parser/version?style=for-the-badge" alt="Latest Stable Version"></a>
-    <a href="https://packagist.org/packages/ffi/parser"><img src="https://poser.pugx.org/ffi/parser/v/unstable?style=for-the-badge" alt="Latest Unstable Version"></a>
-    <a href="https://packagist.org/packages/ffi/parser"><img src="https://poser.pugx.org/ffi/parser/downloads?style=for-the-badge" alt="Total Downloads"></a>
-    <a href="https://raw.githubusercontent.com/php-ffi/parser/master/LICENSE"><img src="https://poser.pugx.org/ffi/parser/license?style=for-the-badge" alt="License MIT"></a>
+    <a href="https://packagist.org/packages/ffi/c-parser"><img src="https://poser.pugx.org/ffi/c-parser/require/php?style=for-the-badge" alt="PHP 8.1+"></a>
+    <a href="https://packagist.org/packages/ffi/c-parser"><img src="https://poser.pugx.org/ffi/c-parser/version?style=for-the-badge" alt="Latest Stable Version"></a>
+    <a href="https://packagist.org/packages/ffi/c-parser"><img src="https://poser.pugx.org/ffi/c-parser/v/unstable?style=for-the-badge" alt="Latest Unstable Version"></a>
+    <a href="https://packagist.org/packages/ffi/c-parser"><img src="https://poser.pugx.org/ffi/c-parser/downloads?style=for-the-badge" alt="Total Downloads"></a>
+    <a href="https://raw.githubusercontent.com/php-ffi/c-parser/master/LICENSE"><img src="https://poser.pugx.org/ffi/c-parser/license?style=for-the-badge" alt="License MIT"></a>
 </p>
 <p align="center">
-    <a href="https://github.com/php-ffi/parser/actions/workflows/tests.yml"><img src="https://github.com/php-ffi/parser/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+    <a href="https://github.com/php-ffi/c-parser/actions/workflows/tests.yml"><img src="https://github.com/php-ffi/c-parser/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
 </p>
 
 Parses C headers (the ones you pass to `FFI::cdef()`) into an AST. Useful for
 generating wrappers and stubs or checking a header before loading it.
 
-Based on C23, [ISO/IEC 9899:2024 (N3220)](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf).
+Based on C23 specification: [ISO/IEC 9899:2024 (N3220)](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf)
 
 ## Installation
 
 ```sh
-$ composer require ffi/parser
+$ composer require ffi/c-parser
 ```
 
 ## Usage
