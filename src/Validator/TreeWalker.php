@@ -30,7 +30,7 @@ final class TreeWalker
 
     public function __construct(
         /**
-         * @var non-empty-list<ValidatorInterface>
+         * @var non-empty-list<ValidatorRuleInterface>
          */
         private readonly array $validators,
         /**

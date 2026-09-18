@@ -13,7 +13,7 @@ use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
 use FFI\Parser\Validator\ValidationContext;
-use FFI\Parser\Validator\ValidatorInterface;
+use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 use Phplrt\Contracts\Lexer\Exception\RuntimeExceptionInterface as LexerRuntimeExceptionInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
@@ -295,7 +295,7 @@ final class ParserTest extends TestCase
 
     public function testViolationsAreReportedByValidationException(): void
     {
-        $parser = new Parser(validators: [self::createIntTypeValidator()]);
+        $parser = new Parser(rules: [self::createIntTypeValidator()]);
 
         try {
             $parser->parse("int a;\nint b;");
@@ -314,7 +314,7 @@ final class ParserTest extends TestCase
     {
         $validator = self::createRecordingValidator();
 
-        $declarations = (new Parser(validators: [$validator]))->parse('char a; long b;');
+        $declarations = (new Parser(rules: [$validator]))->parse('char a; long b;');
 
         self::assertNotSame([], $validator->contexts);
         self::assertSame($declarations, $validator->contexts[0]->declarations);
@@ -324,7 +324,7 @@ final class ParserTest extends TestCase
     {
         $validator = self::createRecordingValidator();
 
-        self::assertTrue((new Parser(validators: [$validator]))->validate('int a;'));
+        self::assertTrue((new Parser(rules: [$validator]))->validate('int a;'));
         self::assertSame([], $validator->contexts);
     }
 
@@ -333,7 +333,7 @@ final class ParserTest extends TestCase
         $validator = self::createRecordingValidator();
 
         try {
-            (new Parser(validators: [$validator]))->parse('int a');
+            (new Parser(rules: [$validator]))->parse('int a');
         } catch (SyntaxErrorException) {
             self::assertSame([], $validator->contexts);
 
@@ -343,9 +343,9 @@ final class ParserTest extends TestCase
         self::fail('SyntaxErrorException has not been thrown');
     }
 
-    private static function createIntTypeValidator(): ValidatorInterface
+    private static function createIntTypeValidator(): ValidatorRuleInterface
     {
-        return new class implements ValidatorInterface {
+        return new class implements ValidatorRuleInterface {
             public function validate(NodeInterface $node, ValidationContext $context): iterable
             {
                 if ($node instanceof IntType) {
@@ -356,11 +356,11 @@ final class ParserTest extends TestCase
     }
 
     /**
-     * @return ValidatorInterface&object{contexts: list<ValidationContext>}
+     * @return ValidatorRuleInterface&object{contexts: list<ValidationContext>}
      */
-    private static function createRecordingValidator(): ValidatorInterface
+    private static function createRecordingValidator(): ValidatorRuleInterface
     {
-        return new class implements ValidatorInterface {
+        return new class implements ValidatorRuleInterface {
             /**
              * @var list<ValidationContext>
              */

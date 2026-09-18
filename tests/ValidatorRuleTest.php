@@ -10,7 +10,7 @@ use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Validator;
 use FFI\Parser\Validator\ValidationContext;
-use FFI\Parser\Validator\ValidatorInterface;
+use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 
@@ -104,15 +104,15 @@ final class ValidatorTest extends TestCase
     }
 
     /**
-     * @return ValidatorInterface&object{
+     * @return ValidatorRuleInterface&object{
      *     visits: list<non-empty-string>,
      *     nodes: list<NodeInterface>,
      *     contexts: list<ValidationContext>,
      * }
      */
-    private static function createRecordingValidator(): ValidatorInterface
+    private static function createRecordingValidator(): ValidatorRuleInterface
     {
-        return new class implements ValidatorInterface {
+        return new class implements ValidatorRuleInterface {
             /**
              * @var list<non-empty-string>
              */
@@ -143,9 +143,9 @@ final class ValidatorTest extends TestCase
     /**
      * @param class-string<NodeInterface> $class
      */
-    private static function createRejectingValidator(string $class): ValidatorInterface
+    private static function createRejectingValidator(string $class): ValidatorRuleInterface
     {
-        return new class ($class) implements ValidatorInterface {
+        return new class ($class) implements ValidatorRuleInterface {
             /**
              * @param class-string<NodeInterface> $class
              */

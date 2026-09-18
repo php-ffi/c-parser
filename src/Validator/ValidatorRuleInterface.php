@@ -14,7 +14,7 @@ use FFI\Parser\Node\NodeInterface;
  * it every node of the tree, each one once, and the validator picks the
  * kinds of nodes it checks.
  */
-interface ValidatorInterface
+interface ValidatorRuleInterface
 {
     /**
      * Checks a single node. An empty result means the node breaks no rule

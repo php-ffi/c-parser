@@ -6,7 +6,7 @@ namespace FFI\Parser;
 
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Validator\TreeWalker;
-use FFI\Parser\Validator\ValidatorInterface;
+use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
@@ -19,18 +19,31 @@ use FFI\Parser\Validator\Violation;
 final class Validator
 {
     /**
-     * @var list<ValidatorInterface>
+     * @var list<ValidatorRuleInterface>
      */
     private readonly array $validators;
 
     /**
-     * @param iterable<mixed, ValidatorInterface> $validators
+     * @param iterable<mixed, ValidatorRuleInterface> $rules
      */
-    public function __construct(iterable $validators = [])
+    public function __construct(iterable $rules = [])
     {
-        $this->validators = \is_array($validators)
-            ? \array_values($validators)
-            : \iterator_to_array($validators, false);
+        $this->validators = self::formatValidatorRules($rules);
+    }
+
+    /**
+     * TODO Since PHP 8.2 should be replaced to `iterator_to_array`
+     *
+     * @param iterable<mixed, ValidatorRuleInterface> $rules
+     * @return list<ValidatorRuleInterface>
+     */
+    private static function formatValidatorRules(iterable $rules): array
+    {
+        return match (true) {
+            $rules instanceof \Traversable => \iterator_to_array($rules, false),
+            \array_is_list($rules) => $rules,
+            default => \array_values($rules),
+        };
     }
 
     /**
@@ -55,7 +68,8 @@ final class Validator
             return [];
         }
 
-        $violations = (new TreeWalker($this->validators, $declarations))->walk();
+        $violations = (new TreeWalker($this->validators, $declarations))
+            ->walk();
 
         \usort($violations, static fn(Violation $a, Violation $b): int => $a->offset <=> $b->offset);
 

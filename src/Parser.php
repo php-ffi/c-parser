@@ -9,7 +9,7 @@ use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser\ParserExecutor;
-use FFI\Parser\Validator\ValidatorInterface;
+use FFI\Parser\Validator\ValidatorRuleInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
 use Phplrt\Contracts\Source\SourceFactoryInterface;
@@ -38,16 +38,42 @@ final class Parser
      * @param SourceFactoryInterface|null $sources creates the sources out of
      *        the values given to {@see parse()} and {@see validate()}, the
      *        default one accepts strings, files and streams
-     * @param iterable<mixed, ValidatorInterface>|null $validators checks of the
+     * @param iterable<mixed, ValidatorRuleInterface>|null $rules checks of the
      *        syntax tree run by {@see parse()}
      */
     public function __construct(
         ?SourceFactoryInterface $sources = null,
-        ?iterable $validators = null,
+        ?iterable $rules = null,
     ) {
-        $this->parser = new ParserExecutor();
-        $this->sources = $sources ?? SourceFactory::createDefault();
-        $this->validator = $validators === null ? Validator::createDefault() : new Validator($validators);
+        $this->parser = self::createParser();
+        $this->sources = self::createSourceFactory($sources);
+        $this->validator = self::createValidator($rules);
+    }
+
+    /**
+     * @param iterable<mixed, ValidatorRuleInterface>|null $rules
+     */
+    private static function createValidator(?iterable $rules): Validator
+    {
+        if ($rules === null) {
+            return Validator::createDefault();
+        }
+
+        return new Validator($rules);
+    }
+
+    private static function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
+    {
+        if ($sources === null) {
+            return SourceFactory::createDefault();
+        }
+
+        return $sources;
+    }
+
+    private static function createParser(): ParserExecutor
+    {
+        return new ParserExecutor();
     }
 
     /**
