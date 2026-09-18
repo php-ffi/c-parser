@@ -21,7 +21,7 @@ final class BitIntType extends BuiltinType
         /**
          * The constant expression of the width in bits
          */
-        public readonly ExpressionInterface $width,
+        public ExpressionInterface $width,
         int $offset = 0,
     ) {
         parent::__construct($offset);

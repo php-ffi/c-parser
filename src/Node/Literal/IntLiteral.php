@@ -25,7 +25,7 @@ abstract class IntLiteral extends Literal
      *
      * @var numeric-string
      */
-    public readonly string $decimal;
+    public string $decimal;
 
     /**
      * @param numeric-string|null $decimal the exact value in case of it does
@@ -42,19 +42,19 @@ abstract class IntLiteral extends Literal
          *
          * @var int<0, max>
          */
-        public readonly int $value,
+        public int $value,
         ?string $decimal = null,
         /**
          * {@see null} in case of there is no suffix, i.e. the constant gets
          * the first type it fits in, starting from `int`
          */
-        public readonly ?IntTypeSuffix $suffix = null,
+        public ?IntTypeSuffix $suffix = null,
         /**
          * GCC: whether the constant is imaginary, written with the suffix
          * `i` or `j` (`2.0i`, `3j`), its type is then the complex type of
          * the constant
          */
-        public readonly bool $isImaginary = false,
+        public bool $isImaginary = false,
         ?string $raw = null,
         int $offset = 0,
     ) {

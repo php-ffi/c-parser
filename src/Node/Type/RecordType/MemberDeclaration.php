@@ -34,25 +34,25 @@ final class MemberDeclaration extends SpecifiedDeclaration
          * qualifier and no pointer, array or function is written, such as
          * in `static (a);`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The name, {@see null} in case of the member declaration has no
          * declarator (an anonymous structure or union, or a declaration of
          * nothing such as `int;`) or the member is an unnamed bit-field
          */
-        public readonly ?Identifier $name = null,
+        public ?Identifier $name = null,
         /**
          * The constant expression of the width of a bit-field, {@see null}
          * in case of the member is not a bit-field
          */
-        public readonly ?ExpressionInterface $width = null,
+        public ?ExpressionInterface $width = null,
         /**
          * The attributes of the declarator: written before it (GCC allows
          * them before any declarator but the first), after its name and
          * after the whole of it, the width of a bit-field included,
          * {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

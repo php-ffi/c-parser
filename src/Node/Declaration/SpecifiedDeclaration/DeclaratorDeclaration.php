@@ -34,25 +34,25 @@ abstract class DeclaratorDeclaration extends SpecifiedDeclaration implements Roo
         /**
          * The declared name
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         /**
          * The attributes of the declarator: written before it (GCC allows
          * them before any declarator but the first), after its name and
          * after the whole of it, around the assembler label, {@see null}
          * in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         /**
          * The name of the symbol in the object file, {@see null} in case of
          * none is written
          */
-        public readonly ?AsmLabel $asmLabel = null,
+        public ?AsmLabel $asmLabel = null,
         /**
          * The initializer after `=`, {@see null} in case of none is written.
          * C allows it only in the declaration of an object, but the parser
          * accepts it after any declarator and keeps it for a validator
          */
-        public readonly ?InitializerInterface $initializer = null,
+        public ?InitializerInterface $initializer = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

@@ -24,25 +24,25 @@ final class EnumType extends Type implements DeclarationInterface
         /**
          * The tag, {@see null} in case of an anonymous one
          */
-        public readonly ?Identifier $name,
+        public ?Identifier $name,
         /**
          * The fixed underlying type written after the colon, {@see null}
          * in case of there is none
          */
-        public readonly ?TypeInterface $underlyingType = null,
+        public ?TypeInterface $underlyingType = null,
         /**
          * The enumerators, {@see null} in case of there is no body: a
          * reference to the tag or its declaration without the enumerators,
          * such as `enum E : int;`
          */
-        public readonly ?EnumeratorList $enumerators = null,
+        public ?EnumeratorList $enumerators = null,
         /**
          * The attributes after `enum` and, as GCC allows, after the body,
          * `enum [[a]] E { A } __attribute__((b))`. The ones after a tag
          * without a body, `enum E [[a]];`, are among the specifiers.
          * {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

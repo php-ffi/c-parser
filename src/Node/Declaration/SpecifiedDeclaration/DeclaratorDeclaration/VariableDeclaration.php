@@ -33,7 +33,7 @@ final class VariableDeclaration extends DeclaratorDeclaration
          * and the declarator is a name, such as in `static (x);` (without
          * the parentheses `x` is the typedef name of the type)
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         Identifier $name,
         ?AttributeList $attributes = null,
         ?AsmLabel $asmLabel = null,

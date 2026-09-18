@@ -24,11 +24,11 @@ final class CallExpression extends Expression
         /**
          * The expression before `(` that designates the function
          */
-        public readonly ExpressionInterface $function,
+        public ExpressionInterface $function,
         /**
          * The arguments in parentheses
          */
-        public readonly ArgumentList $arguments,
+        public ArgumentList $arguments,
         int $offset = 0,
     ) {
         parent::__construct($offset);

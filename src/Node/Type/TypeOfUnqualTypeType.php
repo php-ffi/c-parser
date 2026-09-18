@@ -20,7 +20,7 @@ final class TypeOfUnqualTypeType extends Type
         /**
          * The type name in the parentheses
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

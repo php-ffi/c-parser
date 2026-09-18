@@ -23,11 +23,11 @@ final class GenericAssociation extends Node
         /**
          * The type name before `:`, {@see null} for the `default` association
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The expression selected for the type
          */
-        public readonly ExpressionInterface $expression,
+        public ExpressionInterface $expression,
         int $offset = 0,
     ) {
         parent::__construct($offset);

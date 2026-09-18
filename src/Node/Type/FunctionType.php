@@ -25,21 +25,21 @@ final class FunctionType extends Type
          * The return type, {@see null} in case of the specifiers give no
          * type, such as in `static (f)(void);`
          */
-        public readonly ?TypeInterface $returnType,
+        public ?TypeInterface $returnType,
         /**
          * The parameters in the order written, empty in case of `f()` and
          * `f(...)`
          */
-        public readonly ParameterList $parameters = new ParameterList([]),
+        public ParameterList $parameters = new ParameterList([]),
         /**
          * Whether the parameters end with `...`
          */
-        public readonly bool $isVariadic = false,
+        public bool $isVariadic = false,
         /**
          * The C23 attributes written after the parameters,
          * `f(void) [[x]]`, {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

@@ -23,12 +23,12 @@ final class BlockPointerType extends Type
          * The function type the block has, {@see null} in case of the
          * specifiers give no type
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The attributes written after the `^`, {@see null} in case of none
          * is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

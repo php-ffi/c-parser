@@ -22,11 +22,11 @@ final class RangeDesignator extends Designator
         /**
          * The constant expression of the first index
          */
-        public readonly ExpressionInterface $first,
+        public ExpressionInterface $first,
         /**
          * The constant expression of the last index
          */
-        public readonly ExpressionInterface $last,
+        public ExpressionInterface $last,
         int $offset = 0,
     ) {
         parent::__construct($offset);

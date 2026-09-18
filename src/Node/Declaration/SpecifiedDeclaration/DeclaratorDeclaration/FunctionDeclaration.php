@@ -26,7 +26,7 @@ final class FunctionDeclaration extends DeclaratorDeclaration
         /**
          * The type of the function
          */
-        public readonly FunctionType $type,
+        public FunctionType $type,
         Identifier $name,
         ?AttributeList $attributes = null,
         ?AsmLabel $asmLabel = null,

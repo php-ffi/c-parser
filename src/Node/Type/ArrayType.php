@@ -23,7 +23,7 @@ abstract class ArrayType extends Type
          * The element type, {@see null} in case of the specifiers give no
          * type, such as in `static (a)[3];`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The qualifiers written in the brackets (`int a[const 3]`), in the
          * order written. C allows them only in the outermost array of a
@@ -33,12 +33,12 @@ abstract class ArrayType extends Type
          *
          * @var list<TypeQualifier>
          */
-        public readonly array $qualifiers = [],
+        public array $qualifiers = [],
         /**
          * The C23 attributes written after the brackets, `[3] [[x]]`,
          * {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

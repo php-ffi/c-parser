@@ -21,7 +21,7 @@ final class TypeOfType extends Type
         /**
          * The expression in the parentheses
          */
-        public readonly ExpressionInterface $operand,
+        public ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

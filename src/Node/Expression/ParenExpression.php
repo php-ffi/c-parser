@@ -19,7 +19,7 @@ final class ParenExpression extends Expression
         /**
          * The expression in the parentheses
          */
-        public readonly ExpressionInterface $expression,
+        public ExpressionInterface $expression,
         int $offset = 0,
     ) {
         parent::__construct($offset);

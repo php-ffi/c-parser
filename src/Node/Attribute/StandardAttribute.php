@@ -23,7 +23,7 @@ final class StandardAttribute extends Attribute
          * The attribute prefix before `::`, such as `gnu` in `gnu::packed`,
          * {@see null} in case of none is written
          */
-        public readonly ?Identifier $prefix,
+        public ?Identifier $prefix,
         Identifier $name,
         ?ArgumentList $arguments = null,
         int $offset = 0,

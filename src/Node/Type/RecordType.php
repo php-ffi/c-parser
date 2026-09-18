@@ -25,20 +25,20 @@ abstract class RecordType extends Type implements DeclarationInterface
         /**
          * The tag, {@see null} in case of an anonymous one
          */
-        public readonly ?Identifier $name,
+        public ?Identifier $name,
         /**
          * The members, {@see null} in case of there is no body: a reference
          * to the tag or its declaration without the members, such as
          * `struct S;`
          */
-        public readonly ?MemberDeclarationList $members = null,
+        public ?MemberDeclarationList $members = null,
         /**
          * The attributes after `struct` or `union` and, as GCC allows,
          * after the body, `struct [[a]] S { int x; } __attribute__((b))`.
          * The ones after a tag without a body, `struct S [[a]];`, are among
          * the specifiers. {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

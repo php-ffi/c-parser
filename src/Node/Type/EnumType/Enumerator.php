@@ -23,17 +23,17 @@ final class Enumerator extends Declaration
         /**
          * The name of the constant
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         /**
          * The constant expression of the value, {@see null} in case of it
          * is not written, i.e. the value follows the previous one
          */
-        public readonly ?ExpressionInterface $value = null,
+        public ?ExpressionInterface $value = null,
         /**
          * The attributes after the name, `A [[deprecated]] = 1`,
          * {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

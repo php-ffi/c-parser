@@ -24,11 +24,11 @@ final class BuiltinCallExpression extends Expression
         /**
          * The name of the function, `__builtin_offsetof`
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         /**
          * The arguments in parentheses
          */
-        public readonly ArgumentList $arguments,
+        public ArgumentList $arguments,
         int $offset = 0,
     ) {
         parent::__construct($offset);

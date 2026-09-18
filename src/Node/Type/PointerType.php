@@ -23,12 +23,12 @@ final class PointerType extends Type
          * The referenced type, {@see null} in case of the specifiers give no
          * type, such as in `static *p;`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The attributes written after the `*`, `*[[x]]` or `*_Nonnull`,
          * {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

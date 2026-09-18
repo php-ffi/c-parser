@@ -25,7 +25,7 @@ final class ConcatenatedStringExpression extends Expression
          *
          * @var non-empty-list<StringLiteral>
          */
-        public readonly array $parts,
+        public array $parts,
         int $offset = 0,
     ) {
         parent::__construct($offset);

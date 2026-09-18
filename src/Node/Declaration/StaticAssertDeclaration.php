@@ -24,12 +24,12 @@ final class StaticAssertDeclaration extends Declaration implements
         /**
          * The constant expression asserted to be non-zero
          */
-        public readonly ExpressionInterface $condition,
+        public ExpressionInterface $condition,
         /**
          * The message reported when the assertion fails, {@see null} in case
          * of it is omitted, which C23 allows
          */
-        public readonly StringLiteral|ConcatenatedStringExpression|null $message = null,
+        public StringLiteral|ConcatenatedStringExpression|null $message = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

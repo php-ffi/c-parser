@@ -31,17 +31,17 @@ final class Parameter extends SpecifiedDeclaration
          * qualifier and no pointer, array or function is written, such as
          * in `f(register (x))`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The name, {@see null} in case of the declarator is abstract or
          * there is none
          */
-        public readonly ?Identifier $name = null,
+        public ?Identifier $name = null,
         /**
          * The attributes after the name of the declarator and after the
          * whole of it, {@see null} in case of none is written
          */
-        public readonly ?AttributeList $attributes = null,
+        public ?AttributeList $attributes = null,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

@@ -42,12 +42,12 @@ abstract class Attribute extends Node implements
          * The name of the attribute as written. A keyword is a name as well
          * (6.7.13.2p3), such as `const` in `__attribute__((const))`
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         /**
          * The argument clause, {@see null} in case of none is written, an
          * empty list in case of `()`
          */
-        public readonly ?ArgumentList $arguments = null,
+        public ?ArgumentList $arguments = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

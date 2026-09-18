@@ -21,7 +21,7 @@ final class AlignAsSpecifier extends AlignmentSpecifier
         /**
          * The constant expression of the alignment
          */
-        public readonly ExpressionInterface $operand,
+        public ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

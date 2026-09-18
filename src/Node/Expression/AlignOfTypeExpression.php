@@ -23,7 +23,7 @@ final class AlignOfTypeExpression extends Expression
         /**
          * The type whose alignment is taken
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

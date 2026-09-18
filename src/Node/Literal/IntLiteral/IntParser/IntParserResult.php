@@ -20,20 +20,20 @@ final class IntParserResult
          *
          * @var int<0, max>
          */
-        public readonly int $value,
+        public int $value,
         /**
          * The exact value in decimal digits
          *
          * @var numeric-string
          */
-        public readonly string $decimal,
+        public string $decimal,
         /**
          * The type suffix or {@see null} in case of there is none
          */
-        public readonly ?IntTypeSuffix $suffix,
+        public ?IntTypeSuffix $suffix,
         /**
          * Whether the imaginary suffix of GCC is written
          */
-        public readonly bool $isImaginary,
+        public bool $isImaginary,
     ) {}
 }

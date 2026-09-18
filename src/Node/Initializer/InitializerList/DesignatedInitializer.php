@@ -23,11 +23,11 @@ final class DesignatedInitializer extends Node
         /**
          * The designators before `=` in the order written
          */
-        public readonly DesignatorList $designators,
+        public DesignatorList $designators,
         /**
          * The initializer of the named subobject
          */
-        public readonly InitializerInterface $initializer,
+        public InitializerInterface $initializer,
         int $offset = 0,
     ) {
         parent::__construct($offset);

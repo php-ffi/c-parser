@@ -51,21 +51,34 @@ final class NodeListTest extends TestCase
         self::assertNull((new SpecifierList([]))->last());
     }
 
-    public function testListCannotBeModified(): void
+    public function testNodeInListCanBeReplaced(): void
     {
+        $extern = new ExternSpecifier(7);
         $list = new SpecifierList([new StaticSpecifier(0)]);
 
-        $this->expectException(\RuntimeException::class);
+        $list[0] = $extern;
 
-        $list[0] = new ExternSpecifier(7);
+        self::assertSame([$extern], $list->items);
     }
 
-    public function testNodeCannotBeRemovedFromList(): void
+    public function testNodeCanBeAppendedToList(): void
     {
-        $list = new SpecifierList([new StaticSpecifier(0)]);
+        $static = new StaticSpecifier(0);
+        $extern = new ExternSpecifier(7);
+        $list = new SpecifierList([$static]);
 
-        $this->expectException(\RuntimeException::class);
+        $list[] = $extern;
+
+        self::assertSame([$static, $extern], $list->items);
+    }
+
+    public function testRemovedNodeShiftsTheFollowingOnes(): void
+    {
+        $extern = new ExternSpecifier(7);
+        $list = new SpecifierList([new StaticSpecifier(0), $extern]);
 
         unset($list[0]);
+
+        self::assertSame([$extern], $list->items);
     }
 }

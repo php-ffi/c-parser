@@ -18,15 +18,15 @@ final class ConditionalExpression extends Expression
         /**
          * The expression before `?`
          */
-        public readonly ExpressionInterface $condition,
+        public ExpressionInterface $condition,
         /**
          * The expression between `?` and `:`
          */
-        public readonly ExpressionInterface $then,
+        public ExpressionInterface $then,
         /**
          * The expression after `:`
          */
-        public readonly ExpressionInterface $else,
+        public ExpressionInterface $else,
         int $offset = 0,
     ) {
         parent::__construct($offset);

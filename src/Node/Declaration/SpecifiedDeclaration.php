@@ -22,7 +22,7 @@ abstract class SpecifiedDeclaration extends Declaration
          * The storage-class, function and alignment specifiers and the
          * attributes among them, in the order written
          */
-        public readonly SpecifierList $specifiers = new SpecifierList([]),
+        public SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {
         parent::__construct($offset);

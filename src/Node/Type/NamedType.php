@@ -22,7 +22,7 @@ final class NamedType extends Type
         /**
          * The name of the type
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         int $offset = 0,
     ) {
         parent::__construct($offset);

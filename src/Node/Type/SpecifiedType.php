@@ -27,12 +27,12 @@ final class SpecifiedType extends Type
          * The type of the specifiers, {@see null} in case of no type
          * specifier and no qualifier is written, such as in `alignas(8)`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         /**
          * The storage-class, function and alignment specifiers and the
          * attributes among them, in the order written
          */
-        public readonly SpecifierList $specifiers,
+        public SpecifierList $specifiers,
         int $offset = 0,
     ) {
         parent::__construct($offset);

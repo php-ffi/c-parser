@@ -20,10 +20,10 @@ final class StringParserResult
          * The characters between the quotes with the escape sequences
          * expanded
          */
-        public readonly string $value,
+        public string $value,
         /**
          * The encoding prefix or {@see null} in case of there is none
          */
-        public readonly ?EncodingPrefix $prefix,
+        public ?EncodingPrefix $prefix,
     ) {}
 }

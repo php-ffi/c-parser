@@ -23,11 +23,11 @@ final class GenericSelectionExpression extends Expression
          * The operand whose type selects the association: an expression, or
          * a type name where it cannot be one (Clang, C2y), `_Generic(int, ...)`
          */
-        public readonly ExpressionInterface|TypeInterface $operand,
+        public ExpressionInterface|TypeInterface $operand,
         /**
          * The associations in the order written
          */
-        public readonly GenericAssociationList $associations,
+        public GenericAssociationList $associations,
         int $offset = 0,
     ) {
         parent::__construct($offset);

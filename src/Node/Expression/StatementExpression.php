@@ -23,7 +23,7 @@ final class StatementExpression extends Expression
          *
          * @var non-empty-string
          */
-        public readonly string $body,
+        public string $body,
         int $offset = 0,
     ) {
         parent::__construct($offset);

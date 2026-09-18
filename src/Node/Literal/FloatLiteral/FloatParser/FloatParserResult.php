@@ -19,26 +19,26 @@ final class FloatParserResult
          * The value rounded to a double, {@see \INF} in case of it is too
          * large for one
          */
-        public readonly float $value,
+        public float $value,
         /**
          * The digits with the point as written, without digit separators
          *
          * @var non-empty-string
          */
-        public readonly string $mantissa,
+        public string $mantissa,
         /**
          * The exponent as written, `0` in case of there is none
          *
          * @var numeric-string
          */
-        public readonly string $exponent,
+        public string $exponent,
         /**
          * The type suffix or {@see null} in case of there is none
          */
-        public readonly ?FloatTypeSuffix $suffix,
+        public ?FloatTypeSuffix $suffix,
         /**
          * Whether the imaginary suffix of GCC is written
          */
-        public readonly bool $isImaginary,
+        public bool $isImaginary,
     ) {}
 }

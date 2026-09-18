@@ -26,12 +26,12 @@ final class QualifiedType extends Type
          *
          * @var non-empty-list<TypeQualifier>
          */
-        public readonly array $qualifiers,
+        public array $qualifiers,
         /**
          * The qualified type, {@see null} in case of no type specifier is
          * written, such as in `const;`
          */
-        public readonly ?TypeInterface $type = null,
+        public ?TypeInterface $type = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

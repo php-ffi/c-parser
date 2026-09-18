@@ -21,7 +21,7 @@ final class IdentifierExpression extends Expression
         /**
          * The name the expression refers to
          */
-        public readonly Identifier $name,
+        public Identifier $name,
         int $offset = 0,
     ) {
         parent::__construct($offset);

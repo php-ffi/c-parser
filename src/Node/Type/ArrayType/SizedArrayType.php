@@ -28,14 +28,14 @@ final class SizedArrayType extends ArrayType
         /**
          * The expression of the size
          */
-        public readonly ExpressionInterface $size,
+        public ExpressionInterface $size,
         /**
          * Whether `static` is written in the brackets: the parameter points
          * to at least the given number of elements. C allows it only in the
          * outermost array of a parameter, but the parser accepts it
          * everywhere and keeps it for a validator.
          */
-        public readonly bool $isStatic = false,
+        public bool $isStatic = false,
         array $qualifiers = [],
         ?AttributeList $attributes = null,
         int $offset = 0,

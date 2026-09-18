@@ -19,7 +19,7 @@ final class AtomicType extends Type
         /**
          * The type made atomic
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

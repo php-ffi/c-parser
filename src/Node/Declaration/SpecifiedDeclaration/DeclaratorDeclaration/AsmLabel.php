@@ -23,7 +23,7 @@ final class AsmLabel extends Node
         /**
          * The name of the symbol
          */
-        public readonly StringLiteral|ConcatenatedStringExpression $name,
+        public StringLiteral|ConcatenatedStringExpression $name,
         int $offset = 0,
     ) {
         parent::__construct($offset);

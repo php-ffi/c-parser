@@ -24,7 +24,7 @@ final class SizeOfTypeExpression extends Expression
         /**
          * The type whose size is taken
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

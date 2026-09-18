@@ -24,11 +24,11 @@ final class CastExpression extends Expression
         /**
          * The type the operand is converted to
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         /**
          * The expression being converted
          */
-        public readonly ExpressionInterface $operand,
+        public ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

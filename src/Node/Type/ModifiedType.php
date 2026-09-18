@@ -27,12 +27,12 @@ final class ModifiedType extends Type
          *
          * @var non-empty-list<TypeModifier>
          */
-        public readonly array $modifiers,
+        public array $modifiers,
         /**
          * The base, {@see null} in case of only the modifiers are written,
          * such as `unsigned` or `long long`
          */
-        public readonly ?TypeInterface $type = null,
+        public ?TypeInterface $type = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

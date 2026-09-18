@@ -21,7 +21,7 @@ final class AlignOfExpression extends Expression
         /**
          * The expression whose alignment is taken
          */
-        public readonly ExpressionInterface $operand,
+        public ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

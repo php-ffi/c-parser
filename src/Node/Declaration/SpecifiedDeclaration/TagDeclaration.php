@@ -30,7 +30,7 @@ final class TagDeclaration extends SpecifiedDeclaration implements RootDeclarati
         /**
          * The declared type
          */
-        public readonly RecordType|EnumType $type,
+        public RecordType|EnumType $type,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

@@ -29,7 +29,7 @@ final class TypeDeclaration extends SpecifiedDeclaration implements RootDeclarat
          * The type of the specifiers, {@see null} in case of no type
          * specifier and no qualifier is written, such as in `static;`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         SpecifierList $specifiers = new SpecifierList([]),
         int $offset = 0,
     ) {

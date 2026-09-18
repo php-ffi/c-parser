@@ -25,7 +25,7 @@ abstract class FloatLiteral extends Literal
      *
      * @var non-empty-string
      */
-    public readonly string $mantissa;
+    public string $mantissa;
 
     /**
      * The exponent, a power of 10 for a decimal constant and of 2 for a
@@ -34,7 +34,7 @@ abstract class FloatLiteral extends Literal
      *
      * @var numeric-string
      */
-    public readonly string $exponent;
+    public string $exponent;
 
     /**
      * @param non-empty-string|null $mantissa the exact digits, {@see null}
@@ -52,20 +52,20 @@ abstract class FloatLiteral extends Literal
          * (`1e-999`) and an approximation for a constant more precise than
          * a double (`0.1dd`, `1.1L`)
          */
-        public readonly float $value,
+        public float $value,
         ?string $mantissa = null,
         ?string $exponent = null,
         /**
          * {@see null} in case of there is no suffix, i.e. the constant is a
          * `double`
          */
-        public readonly ?FloatTypeSuffix $suffix = null,
+        public ?FloatTypeSuffix $suffix = null,
         /**
          * GCC: whether the constant is imaginary, written with the suffix
          * `i` or `j` (`2.0i`, `3j`), its type is then the complex type of
          * the constant
          */
-        public readonly bool $isImaginary = false,
+        public bool $isImaginary = false,
         ?string $raw = null,
         int $offset = 0,
     ) {

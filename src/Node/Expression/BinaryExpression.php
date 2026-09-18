@@ -22,11 +22,11 @@ abstract class BinaryExpression extends Expression
         /**
          * The operand on the left of the operator
          */
-        public readonly ExpressionInterface $left,
+        public ExpressionInterface $left,
         /**
          * The operand on the right of the operator
          */
-        public readonly ExpressionInterface $right,
+        public ExpressionInterface $right,
         int $offset = 0,
     ) {
         parent::__construct($offset);

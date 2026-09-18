@@ -24,11 +24,11 @@ final class CompoundLiteralExpression extends Expression
         /**
          * The type of the object
          */
-        public readonly TypeInterface $type,
+        public TypeInterface $type,
         /**
          * The initializer in braces
          */
-        public readonly InitializerList $initializer,
+        public InitializerList $initializer,
         int $offset = 0,
     ) {
         parent::__construct($offset);

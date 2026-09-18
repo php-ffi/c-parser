@@ -27,7 +27,7 @@ abstract class NodeList extends Node implements
          *
          * @var list<TNode>
          */
-        public readonly array $items,
+        public array $items,
         int $offset = 0,
     ) {
         parent::__construct($offset);
@@ -90,14 +90,39 @@ abstract class NodeList extends Node implements
         return $this->items[$offset] ?? null;
     }
 
+    /**
+     * Replaces the node at the given index, or appends the node to the end
+     * of the list in case of the index is {@see null} or equals the count
+     *
+     * @param int<0, max>|null $offset
+     * @param TNode $value
+     */
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        throw new \RuntimeException('Cannot modify readonly ' . static::class);
+        // @phpstan-ignore-next-line the contract already narrows the offset, the assertion checks a caller that ignores it
+        \assert($offset === null || (\is_int($offset) && $offset >= 0 && $offset <= \count($this->items)));
+
+        if ($offset === null) {
+            $this->items[] = $value;
+
+            return;
+        }
+
+        \array_splice($this->items, $offset, 1, [$value]);
     }
 
+    /**
+     * Removes the node at the given index, the following nodes shift
+     * to the left
+     *
+     * @param int<0, max> $offset
+     */
     public function offsetUnset(mixed $offset): void
     {
-        throw new \RuntimeException('Cannot modify readonly ' . static::class);
+        // @phpstan-ignore-next-line the contract already narrows the offset, the assertion checks a caller that ignores it
+        \assert(\is_int($offset) && $offset >= 0);
+
+        \array_splice($this->items, $offset, 1);
     }
 
     /**

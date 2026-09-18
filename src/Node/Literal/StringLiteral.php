@@ -25,12 +25,12 @@ final class StringLiteral extends Literal
          * becomes UTF-8, an octal or a hexadecimal escape in a narrow one
          * stays a byte, a value that does not fit becomes U+FFFD
          */
-        public readonly string $value,
+        public string $value,
         /**
          * {@see null} in case of there is no prefix, i.e. the literal is an
          * array of `char`
          */
-        public readonly ?EncodingPrefix $prefix = null,
+        public ?EncodingPrefix $prefix = null,
         ?string $raw = null,
         int $offset = 0,
     ) {

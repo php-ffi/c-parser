@@ -23,7 +23,7 @@ final class AttributeDeclaration extends Declaration implements
         /**
          * The attributes in the order written
          */
-        public readonly AttributeList $attributes,
+        public AttributeList $attributes,
         int $offset = 0,
     ) {
         parent::__construct($offset);

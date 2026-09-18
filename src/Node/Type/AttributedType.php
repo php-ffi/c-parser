@@ -25,12 +25,12 @@ final class AttributedType extends Type
         /**
          * The attributes in the order written
          */
-        public readonly AttributeList $attributes,
+        public AttributeList $attributes,
         /**
          * The type the attributes apply to, {@see null} in case of the
          * specifiers give no type, such as in `static (__stdcall *f)(void);`
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         int $offset = 0,
     ) {
         parent::__construct($offset);

@@ -21,7 +21,7 @@ final class MemberDesignator extends Designator
         /**
          * The name of the member
          */
-        public readonly Identifier $member,
+        public Identifier $member,
         int $offset = 0,
     ) {
         parent::__construct($offset);

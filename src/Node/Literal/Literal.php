@@ -22,7 +22,7 @@ abstract class Literal extends Expression implements
          *
          * @var non-empty-string
          */
-        public readonly string $raw,
+        public string $raw,
         int $offset = 0,
     ) {
         parent::__construct($offset);

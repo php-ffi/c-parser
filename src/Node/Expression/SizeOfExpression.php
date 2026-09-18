@@ -18,7 +18,7 @@ final class SizeOfExpression extends Expression
         /**
          * The expression whose size is taken
          */
-        public readonly ExpressionInterface $operand,
+        public ExpressionInterface $operand,
         int $offset = 0,
     ) {
         parent::__construct($offset);

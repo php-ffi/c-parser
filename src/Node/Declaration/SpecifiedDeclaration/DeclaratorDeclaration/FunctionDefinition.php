@@ -34,12 +34,12 @@ final class FunctionDefinition extends DeclaratorDeclaration
          * validator, {@see null} in case of the specifiers give no type and
          * the declarator is a name
          */
-        public readonly ?TypeInterface $type,
+        public ?TypeInterface $type,
         Identifier $name,
         /**
          * The body in braces
          */
-        public readonly FunctionBody $body,
+        public FunctionBody $body,
         ?AttributeList $attributes = null,
         ?AsmLabel $asmLabel = null,
         ?InitializerInterface $initializer = null,

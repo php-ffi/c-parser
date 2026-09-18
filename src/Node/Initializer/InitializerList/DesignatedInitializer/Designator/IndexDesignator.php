@@ -21,7 +21,7 @@ final class IndexDesignator extends Designator
         /**
          * The constant expression of the index
          */
-        public readonly ExpressionInterface $index,
+        public ExpressionInterface $index,
         int $offset = 0,
     ) {
         parent::__construct($offset);
