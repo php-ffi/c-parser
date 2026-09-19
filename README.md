@@ -64,6 +64,9 @@ The small headers for tests are in `tests/resources/headers`.
 
 ## Extensions
 
+List of supported keywords and instructions defined by various compilers (outside 
+the ISO/IEC 9899:2024 standard).
+
 | Extension                 | Example                                 | From       |
 |---------------------------|-----------------------------------------|------------|
 | Attributes                | `__attribute__((packed))`               | GCC, Clang |
