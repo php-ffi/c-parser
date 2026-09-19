@@ -36,6 +36,32 @@ echo $declarations[0]->name->value; // "move"
 An invalid header throws `FFI\Parser\Exception\ParserException`, which points
 to the error in the source.
 
+## Benchmarks
+
+| Name              | Speed  | AST Nodes | Header Size |
+|-------------------|--------|-----------|-------------|
+| bzip2.h           | 0.007s | 3869      | 24.1 KiB    |
+| cjson.h           | 0.003s | 1556      | 6.7 KiB     |
+| egl.h             | 0.004s | 2694      | 16.4 KiB    |
+| lua.h             | 0.013s | 6916      | 39.3 KiB    |
+| sqlite3.h         | 0.017s | 8944      | 41.6 KiB    |
+| zlib-no-markers.h | 0.011s | 6367      | 33.5 KiB    |
+| zlib.h            | 0.012s | 6367      | 50.4 KiB    |
+| zstd.h            | 0.004s | 2033      | 18.6 KiB    |
+| glfw.h            | 0.185s | 81865     | 344.4 KiB   |
+| vulkan.h          | 0.311s | 117375    | 1.05 MiB    |
+| windows.h         | 0.396s | 140673    | 1.05 MiB    |
+
+The small headers for tests are in `tests/resources/headers`.
+
+> Please note that these should not be considered benchmarks; results may vary 
+> depending on the environment and the PC being used. The measurements were 
+> taken in the following environment:
+> - PHP 8.5 (with OPCache, with JIT 1205)
+> - OS:  Windows 11
+> - CPU: AMD Ryzen 9 5900X
+> - SSD: SanDisk Ultra II (240GB)
+
 ## Extensions
 
 | Extension                 | Example                                 | From       |
