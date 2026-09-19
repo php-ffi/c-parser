@@ -3,13 +3,7 @@
     "type": "library",
     "description": "PHP FFI-compatible ISO/IEC 9899:2024 (С23) parser implementation",
     "license": "MIT",
-    "keywords": [
-        "ffi",
-        "reflection",
-        "parser",
-        "c",
-        "ast"
-    ],
+    "keywords": ["php", "ffi", "php-ffi", "parser", "c", "c23", "c23-parser", "c-header-parser", "iso-9899", "ffi-bindings", "ast"],
     "support": {
         "source": "https://github.com/php-ffi/c-parser",
         "issues": "https://github.com/php-ffi/c-parser/issues",
