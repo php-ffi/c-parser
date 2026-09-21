@@ -86,7 +86,6 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
     $declarations = [$children[2]($children[0], $children[1], $offset, null, $initializer)];
 
     for ($i = $first, $count = \count($children); $i < $count; ++$i) {
-        // The other declarators of the list
         \assert($children[$i] instanceof \Closure);
 
         $declarations[] = $children[$i]($children[0], $children[1], $offset);

@@ -127,7 +127,6 @@ final class IntParser
     private static function toDecimal(string $digits, IntBase $base): string
     {
         if ($base === IntBase::Decimal) {
-            // Decimal digits are the decimal number itself
             \assert(\is_numeric($digits));
 
             return $digits;

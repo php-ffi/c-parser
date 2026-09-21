@@ -12539,7 +12539,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             ?Type\TypeInterface $type,
             ?Attribute\AttributeList $after = null,
         ) use ($children, $last, $isStatic, $qualifiers, $attributes, $offset): Type\TypeInterface {
-            // The attributes after the brackets follow the ones in them
             foreach ($after ?? [] as $attribute) {
                 $attributes[] = $attribute;
             }
@@ -12576,7 +12575,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             ?Type\TypeInterface $type,
             ?Attribute\AttributeList $after = null,
         ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
-            // The attributes after the brackets follow the ones in them
             foreach ($after ?? [] as $attribute) {
                 $attributes[] = $attribute;
             }
@@ -12611,7 +12609,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             ?Type\TypeInterface $type,
             ?Attribute\AttributeList $after = null,
         ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
-            // The attributes after the brackets follow the ones in them
             foreach ($after ?? [] as $attribute) {
                 $attributes[] = $attribute;
             }
@@ -13480,7 +13477,6 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         $declarations = [$children[2]($children[0], $children[1], $offset, null, $initializer)];
 
         for ($i = $first, $count = \count($children); $i < $count; ++$i) {
-            // The other declarators of the list
             \assert($children[$i] instanceof \Closure);
 
             $declarations[] = $children[$i]($children[0], $children[1], $offset);

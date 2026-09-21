@@ -363,7 +363,6 @@ SizedArrayDeclarator -> {
         ?Type\TypeInterface $type,
         ?Attribute\AttributeList $after = null,
     ) use ($children, $last, $isStatic, $qualifiers, $attributes, $offset): Type\TypeInterface {
-        // The attributes after the brackets follow the ones in them
         foreach ($after ?? [] as $attribute) {
             $attributes[] = $attribute;
         }
@@ -405,7 +404,6 @@ UnspecifiedSizeArrayDeclarator -> {
         ?Type\TypeInterface $type,
         ?Attribute\AttributeList $after = null,
     ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
-        // The attributes after the brackets follow the ones in them
         foreach ($after ?? [] as $attribute) {
             $attributes[] = $attribute;
         }
@@ -442,7 +440,6 @@ IncompleteArrayDeclarator -> {
         ?Type\TypeInterface $type,
         ?Attribute\AttributeList $after = null,
     ) use ($qualifiers, $attributes, $offset): Type\TypeInterface {
-        // The attributes after the brackets follow the ones in them
         foreach ($after ?? [] as $attribute) {
             $attributes[] = $attribute;
         }
