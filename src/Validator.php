@@ -12,9 +12,8 @@ use FFI\Parser\Validator\Violation;
 /**
  * Runs the validators over the syntax tree.
  *
- * The tree is walked once, every node is visited once, even a node shared
- * by several declarations. Each validator is given each node, in the order
- * the validators are listed.
+ * Each validator is given every node once, even a node shared by several
+ * declarations, in the order the validators are listed.
  */
 final class Validator
 {

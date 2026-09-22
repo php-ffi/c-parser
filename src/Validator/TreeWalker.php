@@ -8,8 +8,7 @@ use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\NodeInterface;
 
 /**
- * A single walk of the validators over the syntax tree, along with what the
- * walk has visited and found so far.
+ * A single walk of the validators over the syntax tree.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser
