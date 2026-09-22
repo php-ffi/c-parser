@@ -10,8 +10,7 @@ use FFI\Parser\Node\NodeList;
 /**
  * Initializer in braces (the braced initializer of C23), its items in the
  * order written: `{ 1, .b = 2, [3] = { 4 } }`. The braces may be empty,
- * `{}`. Unlike the other lists it starts where its brace does, as the brace
- * is a part of it.
+ * `{}`. Unlike the other lists it starts where its opening brace does.
  *
  * @template-extends NodeList<InitializerInterface|DesignatedInitializer>
  *
