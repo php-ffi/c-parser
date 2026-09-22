@@ -9,9 +9,8 @@ use FFI\Parser\Node\Expression\CallExpression\ArgumentList;
 /**
  * Function call: `f(x, y)`.
  *
- * Without a table of the declared names, `f()` and `f(x)` where an
- * expression and a type name are both allowed (`sizeof`, `typeof`) are a
- * call, not a function type.
+ * `f()` and `f(x)` where an expression and a type name are both allowed
+ * (`sizeof`, `typeof`) are a call, not a function type.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.3.3 Function calls
  */
