@@ -21,10 +21,6 @@ final class HexFloatLiteral extends FloatLiteral
      */
     private const MAX_SIGNIFICAND = 2 ** 53;
 
-    /**
-     * Scales the value by powers of two to a whole number, the mantissa
-     * written without a point.
-     */
     protected function splitValue(): array
     {
         $mantissa = $this->value;

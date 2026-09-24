@@ -21,7 +21,6 @@ final class BaseConverter
 
     /**
      * Returns the fastest converter available in the current environment.
-     * The choice is made once.
      */
     public static function createDefault(): BaseConverterInterface
     {
@@ -34,7 +33,8 @@ final class BaseConverter
     }
 
     /**
-     * A facade method for the {@see BaseConverterInterface::toDecimal()}
+     * Converts the digits of an integer constant in the given base into the
+     * exact decimal string.
      *
      * @param non-empty-string $digits
      * @param int<2, 36> $base

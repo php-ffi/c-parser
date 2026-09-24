@@ -150,10 +150,6 @@ final class FloatParser
 
     /**
      * Rounds `mantissa * 2^exponent` to the nearest double, ties to even.
-     *
-     * A normal value is rounded once, by the conversion of the mantissa. The
-     * mantissa of a subnormal one is rounded to its significant bits before
-     * the conversion, which then keeps it exact.
      */
     private static function toFloat(int $mantissa, int $exponent): float
     {
@@ -194,10 +190,8 @@ final class FloatParser
     }
 
     /**
-     * Multiplies the value by the power of two. The power alone underflows
-     * below `0x1p-1074` while the product does not (`0x1.00000000000010p-1022`
-     * is scaled by `2^-1078`), so a small power is taken in two steps. A large
-     * one overflows to {@see \INF} along with the product.
+     * Multiplies the value by the power of two, {@see \INF} in case of the
+     * product overflows.
      */
     private static function scale(float $value, int $exponent): float
     {

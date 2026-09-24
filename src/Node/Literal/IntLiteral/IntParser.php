@@ -53,8 +53,8 @@ final class IntParser
     }
 
     /**
-     * The `i` of an MSVC suffix (`i64`) is followed by digits, the one of an
-     * imaginary constant is not.
+     * Whether the suffix makes the constant imaginary, the `i` of an MSVC
+     * suffix such as `i64` aside.
      */
     private static function isImaginary(string $suffix): bool
     {

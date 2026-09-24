@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal\IntLiteral\BaseConverter;
 
 /**
- * Converts the base by the `ext-bcmath` extension, accumulating the digits
- * by the Horner scheme.
+ * Converts the base by the `ext-bcmath` extension.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
