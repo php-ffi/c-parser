@@ -53,10 +53,6 @@ final class CharLiteralTest extends TestCase
         self::assertSame(42, CharLiteral::parse("'a'", 42)->offset);
     }
 
-    /**
-     * A constant built without the source text gets one that the parser
-     * accepts and that is parsed back into the same constant.
-     */
     public function testBuiltConstantGetsValidSourceText(): void
     {
         $raw = (new CharLiteral("'\\\n", EncodingPrefix::Wide))->raw;

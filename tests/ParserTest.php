@@ -35,8 +35,6 @@ final class ParserTest extends TestCase
     private const MISSING_FILE = __DIR__ . '/resources/missing.h';
 
     /**
-     * Syntactically valid headers.
-     *
      * @return iterable<non-empty-string, array{string}>
      */
     public static function validHeadersDataProvider(): iterable
@@ -80,9 +78,6 @@ final class ParserTest extends TestCase
     }
 
     /**
-     * Syntactically invalid headers, along with the offset and the text of
-     * the fragment the parser has failed at, empty at the end of input.
-     *
      * @return iterable<non-empty-string, array{string, int<0, max>, string}>
      */
     public static function syntaxErrorsDataProvider(): iterable
@@ -186,9 +181,6 @@ final class ParserTest extends TestCase
     }
 
     /**
-     * A failure of the lexer that is not a defect of the code, such as a
-     * limit of PCRE, leaves the parser as an {@see InternalException}.
-     *
      * @param non-empty-string $method
      */
     #[DataProvider('methodsDataProvider')]
@@ -279,11 +271,6 @@ final class ParserTest extends TestCase
         ];
     }
 
-    /**
-     * Alternatives of the grammar that share their start parse it once
-     * again, which makes the time grow exponentially with the depth of the
-     * nesting. A deep header must still be parsed at once.
-     */
     #[DataProvider('deeplyNestedHeadersDataProvider')]
     public function testDeeplyNestedHeaderIsParsedQuickly(string $code, bool $isValid): void
     {

@@ -26,12 +26,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the constant expressions of `resources/grammar/expressions.pp3`. An
- * expression is parsed as the condition of a `static_assert` and compared as
- * an S-expression with the offset of every node: `(+ 1@14 2@18)@14`, the
- * condition starts at the offset 14, right after `static_assert(`.
- */
 #[CoversNothing]
 final class ExpressionsTest extends TestCase
 {
@@ -60,7 +54,6 @@ final class ExpressionsTest extends TestCase
         yield 'nullptr' => ['nullptr', 'nullptr@14'];
         yield 'imaginary constant' => ['2.0i', '2.0i@14'];
 
-        // Precedence and associativity
         yield 'left associativity' => ['1 - 2 - 3', '(- (- 1@14 2@18)@14 3@22)@14'];
         yield 'multiplication binds tighter' => ['1 + 2 * 3', '(+ 1@14 (* 2@18 3@22)@18)@14'];
         yield 'parentheses override precedence' => ['(1 + 2) * 3', '(* (paren (+ 1@15 2@19)@15)@14 3@24)@14'];
@@ -78,12 +71,10 @@ final class ExpressionsTest extends TestCase
         yield 'comma between ? and :' => ['a ? b, c : d', '(? a@14 (, b@18 c@21)@18 d@25)@14'];
         yield 'comma in parentheses' => ['(a, b, c)', '(paren (, (, a@15 b@18)@15 c@21)@15)@14'];
 
-        // Unary operators
         yield 'nested unary operators' => ['-~!x', '(-u (~u (!u x@17)@16)@15)@14'];
         yield 'address of an element' => ['&arr[2]', '(&u ([] arr@15 2@19)@15)@14'];
         yield 'dereference of a member' => ['*p->q', '(*u (-> p@15 q@18)@15)@14'];
 
-        // Cast against parentheses
         yield 'cast of a name' => ['(T)x', '(cast T@15 x@17)@14'];
         yield 'cast of a constant' => ['(T)1', '(cast T@15 1@17)@14'];
         yield 'cast of a parenthesized operand' => ['(T)(x)', '(cast T@15 (paren x@18)@17)@14'];
@@ -122,7 +113,6 @@ final class ExpressionsTest extends TestCase
         yield 'cast to a type with a storage class' => ['(static int)1', '(cast {static@15 int@22}@15 1@26)@14'];
         yield 'sizeof of an alignment specifier alone' => ['sizeof(alignas(8))', '(sizeof {alignas(8@29)@21 _}@21)@14'];
 
-        // Postfix operators
         yield 'chain of postfix operators' => ['p->m.n[2]', '([] (. (-> p@14 m@17)@14 n@19)@14 2@21)@14'];
         yield 'digraph subscript' => ['a<:1:>', '([] a@14 1@17)@14'];
         yield 'comma in a subscript' => ['a[1, 2]', '([] a@14 (, 1@16 2@19)@16)@14'];
@@ -134,7 +124,6 @@ final class ExpressionsTest extends TestCase
         yield 'call of a parenthesized name' => ['(f)()', '(call (paren f@15)@14)@14'];
         yield 'call in a sum' => ['1 + f(2) * 3', '(+ 1@14 (* (call f@18 2@20)@18 3@25)@18)@14'];
 
-        // All the levels of precedence are one rule
         yield 'every level of precedence' => [
             'a || b && c | d ^ e & f == g < h << i + j * k',
             '(|| a@14 (&& b@19 (| c@24 (^ d@28 (& e@32 (== f@36 (< g@41 (<< h@45 (+ i@50 (* j@54 k@58)@54)@50)@45)'
@@ -150,7 +139,6 @@ final class ExpressionsTest extends TestCase
             '(+ a@14 (* (paren b@19)@18 c@24)@18)@14',
         ];
 
-        // sizeof and alignof
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
         yield 'sizeof of a type' => ['sizeof(T)', '(sizeof T@21)@14'];
         yield 'sizeof of a subscript in parentheses' => ['sizeof(x)[0]', '(sizeof ([] (paren x@21)@20 0@24)@20)@14'];
@@ -191,7 +179,6 @@ final class ExpressionsTest extends TestCase
             '(sizeof (fn T@21 ((ptr U@23)@25@23))@22)@14',
         ];
 
-        // Generic selection
         yield 'generic selection' => [
             '_Generic(x, int: 1, default: 0)',
             '(_Generic x@23 int@26:1@31@26 default:0@43@34)@14',
@@ -206,12 +193,10 @@ final class ExpressionsTest extends TestCase
             '(cast T@15 (_Generic x@26 default:0@38@29)@17)@14',
         ];
 
-        // Statement expressions
         yield 'statement expression' => ['({ int y = 1; y; })', '({ int y = 1; y; })@14'];
         yield 'cast of a statement expression' => ['(T)({ 1; })', '(cast T@15 ({ 1; })@17)@14'];
         yield 'statement expression in a sum' => ['1 + ({ 2; })', '(+ 1@14 ({ 2; })@18)@14'];
 
-        // Built-in functions
         yield 'offsetof' => [
             '__builtin_offsetof(struct S, a)',
             '(__builtin_offsetof struct S@33 a@43)@14',
@@ -239,7 +224,6 @@ final class ExpressionsTest extends TestCase
             '(cast T@15 (__builtin_offsetof U@36 a@39)@17)@14',
         ];
 
-        // Every operator
         foreach (NodePrinter::BINARY_OPERATORS as $operator) {
             yield 'binary ' . $operator => $operator === ','
                 ? ['(a , b)', '(paren (, a@15 b@19)@15)@14']
@@ -257,9 +241,6 @@ final class ExpressionsTest extends TestCase
         self::assertSame($expected, NodePrinter::printWithOffsets(self::parseCondition($expression)));
     }
 
-    /**
-     * Checks the class of the operand, which the printer does not show.
-     */
     public function testLoneNameInSizeofIsATypeName(): void
     {
         $node = self::parseCondition('sizeof(T)');
@@ -268,9 +249,6 @@ final class ExpressionsTest extends TestCase
         self::assertInstanceOf(NamedType::class, $node->type);
     }
 
-    /**
-     * The printer shows the place of the name, not of the identifier in it
-     */
     public function testNameInAnExpressionRefersToTheIdentifier(): void
     {
         $node = self::parseCondition('(a)');

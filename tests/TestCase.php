@@ -13,10 +13,6 @@ use PHPUnit\Framework\TestCase as BaseTestCase;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Parses a header that is expected to be valid. The invariant of the
-     * parser is checked along the way: a header is syntactically valid
-     * exactly when it can be parsed.
-     *
      * @return list<RootDeclarationInterface>
      */
     protected static function parse(string $code): array
@@ -29,8 +25,6 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Parses a header of a single declaration of the given class.
-     *
      * @template TDeclaration of RootDeclarationInterface
      * @param class-string<TDeclaration> $class
      * @return TDeclaration
@@ -46,9 +40,6 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Checks that a header is rejected at the given fragment, empty at the
-     * end of input. The invariant of the parser is checked along the way.
-     *
      * @param int<0, max> $offset
      */
     protected static function assertSyntaxError(string $code, int $offset, string $fragment): void
@@ -73,9 +64,6 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
-     * Lists every node of the tree as its short class name and offset, in
-     * the order of the properties, the ones of a base class first.
-     *
      * @return list<non-empty-string>
      */
     protected static function listOffsets(mixed $value): array

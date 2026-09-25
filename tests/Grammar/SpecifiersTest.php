@@ -11,12 +11,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the declaration specifiers of `resources/grammar/specifiers.pp3`. A
- * declaration without declarators is compared as an S-expression:
- * `(type static [const (unsigned int)])` is a declaration of a qualified type
- * of a modified one with the `static` specifier.
- */
 #[CoversNothing]
 final class SpecifiersTest extends TestCase
 {
@@ -103,7 +97,6 @@ final class SpecifiersTest extends TestCase
         yield 'signed unsigned int' => ['signed unsigned int', '(signed unsigned int)'];
         yield 'short double' => ['short double', '(short double)'];
 
-        // Compiler extensions
         yield 'spellings of GCC' => [
             '__const __volatile__ __signed__ __complex__ double',
             '[const volatile (signed _Complex double)]',
@@ -127,7 +120,6 @@ final class SpecifiersTest extends TestCase
      */
     public static function declarationsDataProvider(): iterable
     {
-        // The specifiers that are not a part of the type
         yield 'storage class' => ['static int;', '(type static int)'];
         yield 'every storage class' => [
             'typedef extern static thread_local _Thread_local auto register constexpr int;',
@@ -146,7 +138,6 @@ final class SpecifiersTest extends TestCase
         ];
         yield 'storage class without a type' => ['static;', '(type static _)'];
 
-        // Tags
         yield 'structure reference' => ['struct S;', '(tag struct S)'];
         yield 'structure' => ['struct S { int a; };', '(tag struct S { int a })'];
         yield 'anonymous structure' => ['struct { int a; };', '(tag struct _ { int a })'];
@@ -202,8 +193,6 @@ final class SpecifiersTest extends TestCase
             '(tag enum E : {alignas(4) int} { A })',
         ];
 
-        // A tag wrapped into another type gives the general declaration,
-        // even if it declares the tag along the way
         yield 'qualified reference' => ['const struct S;', '(type [const struct S])'];
         yield 'qualified structure' => ['const struct S { int a; };', '(type [const struct S { int a }])'];
         yield 'qualifier after the structure' => ['struct S { int a; } const;', '(type [const struct S { int a }])'];
@@ -271,8 +260,6 @@ final class SpecifiersTest extends TestCase
     }
 
     /**
-     * Every node of the declaration starts at its first token.
-     *
      * @param list<non-empty-string> $expected
      */
     #[DataProvider('offsetsDataProvider')]

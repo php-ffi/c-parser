@@ -11,11 +11,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the external declarations of `resources/grammar/declarations.pp3`:
- * a header is compared as the list of its declarations printed as
- * S-expressions, `(variable static (ptr int) p = 0)`.
- */
 #[CoversNothing]
 final class DeclarationsTest extends TestCase
 {
@@ -63,7 +58,6 @@ final class DeclarationsTest extends TestCase
      */
     public static function declaratorDeclarationsDataProvider(): iterable
     {
-        // The kind of the declaration
         yield 'variable' => ['extern const char *const names[16];', [
             '(variable extern (array [const (ptr [const char])] 16) names)',
         ]];
@@ -94,7 +88,6 @@ final class DeclarationsTest extends TestCase
             '(variable typeof((fn int (void))) f)',
         ]];
 
-        // Several declarators
         yield 'several declarators' => ['int a, *b, c[3];', [
             '(variable int a)',
             '(variable (ptr int) b)',
@@ -115,7 +108,6 @@ final class DeclarationsTest extends TestCase
             '(typedef typedef (ptr void) G)',
         ]];
 
-        // Tags with declarators are objects
         yield 'structure defined in a declaration' => ['struct S { int a; } a, *b;', [
             '(variable struct S { int a } a)',
             '(variable (ptr struct S { int a }) b)',
@@ -127,7 +119,6 @@ final class DeclarationsTest extends TestCase
         yield 'enumeration with an underlying type' => ['enum E : int e;', ['(variable enum E : int e)']];
         yield 'atomic type' => ['_Atomic(int) x;', ['(variable _Atomic(int) x)']];
 
-        // The typedef name rule
         yield 'name after a modifier' => ['unsigned T;', ['(variable (unsigned _) T)']];
         yield 'typedef name after a modifier' => ['unsigned __int64 x;', ['(variable (unsigned __int64) x)']];
         yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', [
@@ -156,7 +147,6 @@ final class DeclarationsTest extends TestCase
         yield 'name before an initializer without a type' => ['static x = 1;', ['(variable static _ x = 1)']];
         yield 'inferred type' => ['constexpr auto n = 1;', ['(variable constexpr auto _ n = 1)']];
 
-        // Initializers
         yield 'constant expression' => ['constexpr int N = 10;', ['(variable constexpr int N = 10)']];
         yield 'conditional expression' => ['int x = a ? b : c;', ['(variable int x = (? a b c))']];
         yield 'parenthesized comma expression' => ['int x = (1, 2);', ['(variable int x = (paren (, 1 2)))']];
@@ -182,7 +172,6 @@ final class DeclarationsTest extends TestCase
             '(variable int c = {2})',
         ]];
 
-        // Compound literals
         yield 'compound literal of an array' => ['int *p = (int[]){1, 2};', [
             '(variable (ptr int) p = (compound (array int) {1, 2}))',
         ]];
@@ -211,7 +200,6 @@ final class DeclarationsTest extends TestCase
             '(variable int x = (compound {static int} {1}))',
         ]];
 
-        // Function definitions, the body keeps its text
         yield 'function definition' => ['int f(void) { return 0; }', [
             '(definition (fn int (void)) f { return 0; })',
         ]];
@@ -234,7 +222,6 @@ final class DeclarationsTest extends TestCase
         ]];
         yield 'body after a declarator of no function' => ['int x { 1 }', ['(definition int x { 1 })']];
 
-        // Extensions of GCC
         yield 'assembler label' => ['int f(void) __asm__("_f");', ['(function (fn int (void)) f asm("_f"))']];
         yield 'assembler label without underscores' => ['int f(void) asm("_f");', [
             '(function (fn int (void)) f asm("_f"))',
@@ -259,7 +246,6 @@ final class DeclarationsTest extends TestCase
             '(typedef typedef (long long _) T)',
         ]];
 
-        // Semantically invalid, but syntactically valid
         yield 'typedef with an initializer' => ['typedef int x = 1;', ['(typedef typedef int x = 1)']];
         yield 'typedef with another storage class' => ['typedef static int x = 1;', [
             '(typedef typedef static int x = 1)',
@@ -331,9 +317,6 @@ final class DeclarationsTest extends TestCase
     }
 
     /**
-     * Every declaration starts at its first specifier, and every node of an
-     * initializer at its first token.
-     *
      * @param list<non-empty-string> $expected
      */
     #[DataProvider('offsetsDataProvider')]

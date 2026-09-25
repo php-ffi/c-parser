@@ -9,14 +9,6 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 
-/**
- * Checks the grammar against `FFI::cdef()`: whatever the parser of PHP FFI
- * accepts is accepted by this one too. Only `\FFI\ParserException` means
- * the code is rejected, any other `\FFI\Exception` is the failure to find a
- * function without its library. The parser of PHP FFI checks some semantics
- * too (the attributes it knows, the types declared) and rejects more than a
- * syntax error, most headers of `gcc -E` among them.
- */
 #[CoversNothing]
 #[RequiresPhpExtension('ffi')]
 final class FFICompatibilityTest extends TestCase
@@ -62,7 +54,6 @@ final class FFICompatibilityTest extends TestCase
     #[DataProvider('headersDataProvider')]
     public function testCodeAcceptedByPhpFfiIsAccepted(string $code): void
     {
-        // PHP FFI does not know the line markers of the preprocessor
         $stripped = (string) \preg_replace('/^[ \t]*#.*$/m', '', $code);
 
         try {
@@ -70,7 +61,6 @@ final class FFICompatibilityTest extends TestCase
         } catch (\FFI\ParserException) {
             self::markTestSkipped('PHP FFI rejects the code');
         } catch (\FFI\Exception) {
-            // Parsed, a function cannot be resolved without its library
         }
 
         self::parse($stripped);

@@ -33,8 +33,6 @@ final class SyntaxErrorExceptionTest extends TestCase
     }
 
     /**
-     * Headers along with the way their failure is printed, up to the trace.
-     *
      * @return iterable<non-empty-string, array{string, string}>
      */
     public static function renderedExceptionsDataProvider(): iterable
@@ -117,10 +115,6 @@ final class SyntaxErrorExceptionTest extends TestCase
         self::assertStringNotContainsString(' --> ', (string) self::catchSyntaxErrorException('int a'));
     }
 
-    /**
-     * A stream closed after the parsing is printed with the contents the
-     * parser has read.
-     */
     public function testExceptionOfClosedStreamIsRenderedWithTheSnippet(): void
     {
         $stream = \fopen('php://memory', 'w+b');

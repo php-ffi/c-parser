@@ -10,13 +10,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the grammar against the headers of real libraries in
- * `tests/resources/headers`: the output of `gcc -E` (with the line markers
- * and, for zlib, without them) on Ubuntu 24.04 with gcc 13, of libraries
- * under permissive licenses. Every header is parsed, the number of the
- * declarations at file scope is the one that has been counted once.
- */
 #[CoversNothing]
 final class HeadersTest extends TestCase
 {
@@ -47,10 +40,6 @@ final class HeadersTest extends TestCase
         self::assertCount($declarations, self::parse(self::read($file)));
     }
 
-    /**
-     * The trees are compared without the whitespace: `gcc -E -P` also drops
-     * the empty lines, which the bodies of the functions keep as text.
-     */
     public function testLineMarkersDoNotChangeTheTree(): void
     {
         $print = static fn(string $file): array => \array_map(

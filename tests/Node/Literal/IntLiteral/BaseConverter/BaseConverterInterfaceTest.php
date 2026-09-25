@@ -13,10 +13,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 
-/**
- * Every converter goes through the same numbers and has to give the same
- * results.
- */
 #[CoversClass(GmpBaseConverter::class)]
 #[CoversClass(BcMathBaseConverter::class)]
 #[CoversClass(NativeBaseConverter::class)]
@@ -51,7 +47,6 @@ final class BaseConverterInterfaceTest extends TestCase
                 . '47622016841194629645353280137831435903171972747493376',
         ];
 
-        // Numbers around the size of a PHP integer and a limb
         yield '15 hexadecimal digits' => [\str_repeat('F', 15), 16, '1152921504606846975'];
         yield '16 hexadecimal digits' => [\str_repeat('F', 16), 16, '18446744073709551615'];
         yield '21 octal digits' => [\str_repeat('7', 21), 8, '9223372036854775807'];
@@ -62,7 +57,6 @@ final class BaseConverterInterfaceTest extends TestCase
         yield '13 digits in base 36' => [\str_repeat('z', 13), 36, '170581728179578208255'];
         yield 'leading zeros do not count' => [\str_repeat('0', 20) . \str_repeat('F', 15), 16, '1152921504606846975'];
 
-        // Bases that C has no constants in
         yield 'base 3' => ['2101', 3, '64'];
         yield 'base 7' => ['666', 7, '342'];
         yield 'base 10' => ['00123', 10, '123'];

@@ -14,11 +14,6 @@ use Phplrt\Source\StringSource;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the lexemes of `resources/grammar/lexemes.pp3`. The lexer is built
- * from the grammar, the generated parser is kept equal to it by CI
- * (`composer grammar:build` and `git diff`).
- */
 #[CoversNothing]
 final class LexemesTest extends TestCase
 {
@@ -287,7 +282,6 @@ final class LexemesTest extends TestCase
         ];
         yield 'lone hash at the beginning of a line is a directive' => ['#', [['T_DIRECTIVE', '#']]];
 
-        // A number of the preprocessor that is no constant is a single token
         foreach ([
             '08', '09', '0b2', '0b', '0x', '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b', '1.5ff', '1.5fl', '1.5dF',
             '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8', '0xE+1', '10.13.4', '.5.5',
@@ -301,8 +295,6 @@ final class LexemesTest extends TestCase
         ]];
         yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['T_INVALID_CHAR_LITERAL', "'"]]];
 
-        // A character constant or a string literal that is not closed or holds
-        // an unknown escape sequence is a single token up to the end of the line
         foreach (["'1", "''", "'a", "'\\q'", "'ab\\", "u8'x"] as $fragment) {
             yield 'invalid character ' . $fragment => [$fragment, [['T_INVALID_CHAR_LITERAL', $fragment]]];
         }

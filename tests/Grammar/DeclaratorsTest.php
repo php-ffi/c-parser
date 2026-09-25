@@ -15,13 +15,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the declarators and the type names of
- * `resources/grammar/declarators.pp3`. A declarator is checked as a member
- * of a structure, which needs no other node around it, and a type name as
- * the operand of `sizeof`. The declared type is compared as an S-expression:
- * `(ptr (fn int (int)))` is a pointer to a function.
- */
 #[CoversNothing]
 final class DeclaratorsTest extends TestCase
 {
@@ -43,7 +36,6 @@ final class DeclaratorsTest extends TestCase
         yield 'atomic pointer' => ['int *_Atomic p;', '[_Atomic (ptr int)] p'];
         yield 'pointer to a qualified type' => ['const int *p;', '(ptr [const int]) p'];
 
-        // Arrays
         yield 'array' => ['int a[3];', '(array int 3) a'];
         yield 'array of arrays' => ['int a[2][3];', '(array (array int 3) 2) a'];
         yield 'array of pointers' => ['int *a[3];', '(array (ptr int) 3) a'];
@@ -64,7 +56,6 @@ final class DeclaratorsTest extends TestCase
         yield 'restrict without a size' => ['int a[restrict];', '(array int restrict) a'];
         yield 'atomic unspecified size' => ['int a[_Atomic *];', '(array int _Atomic *) a'];
 
-        // Functions
         yield 'function without parameters' => ['int f();', '(fn int ()) f'];
         yield 'function with void' => ['int f(void);', '(fn int (void)) f'];
         yield 'variadic function without parameters' => ['int f(...);', '(fn int (...)) f'];
@@ -105,14 +96,12 @@ final class DeclaratorsTest extends TestCase
             "(fn int (\xC3\x84 a, (ptr char) \xC3\x96)) f",
         ];
 
-        // Bit-fields
         yield 'bit-field' => ['int a : 3;', 'int a:3'];
         yield 'unnamed bit-field' => ['int : 3;', 'int _:3'];
         yield 'pointer bit-field' => ['int *a : 3;', '(ptr int) a:3'];
         yield 'parenthesized bit-field name' => ['int (a) : 3;', 'int a:3'];
         yield 'unnamed bit-field after a pointer' => ['int *a, : 3;', '(ptr int) a int _:3'];
 
-        // Semantically invalid, but syntactically valid
         yield 'function returning an array' => ['int f()[3];', '(fn (array int 3) ()) f'];
         yield 'function returning a function' => ['int f()(int);', '(fn (fn int (int)) ()) f'];
         yield 'array of functions' => ['int a[3](int);', '(array (fn int (int)) 3) a'];
@@ -198,8 +187,6 @@ final class DeclaratorsTest extends TestCase
         yield 'atomic type specifier' => ['_Atomic(int (*)(void));', '(type _Atomic((ptr (fn int (void)))))'];
         yield 'typeof of an array without a size' => ['typeof(T[]);', '(type typeof((array T)))'];
 
-        // A type name that reads as an expression is the expression, where
-        // the expression is allowed too
         yield 'typeof of a subscript' => ['typeof(T[3]);', '(type typeof(([] T 3)))'];
         yield 'typeof of a product' => ['typeof(a * (b));', '(type typeof((* a (paren b))))'];
         yield 'typeof of a call without arguments' => ['typeof(f());', '(type typeof((call f)))'];
@@ -212,9 +199,6 @@ final class DeclaratorsTest extends TestCase
         yield 'atomic array of a typedef name' => ['_Atomic(T[3]);', '(type _Atomic((array T 3)))'];
     }
 
-    /**
-     * Every specifier with a type name accepts an abstract declarator.
-     */
     #[DataProvider('specifiersWithTypeNamesDataProvider')]
     public function testTypeNameOfSpecifierIsParsed(string $code, string $expected): void
     {
@@ -246,10 +230,6 @@ final class DeclaratorsTest extends TestCase
         yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof (paren ([] T 3)))'];
     }
 
-    /**
-     * A type name that starts with an identifier and reads as an expression
-     * as well is read as the expression, where the expression is allowed.
-     */
     #[DataProvider('typeNamesReadAsExpressionsDataProvider')]
     public function testTypeNameThatReadsAsAnExpressionIsReadAsTheExpression(string $code, string $expected): void
     {
@@ -280,10 +260,6 @@ final class DeclaratorsTest extends TestCase
         yield 'atomic array of a typedef name' => ['sizeof(_Atomic(T[3]))', '(sizeof _Atomic((array T 3)))'];
     }
 
-    /**
-     * A type name that cannot be an expression stays a type name, and so
-     * does any type name where only a type name is allowed.
-     */
     #[DataProvider('typeNamesReadAsTypesDataProvider')]
     public function testTypeNameThatCannotBeAnExpressionIsReadAsTheType(string $code, string $expected): void
     {
@@ -335,9 +311,6 @@ final class DeclaratorsTest extends TestCase
     }
 
     /**
-     * A type built by a declarator starts at its own token: the asterisk,
-     * the bracket or the parenthesis.
-     *
      * @param list<non-empty-string> $expected
      */
     #[DataProvider('offsetsDataProvider')]
@@ -375,8 +348,6 @@ final class DeclaratorsTest extends TestCase
         yield 'abstract bit-field' => ['struct S { int * : 3; };', 17, ':'];
         yield 'name in a type name' => ['static_assert(sizeof(int x));', 25, 'x'];
 
-        // A type name that reads as an expression is the expression in a
-        // cast, and the cast to an array or a function is lost with it
         yield 'cast to an array of a typedef name' => ['static_assert((T[3])x);', 20, 'x'];
         yield 'cast to a function of a typedef name' => ['static_assert((T *(U))x);', 22, 'x'];
     }

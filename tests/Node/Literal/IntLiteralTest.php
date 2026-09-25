@@ -234,10 +234,6 @@ final class IntLiteralTest extends TestCase
         yield 'imaginary' => [new DecIntLiteral(3, suffix: IntTypeSuffix::Long, isImaginary: true), '3li'];
     }
 
-    /**
-     * A constant built without the source text gets its value written in
-     * its base, with its suffix.
-     */
     #[DataProvider('builtConstantsDataProvider')]
     public function testBuiltConstantGetsSourceText(IntLiteral $constant, string $raw): void
     {

@@ -88,10 +88,6 @@ final class StringLiteralTest extends TestCase
         yield 'L above 32 bits' => ['L"\\x100000000"', EncodingPrefix::Wide, "\u{FFFD}"];
     }
 
-    /**
-     * An octal or hexadecimal escape is a byte in a narrow literal and a code
-     * point in a wide one.
-     */
     #[DataProvider('prefixesDataProvider')]
     public function testPrefixSelectsTheEncodingOfEscapes(string $raw, ?EncodingPrefix $prefix, string $value): void
     {
@@ -119,10 +115,6 @@ final class StringLiteralTest extends TestCase
         yield 'wide' => ['wide', EncodingPrefix::Wide];
     }
 
-    /**
-     * A literal built without the source text gets one that the parser
-     * accepts and that is parsed back into the same literal.
-     */
     #[DataProvider('builtLiteralsDataProvider')]
     public function testBuiltLiteralGetsValidSourceText(string $value, ?EncodingPrefix $prefix): void
     {

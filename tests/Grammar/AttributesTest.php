@@ -13,13 +13,6 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Checks the attributes of `resources/grammar/attributes.pp3` in every
- * syntax and in every position: a header is compared as the list of its
- * declarations printed as S-expressions, where an attribute is printed in
- * its own syntax, `[[gnu::aligned(8)]]`, and the attributes inside a
- * declarator wrap the type, `(attr _Nonnull (ptr int))`.
- */
 #[CoversNothing]
 final class AttributesTest extends TestCase
 {
@@ -28,7 +21,6 @@ final class AttributesTest extends TestCase
      */
     public static function syntaxesDataProvider(): iterable
     {
-        // C23
         yield 'standard attribute' => ['[[deprecated]];', '(attributes [[deprecated]])'];
         yield 'prefixed attribute' => ['[[gnu::packed]];', '(attributes [[gnu::packed]])'];
         yield 'several attributes' => ['[[a, b::c]];', '(attributes [[a]] [[b::c]])'];
@@ -44,7 +36,6 @@ final class AttributesTest extends TestCase
         yield 'keyword as a prefix' => ['[[int::x]];', '(attributes [[int::x]])'];
         yield 'reserved keyword as a name' => ['[[fallthrough, default]];', '(attributes [[fallthrough]] [[default]])'];
 
-        // GCC
         yield 'attribute of GCC' => ['__attribute__((packed));', '(attributes __attribute__((packed)))'];
         yield 'short spelling of GCC' => ['__attribute((packed));', '(attributes __attribute__((packed)))'];
         yield 'several attributes of GCC' => [
@@ -62,7 +53,6 @@ final class AttributesTest extends TestCase
             '(attributes __attribute__((const)) __attribute__((__const__)))',
         ];
 
-        // MSVC
         yield '__declspec' => ['__declspec(dllimport);', '(attributes __declspec(dllimport))'];
         yield '__declspec of several attributes' => [
             '__declspec(dllimport align(16) noreturn);',
@@ -70,7 +60,6 @@ final class AttributesTest extends TestCase
         ];
         yield 'empty __declspec' => ['__declspec();', '(attributes )'];
 
-        // Keywords allowed among the specifiers
         foreach ([
             '__cdecl', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__ptr32', '__ptr64', '__w64',
             '__forceinline',
@@ -151,7 +140,6 @@ final class AttributesTest extends TestCase
      */
     public static function positionsDataProvider(): iterable
     {
-        // Among the specifiers
         yield 'before the specifiers' => ['[[a]] int x;', ['(variable [[a]] int x)']];
         yield 'after the specifiers' => ['int [[a]] x;', ['(variable [[a]] int x)']];
         yield 'among the specifiers' => [
@@ -197,7 +185,6 @@ final class AttributesTest extends TestCase
             '(variable int x = (sizeof {[[a]] int}))',
         ]];
 
-        // A declarator
         yield 'after the name' => ['int x [[a]];', ['(variable int x [[a]])']];
         yield 'after the name and before an array' => ['int x [[a]] [3];', ['(variable (array int 3) x [[a]])']];
         yield 'after the name of a function' => ['int f [[a]] (void);', ['(function (fn int (void)) f [[a]])']];
@@ -230,7 +217,6 @@ final class AttributesTest extends TestCase
             '(variable [[a]] int x [[b]] __attribute__((c)) = 1)',
         ]];
 
-        // Inside a declarator
         yield 'after a pointer' => ['int * [[a]] p;', ['(variable (ptr int [[a]]) p)']];
         yield 'after a pointer and its qualifiers' => ['int * [[a]] const _Nonnull p;', [
             '(variable [const (ptr int [[a]] _Nonnull)] p)',
@@ -248,8 +234,6 @@ final class AttributesTest extends TestCase
             'int (*f [[a]] (void) [[b]])(int) [[c]];',
             ['(function (fn (ptr (fn int (int) [[c]])) (void) [[b]]) f [[a]])'],
         ];
-        // A function wrapped into attributes is not told from an object, as
-        // a function of a typedef name is not
         yield 'at the start of a parenthesized function declarator' => ['void (__stdcall f)(int);', [
             '(variable (attr __stdcall (fn void (int))) f)',
         ]];
@@ -271,7 +255,6 @@ final class AttributesTest extends TestCase
             ['(typedef typedef (ptr (attr __cdecl (fn void (int)))) F)'],
         ];
 
-        // Parameters
         yield 'parameter' => ['void f([[a]] int x __attribute__((unused)), int y[2] [[b]]);', [
             '(function (fn void ([[a]] int x __attribute__((unused)), (array int 2 [[b]]) y)) f)',
         ]];
@@ -299,7 +282,6 @@ final class AttributesTest extends TestCase
             '(variable int x = (sizeof (ptr (attr __cdecl (fn void (void))))))',
         ]];
 
-        // Tags
         yield 'after struct' => ['struct [[a]] S;', ['(tag struct [[a]] S)']];
         yield 'after struct and before the body' => ['struct __attribute__((packed)) { int a; } s;', [
             '(variable struct __attribute__((packed)) _ { int a } s)',
@@ -320,7 +302,6 @@ final class AttributesTest extends TestCase
             '(tag enum E { A [[deprecated]]=1, B __attribute__((deprecated)), C })',
         ]];
 
-        // Members
         yield 'members' => ['struct S { [[a]] int x [[b]], y __attribute__((c)); };', [
             '(tag struct S { [[a]] int x [[b]]; [[a]] int y __attribute__((c)) })',
         ]];
@@ -398,10 +379,6 @@ final class AttributesTest extends TestCase
     }
 
     /**
-     * Every attribute starts at its prefix or name, and a list of the
-     * attributes at its first attribute or, empty in an attribute
-     * declaration, where the declaration does.
-     *
      * @param list<non-empty-string> $expected
      */
     #[DataProvider('offsetsDataProvider')]
@@ -431,14 +408,11 @@ final class AttributesTest extends TestCase
         yield 'assembler label of a member' => ['struct S { int a __asm__("a"); };', 17, '__asm__'];
         yield 'two assembler labels' => ['int f(void) __asm__("a") __asm__("b");', 25, '__asm__'];
         yield 'attributes after struct alone' => ['struct [[a]];', 12, ';'];
-        // GCC allows its attributes in a parenthesized declarator only at
-        // the start of it
         yield 'attribute of GCC after an array in a parenthesized declarator' => [
             'int (*a[3] __attribute__((x)));',
             11,
             '__attribute__',
         ];
-        // Positions C23 has no attributes in
         yield 'attribute in the brackets of an array' => ['int a[[[x]] 3];', 7, '['];
         yield 'attribute after a parenthesized declarator' => ['int (*f) [[x]] (int);', 15, '('];
         yield 'attribute in a subscript' => ['int x = y[[z]];', 9, '[['];

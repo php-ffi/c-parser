@@ -10,16 +10,10 @@ use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Messages the grammar gives for the typical mistakes in a header.
- */
 #[CoversNothing]
 final class SyntaxErrorsTest extends TestCase
 {
     /**
-     * Invalid headers along with the offset and the text of the fragment the
-     * parser has failed at, empty at the end of input, and the message.
-     *
      * @return iterable<non-empty-string, array{string, int<0, max>, string, non-empty-string}>
      */
     public static function syntaxErrorsDataProvider(): iterable

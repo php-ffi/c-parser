@@ -214,9 +214,6 @@ final class FloatLiteralTest extends TestCase
     }
 
     /**
-     * The mantissa and the exponent keep the value exactly, whatever its
-     * precision.
-     *
      * @param class-string<FloatLiteral> $class
      */
     #[DataProvider('partsDataProvider')]
@@ -251,10 +248,6 @@ final class FloatLiteralTest extends TestCase
         yield 'imaginary' => [new DecFloatLiteral(2.5, suffix: FloatTypeSuffix::Float, isImaginary: true), '2.5fi'];
     }
 
-    /**
-     * A constant built without the source text gets one written out of its
-     * mantissa and exponent, which are taken out of the value unless given.
-     */
     #[DataProvider('builtConstantsDataProvider')]
     public function testBuiltConstantGetsSourceText(FloatLiteral $constant, string $raw): void
     {

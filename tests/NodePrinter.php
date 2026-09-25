@@ -69,27 +69,9 @@ use FFI\Parser\Node\Type\TypeOfTypeType;
 use FFI\Parser\Node\Type\TypeOfUnqualType;
 use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
 
-/**
- * Prints a syntax tree as an S-expression, the whole tree as one string:
- * `(+ 1 (* 2 3))`, `[const (unsigned long _)]`,
- * `struct S { int a }`, `(fn (ptr char) (int a, ...))`. A declaration is
- * named by its kind, `(variable static int x = {1, .a=2, [3]={}})`,
- * `(function ...)`, `(typedef ...)`, `(tag ...)`, `(type ...)`,
- * `(attributes ...)`. An attribute is printed in its own syntax with one
- * attribute per specifier, `[[gnu::aligned(8)]] __attribute__((packed))`,
- * attributes in a declarator wrap the type, `(attr _Nonnull (ptr int))`,
- * an argument that is no expression is `(tokens introduced=10.4)`. The
- * attributes among the specifiers are printed before the type and the ones
- * of a tag after its keyword wherever they are written, only the offsets
- * tell the places apart.
- * With the offsets every node ends with its offset: `(+ 1@14 2@18)@14`. A
- * missing node is `_`.
- */
 final class NodePrinter
 {
     /**
-     * The spelling of the operator of every binary expression node.
-     *
      * @var array<class-string<BinaryExpression>, non-empty-string>
      */
     public const BINARY_OPERATORS = [
@@ -115,8 +97,6 @@ final class NodePrinter
     ];
 
     /**
-     * The spelling of the operator of every unary expression node.
-     *
      * @var array<class-string<UnaryExpression>, non-empty-string>
      */
     public const UNARY_OPERATORS = [
@@ -129,8 +109,6 @@ final class NodePrinter
     ];
 
     /**
-     * The keyword of every node spelled by one.
-     *
      * @var array<class-string<Node>, non-empty-string>
      */
     private const KEYWORDS = [
@@ -174,8 +152,6 @@ final class NodePrinter
             return '_';
         }
 
-        // A list is not marked with its offset, which is the one of its
-        // first node
         if ($node instanceof NodeList && !$node instanceof InitializerList) {
             return \implode(' ', \array_map($this->format(...), $node->items));
         }
