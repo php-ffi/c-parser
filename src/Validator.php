@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace FFI\Parser;
 
+use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
-use FFI\Parser\Validator\TreeWalker;
 use FFI\Parser\Validator\ValidatorRuleInterface;
+use FFI\Parser\Validator\ValidatorVisitor;
 use FFI\Parser\Validator\Violation;
 
 /**
@@ -60,6 +61,8 @@ final class Validator
      * @param list<RootDeclarationInterface> $declarations
      * @return list<Violation> violations in the order of their offsets, empty
      *         in case of the declarations break no rule
+     * @throws TraverserException in case of a visitor breaks the syntax
+     *         tree
      */
     public function validate(array $declarations): array
     {
@@ -67,11 +70,12 @@ final class Validator
             return [];
         }
 
-        $violations = (new TreeWalker($this->validators, $declarations))
-            ->walk();
+        Traverser::execute($declarations, [
+            $visitor = new ValidatorVisitor($this->validators),
+        ]);
 
-        \usort($violations, static fn(Violation $a, Violation $b): int => $a->offset <=> $b->offset);
+        \usort($visitor->violations, Violation::sort(...));
 
-        return $violations;
+        return $visitor->violations;
     }
 }

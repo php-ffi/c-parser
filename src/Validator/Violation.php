@@ -31,4 +31,18 @@ final class Violation
          */
         public readonly ?int $length = null,
     ) {}
+
+    /**
+     * Helper method for violation sorting.
+     *
+     * ```
+     * \usort($visitor->violations, Violation::sort(...));
+     * ```
+     *
+     * @return -1|0|1
+     */
+    public static function sort(Violation $a, Violation $b): int
+    {
+        return $a->offset <=> $b->offset;
+    }
 }
