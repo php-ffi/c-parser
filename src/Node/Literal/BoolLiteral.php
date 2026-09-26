@@ -20,7 +20,7 @@ final class BoolLiteral extends Literal
         /**
          * The value of the constant
          */
-        public bool $value,
+        public readonly bool $value,
         ?string $raw = null,
         int $offset = 0,
     ) {

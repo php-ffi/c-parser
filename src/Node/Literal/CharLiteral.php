@@ -26,12 +26,12 @@ final class CharLiteral extends Literal
          * stays a byte, a value that does not fit becomes U+FFFD. A
          * multicharacter constant (`'ab'`) keeps all of them.
          */
-        public string $value,
+        public readonly string $value,
         /**
          * {@see null} in case of there is no prefix, i.e. the constant is
          * an `int`
          */
-        public ?EncodingPrefix $prefix = null,
+        public readonly ?EncodingPrefix $prefix = null,
         ?string $raw = null,
         int $offset = 0,
     ) {
