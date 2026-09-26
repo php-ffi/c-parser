@@ -24,7 +24,7 @@ final class FunctionBody extends Node
          *
          * @var non-empty-string
          */
-        public string $raw,
+        public readonly string $raw,
         int $offset = 0,
     ) {
         parent::__construct($offset);
