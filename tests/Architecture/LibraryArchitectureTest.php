@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Architecture;
 
 use FFI\Parser\Parser;
+use FFI\Parser\Traverser;
 use FFI\Parser\Validator;
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\Rule;
@@ -12,7 +13,7 @@ use PHPat\Test\PHPat;
 
 final class LibraryArchitectureTest
 {
-    public function testNodesDoNotDependOnTheParserOrTheValidators(): Rule
+    public function testNodesDoNotDependOnTheParserTheTraverserOrTheValidators(): Rule
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('FFI\Parser\Node'))
@@ -21,9 +22,12 @@ final class LibraryArchitectureTest
             ->classes(
                 Selector::classname(Parser::class),
                 Selector::inNamespace('FFI\Parser\Parser'),
+                Selector::classname(Traverser::class),
+                Selector::inNamespace('FFI\Parser\Traverser'),
+                Selector::classname(Validator::class),
                 Selector::inNamespace('FFI\Parser\Validator'),
             )
-            ->because('the syntax tree is shared by the parser and the validators and knows nothing of them');
+            ->because('the syntax tree knows nothing of the parser, the traverser and the validators that use it');
     }
 
     public function testParserInternalsAreUsedByTheParserOnly(): Rule
@@ -40,7 +44,25 @@ final class LibraryArchitectureTest
             ->because('the generated parser is an implementation detail of the public parser');
     }
 
-    public function testValidatorsDependOnTheNodesOnly(): Rule
+    public function testTraverserDependsOnTheNodesOnly(): Rule
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::classname(Traverser::class),
+                Selector::inNamespace('FFI\Parser\Traverser'),
+            )
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::classname(Traverser::class),
+                Selector::inNamespace('FFI\Parser\Traverser'),
+                Selector::inNamespace('FFI\Parser\Node'),
+                Selector::inNamespace('FFI\Parser\Exception'),
+            )
+            ->because('a visitor walks the syntax tree and can be run without the parser');
+    }
+
+    public function testValidatorsDependOnTheNodesAndTheTraverserOnly(): Rule
     {
         return PHPat::rule()
             ->classes(
@@ -53,6 +75,8 @@ final class LibraryArchitectureTest
                 Selector::classname(Validator::class),
                 Selector::inNamespace('FFI\Parser\Validator'),
                 Selector::inNamespace('FFI\Parser\Node'),
+                Selector::classname(Traverser::class),
+                Selector::inNamespace('FFI\Parser\Traverser'),
             )
             ->because('a validator checks the syntax tree and can be run without the parser');
     }
