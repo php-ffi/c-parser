@@ -15,6 +15,6 @@ abstract class Node implements NodeInterface
          *
          * @var int<0, max>
          */
-        public int $offset = 0,
+        public readonly int $offset = 0,
     ) {}
 }
