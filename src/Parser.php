@@ -10,6 +10,7 @@ use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser\ParserExecutor;
+use FFI\Parser\Transformer\TransformerRuleInterface;
 use FFI\Parser\Validator\ValidatorRuleInterface;
 use Phplrt\Contracts\Source\Exception\SourceExceptionInterface;
 use Phplrt\Contracts\Source\ReadableInterface;
@@ -33,6 +34,8 @@ final class Parser
 
     private readonly SourceFactoryInterface $sources;
 
+    private readonly Transformer $transformer;
+
     private readonly Validator $validator;
 
     /**
@@ -41,14 +44,31 @@ final class Parser
      *        default one accepts strings, files and streams
      * @param iterable<mixed, ValidatorRuleInterface>|null $rules checks of the
      *        syntax tree run by {@see parse()}
+     * @param iterable<mixed, TransformerRuleInterface>|null $transformers
+     *        rewrites of the syntax tree run by {@see parse()} before the
+     *        checks
      */
     public function __construct(
         ?SourceFactoryInterface $sources = null,
         ?iterable $rules = null,
+        ?iterable $transformers = null,
     ) {
         $this->parser = self::createParser();
         $this->sources = self::createSourceFactory($sources);
+        $this->transformer = self::createTransformer($transformers);
         $this->validator = self::createValidator($rules);
+    }
+
+    /**
+     * @param iterable<mixed, TransformerRuleInterface>|null $rules
+     */
+    private static function createTransformer(?iterable $rules): Transformer
+    {
+        if ($rules === null) {
+            return Transformer::createDefault();
+        }
+
+        return new Transformer($rules);
     }
 
     /**
@@ -78,8 +98,8 @@ final class Parser
     }
 
     /**
-     * Parses the header into the syntax tree and runs the validators over
-     * it.
+     * Parses the header into the syntax tree, runs the transformers over it
+     * and then the validators over the resulting tree.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
@@ -89,7 +109,7 @@ final class Parser
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it
      * @throws SyntaxErrorException in case of the header is not syntactically valid
-     * @throws TraverserException in case of a visitor breaks the syntax
+     * @throws TraverserException in case of a transformer breaks the syntax
      *         tree
      * @throws ValidationException in case of the syntax tree breaks a rule of
      *         a validator
@@ -99,6 +119,7 @@ final class Parser
         $source = $this->createSource($source);
 
         $declarations = $this->parseOrFail($source);
+        $declarations = $this->transformer->transform($declarations);
 
         $this->validateOrFail($declarations, $source);
 
