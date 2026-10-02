@@ -9,9 +9,13 @@ use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\NodeInterface;
+use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\VariableDeclaration;
+use FFI\Parser\Node\Type\BuiltinType\CharType;
 use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
+use FFI\Parser\Transformer\TransformationContext;
+use FFI\Parser\Transformer\TransformerRuleInterface;
 use FFI\Parser\Validator\ValidationContext;
 use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
@@ -330,6 +334,33 @@ final class ParserTest extends TestCase
         self::fail('SyntaxErrorException has not been thrown');
     }
 
+    public function testTransformersRewriteTheParsedTree(): void
+    {
+        $declarations = (new Parser(transformers: [self::createIntToCharTransformer()]))->parse('int a;');
+
+        self::assertCount(1, $declarations);
+        self::assertInstanceOf(VariableDeclaration::class, $declarations[0]);
+        self::assertInstanceOf(CharType::class, $declarations[0]->type);
+    }
+
+    public function testValidatorsAreGivenTheTransformedTree(): void
+    {
+        $parser = new Parser(
+            rules: [self::createIntTypeValidator()],
+            transformers: [self::createIntToCharTransformer()],
+        );
+
+        self::assertCount(2, $parser->parse("int a;\nint b;"));
+    }
+
+    public function testTransformersAreNotRunBySyntaxCheck(): void
+    {
+        $transformer = self::createIntToCharTransformer();
+
+        self::assertTrue((new Parser(transformers: [$transformer]))->validate('int a;'));
+        self::assertSame(0, $transformer->visits);
+    }
+
     private static function createIntTypeValidator(): ValidatorRuleInterface
     {
         return new class implements ValidatorRuleInterface {
@@ -358,6 +389,26 @@ final class ParserTest extends TestCase
                 $this->contexts[] = $context;
 
                 return [];
+            }
+        };
+    }
+
+    /**
+     * @return TransformerRuleInterface&object{visits: int<0, max>}
+     */
+    private static function createIntToCharTransformer(): TransformerRuleInterface
+    {
+        return new class implements TransformerRuleInterface {
+            /**
+             * @var int<0, max>
+             */
+            public int $visits = 0;
+
+            public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
+            {
+                ++$this->visits;
+
+                return $node instanceof IntType ? new CharType($node->offset) : null;
             }
         };
     }
