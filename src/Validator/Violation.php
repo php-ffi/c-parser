@@ -36,7 +36,7 @@ final class Violation
      * Helper method for violation sorting.
      *
      * ```
-     * \usort($visitor->violations, Violation::sort(...));
+     * \usort($violations, Violation::sort(...));
      * ```
      *
      * @return -1|0|1

@@ -74,8 +74,10 @@ final class Validator
             $visitor = new ValidatorVisitor($this->validators),
         ]);
 
-        \usort($visitor->violations, Violation::sort(...));
+        $violations = $visitor->violations;
 
-        return $visitor->violations;
+        \usort($violations, Violation::sort(...));
+
+        return $violations;
     }
 }

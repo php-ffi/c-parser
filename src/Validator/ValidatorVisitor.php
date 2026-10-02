@@ -19,6 +19,8 @@ use FFI\Parser\Traverser\VisitorInterface;
 final class ValidatorVisitor implements VisitorInterface
 {
     /**
+     * Violations in the order they are found
+     *
      * @var list<Violation>
      *
      * @phpstan-readonly-allow-private-mutation
@@ -31,18 +33,6 @@ final class ValidatorVisitor implements VisitorInterface
          */
         private readonly array $validators,
     ) {}
-
-    /**
-     * An alias accessor method for {@see self::$violations} property.
-     *
-     * @api
-     *
-     * @return list<Violation> violations in the order they are found
-     */
-    public function getViolations(): array
-    {
-        return $this->violations;
-    }
 
     public function enter(NodeInterface $node, Context $context): ?Action
     {

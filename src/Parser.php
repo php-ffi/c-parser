@@ -6,6 +6,7 @@ namespace FFI\Parser;
 
 use FFI\Parser\Exception\InternalException;
 use FFI\Parser\Exception\SyntaxErrorException;
+use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Parser\ParserExecutor;
@@ -88,6 +89,8 @@ final class Parser
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it
      * @throws SyntaxErrorException in case of the header is not syntactically valid
+     * @throws TraverserException in case of a visitor breaks the syntax
+     *         tree
      * @throws ValidationException in case of the syntax tree breaks a rule of
      *         a validator
      */
@@ -145,6 +148,8 @@ final class Parser
 
     /**
      * @param list<RootDeclarationInterface> $declarations
+     * @throws TraverserException in case of a visitor breaks the syntax
+     *         tree
      * @throws ValidationException in case of the syntax tree breaks a rule of
      *         a validator
      */
