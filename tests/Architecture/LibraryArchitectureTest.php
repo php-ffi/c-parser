@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Architecture;
 
 use FFI\Parser\Parser;
+use FFI\Parser\Transformer;
 use FFI\Parser\Traverser;
 use FFI\Parser\Validator;
 use PHPat\Selector\Selector;
@@ -13,7 +14,7 @@ use PHPat\Test\PHPat;
 
 final class LibraryArchitectureTest
 {
-    public function testNodesDoNotDependOnTheParserTheTraverserOrTheValidators(): Rule
+    public function testNodesDoNotDependOnTheParserTheTraverserTheTransformersOrTheValidators(): Rule
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('FFI\Parser\Node'))
@@ -24,10 +25,12 @@ final class LibraryArchitectureTest
                 Selector::inNamespace('FFI\Parser\Parser'),
                 Selector::classname(Traverser::class),
                 Selector::inNamespace('FFI\Parser\Traverser'),
+                Selector::classname(Transformer::class),
+                Selector::inNamespace('FFI\Parser\Transformer'),
                 Selector::classname(Validator::class),
                 Selector::inNamespace('FFI\Parser\Validator'),
             )
-            ->because('the syntax tree knows nothing of the parser, the traverser and the validators that use it');
+            ->because('the syntax tree knows nothing of the parser, the traverser, the transformers and the validators that use it');
     }
 
     public function testParserInternalsAreUsedByTheParserOnly(): Rule
@@ -60,6 +63,26 @@ final class LibraryArchitectureTest
                 Selector::inNamespace('FFI\Parser\Exception'),
             )
             ->because('a visitor walks the syntax tree and can be run without the parser');
+    }
+
+    public function testTransformersDependOnTheNodesTheTraverserAndTheExceptionsOnly(): Rule
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::classname(Transformer::class),
+                Selector::inNamespace('FFI\Parser\Transformer'),
+            )
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::classname(Transformer::class),
+                Selector::inNamespace('FFI\Parser\Transformer'),
+                Selector::inNamespace('FFI\Parser\Node'),
+                Selector::classname(Traverser::class),
+                Selector::inNamespace('FFI\Parser\Traverser'),
+                Selector::inNamespace('FFI\Parser\Exception'),
+            )
+            ->because('a transformer rewrites the syntax tree and can be run without the parser');
     }
 
     public function testValidatorsDependOnTheNodesTheTraverserAndTheExceptionsOnly(): Rule
