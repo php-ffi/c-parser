@@ -6,6 +6,20 @@ namespace FFI\Parser;
 
 use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignAsExpressionOperandRule;
+use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignOfExpressionOperandRule;
+use FFI\Parser\Transformer\Rule\ExpressionOperandRule\SizeOfExpressionOperandRule;
+use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfExpressionOperandRule;
+use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfUnqualExpressionOperandRule;
+use FFI\Parser\Transformer\Rule\FunctionCallRule;
+use FFI\Parser\Transformer\Rule\TypedefCastRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignAsTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignOfTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\BuiltinCallTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\GenericSelectionTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\SizeOfTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfUnqualTypeNameOperandRule;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 use FFI\Parser\Transformer\TransformerVisitor;
 
@@ -48,11 +62,28 @@ final class Transformer
     }
 
     /**
-     * TODO Add default rules
+     * Creates the transformer with the rules that rebuild the constructs
+     * the grammar parses one way, whichever names are declared before them,
+     * by the typedef names and the other names declared in the tree.
      */
     public static function createDefault(): self
     {
-        return new self();
+        return new self([
+            new TypedefCastRule(),
+            new FunctionCallRule(),
+            new SizeOfExpressionOperandRule(),
+            new AlignOfExpressionOperandRule(),
+            new TypeOfExpressionOperandRule(),
+            new TypeOfUnqualExpressionOperandRule(),
+            new AlignAsExpressionOperandRule(),
+            new SizeOfTypeNameOperandRule(),
+            new AlignOfTypeNameOperandRule(),
+            new TypeOfTypeNameOperandRule(),
+            new TypeOfUnqualTypeNameOperandRule(),
+            new AlignAsTypeNameOperandRule(),
+            new GenericSelectionTypeNameOperandRule(),
+            new BuiltinCallTypeNameOperandRule(),
+        ]);
     }
 
     /**
