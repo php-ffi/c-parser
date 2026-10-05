@@ -10,13 +10,16 @@ use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Node\Type\NamedType;
 use FFI\Parser\Node\Type\RecordType\StructType;
+use FFI\Parser\Parser;
 use FFI\Parser\Transformer;
 use FFI\Parser\Transformer\TransformationContext;
+use FFI\Parser\Transformer\TransformationContext\Scope;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(Transformer::class)]
 #[CoversClass(TransformationContext::class)]
+#[CoversClass(Scope::class)]
 final class TransformerTest extends TestCase
 {
     public function testNodeIsGivenAfterItsChildren(): void
@@ -115,6 +118,65 @@ final class TransformerTest extends TestCase
         $declarations = self::parse('int x; long y;');
 
         self::assertSame($declarations, (new Transformer())->transform($declarations));
+    }
+
+    public function testNamesAreDeclaredInTheOrderOfTheDeclarations(): void
+    {
+        $transformer = self::createNameRecordingTransformer();
+
+        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+            'int a = T; typedef int T; int b = T; enum { E }; int c = E + W;',
+        ));
+
+        self::assertSame(['T unknown', 'T typedef', 'E non-type', 'W unknown'], $transformer->names);
+    }
+
+    public function testParameterHidesTypedefNameInItsPrototypeOnly(): void
+    {
+        $transformer = self::createNameRecordingTransformer();
+
+        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+            'typedef int T; void f(int T, int a[sizeof(T)]); int b = T;',
+        ));
+
+        self::assertSame(['T non-type', 'T typedef'], $transformer->names);
+    }
+
+    public function testTypedefNameIsNotDeclaredInsideItsOwnDeclaration(): void
+    {
+        $transformer = self::createNameRecordingTransformer();
+
+        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+            'typedef int T[sizeof(T)];',
+        ));
+
+        self::assertSame(['T unknown'], $transformer->names);
+    }
+
+    /**
+     * @return TransformerRuleInterface&object{names: list<string>}
+     */
+    private static function createNameRecordingTransformer(): TransformerRuleInterface
+    {
+        return new class implements TransformerRuleInterface {
+            /**
+             * @var list<string>
+             */
+            public array $names = [];
+
+            public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
+            {
+                if ($node instanceof IdentifierExpression || $node instanceof NamedType) {
+                    $this->names[] = $node->name->value . ' ' . match (true) {
+                        $context->isTypedefName($node->name->value) => 'typedef',
+                        $context->isNonTypeName($node->name->value) => 'non-type',
+                        default => 'unknown',
+                    };
+                }
+
+                return null;
+            }
+        };
     }
 
     /**
