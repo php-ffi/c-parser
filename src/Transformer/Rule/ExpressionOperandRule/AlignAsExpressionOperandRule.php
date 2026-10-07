@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `alignas` of a type name into `alignas` of an expression, when the
  * type is a name declared as other than a type: `alignas(x)` is the
  * alignment the constant `x` gives.
+ *
+ * @template-extends ExpressionOperandRule<AlignAsTypeSpecifier>
  */
 final class AlignAsExpressionOperandRule extends ExpressionOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [AlignAsTypeSpecifier::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof AlignAsTypeSpecifier) {
-            return null;
-        }
-
         $operand = $this->findExpression($node->type, $context);
 
         if ($operand === null) {

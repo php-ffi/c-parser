@@ -18,15 +18,18 @@ use FFI\Parser\Transformer\TransformationContext;
  *
  * The second and the following arguments of `__builtin_offsetof`
  * designate members and are not converted.
+ *
+ * @template-extends TypeNameOperandRule<BuiltinCallExpression>
  */
 final class BuiltinCallTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [BuiltinCallExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof BuiltinCallExpression) {
-            return null;
-        }
-
         $arguments = $node->arguments->items;
         $isChanged = false;
 

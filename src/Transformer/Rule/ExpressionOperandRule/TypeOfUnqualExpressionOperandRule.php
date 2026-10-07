@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `typeof_unqual` of a type name into `typeof_unqual` of an
  * expression, when the type is a name declared as other than a type:
  * `typeof_unqual(x)` is the unqualified type of the object `x`.
+ *
+ * @template-extends ExpressionOperandRule<TypeOfUnqualTypeType>
  */
 final class TypeOfUnqualExpressionOperandRule extends ExpressionOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [TypeOfUnqualTypeType::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof TypeOfUnqualTypeType) {
-            return null;
-        }
-
         $operand = $this->findExpression($node->type, $context);
 
         if ($operand === null) {

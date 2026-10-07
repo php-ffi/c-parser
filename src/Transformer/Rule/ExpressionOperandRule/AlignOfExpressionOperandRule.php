@@ -18,15 +18,18 @@ use FFI\Parser\Transformer\TransformationContext;
  *
  * The offset of the parenthesis is not kept in the tree, the parenthesized
  * expression is given the offset of the name.
+ *
+ * @template-extends ExpressionOperandRule<AlignOfTypeExpression>
  */
 final class AlignOfExpressionOperandRule extends ExpressionOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [AlignOfTypeExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof AlignOfTypeExpression) {
-            return null;
-        }
-
         $operand = $this->findExpression($node->type, $context);
 
         if ($operand === null) {

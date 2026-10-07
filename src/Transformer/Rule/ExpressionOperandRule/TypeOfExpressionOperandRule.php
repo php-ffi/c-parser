@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `typeof` of a type name into `typeof` of an expression, when the
  * type is a name declared as other than a type: `typeof(x)` is the type of
  * the object `x`.
+ *
+ * @template-extends ExpressionOperandRule<TypeOfTypeType>
  */
 final class TypeOfExpressionOperandRule extends ExpressionOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [TypeOfTypeType::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof TypeOfTypeType) {
-            return null;
-        }
-
         $operand = $this->findExpression($node->type, $context);
 
         if ($operand === null) {

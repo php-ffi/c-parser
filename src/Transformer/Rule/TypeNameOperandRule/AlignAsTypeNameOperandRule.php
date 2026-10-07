@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `alignas` of an expression into `alignas` of a type name, when the
  * expression starts with a typedef name: `alignas(T[3])` is the alignment
  * of an array.
+ *
+ * @template-extends TypeNameOperandRule<AlignAsSpecifier>
  */
 final class AlignAsTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [AlignAsSpecifier::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof AlignAsSpecifier) {
-            return null;
-        }
-
         $type = $this->findTypeName($node->operand, $context);
 
         if ($type === null) {

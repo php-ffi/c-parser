@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `typeof` of an expression into `typeof` of a type name, when the
  * expression starts with a typedef name: `typeof(T())` and `typeof(T *(U))`
  * are function types.
+ *
+ * @template-extends TypeNameOperandRule<TypeOfType>
  */
 final class TypeOfTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [TypeOfType::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof TypeOfType) {
-            return null;
-        }
-
         $type = $this->findTypeName($node->operand, $context);
 
         if ($type === null) {

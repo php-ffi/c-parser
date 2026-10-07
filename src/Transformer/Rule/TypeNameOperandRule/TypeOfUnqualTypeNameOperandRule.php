@@ -14,15 +14,18 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `typeof_unqual` of an expression into `typeof_unqual` of a type
  * name, when the expression starts with a typedef name:
  * `typeof_unqual(T())` is a function type.
+ *
+ * @template-extends TypeNameOperandRule<TypeOfUnqualType>
  */
 final class TypeOfUnqualTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [TypeOfUnqualType::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof TypeOfUnqualType) {
-            return null;
-        }
-
         $type = $this->findTypeName($node->operand, $context);
 
         if ($type === null) {

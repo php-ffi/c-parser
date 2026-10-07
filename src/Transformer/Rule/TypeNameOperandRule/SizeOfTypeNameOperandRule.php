@@ -15,12 +15,19 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `sizeof` of a parenthesized expression into `sizeof` of a type
  * name, when the expression starts with a typedef name: `sizeof(T[3])` is
  * the size of an array, `sizeof(T *(U))` is the size of a function type.
+ *
+ * @template-extends TypeNameOperandRule<SizeOfExpression>
  */
 final class SizeOfTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [SizeOfExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof SizeOfExpression || !$node->operand instanceof ParenExpression) {
+        if (!$node->operand instanceof ParenExpression) {
             return null;
         }
 

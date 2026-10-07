@@ -12,6 +12,7 @@ use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression\DereferenceExpression;
+use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\ArrayType\SizedArrayType;
 use FFI\Parser\Node\Type\FunctionType;
@@ -32,6 +33,10 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * between a typedef name and the parenthesis, of `[` and of the parenthesis
  * of a function with parameters are not kept in the tree, the type they
  * start is given the offset of the node after them.
+ *
+ * @template TNode of NodeInterface
+ *
+ * @template-implements TransformerRuleInterface<TNode>
  */
 abstract class TypeNameOperandRule implements TransformerRuleInterface
 {

@@ -14,12 +14,19 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns the controlling expression of `_Generic` into a type name, when
  * the expression starts with a typedef name: `_Generic(T, ...)` selects by
  * the type `T`.
+ *
+ * @template-extends TypeNameOperandRule<GenericSelectionExpression>
  */
 final class GenericSelectionTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [GenericSelectionExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof GenericSelectionExpression || !$node->operand instanceof ExpressionInterface) {
+        if (!$node->operand instanceof ExpressionInterface) {
             return null;
         }
 

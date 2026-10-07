@@ -22,14 +22,19 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * Turns a cast to a parenthesized name declared as other than a type into
  * a call of it: `(f)(x)` is the call `f(x)`, `(f)(x, y)[0]` is the call
  * `f(x, y)` with the subscript applied to its result.
+ *
+ * @template-implements TransformerRuleInterface<CastExpression>
  */
 final class FunctionCallRule implements TransformerRuleInterface
 {
+    public function getNodeClasses(): iterable
+    {
+        return [CastExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof CastExpression
-            || !$node->type instanceof NamedType
-            || !$context->isNonTypeName($node->type->name->value)) {
+        if (!$node->type instanceof NamedType || !$context->isNonTypeName($node->type->name->value)) {
             return null;
         }
 

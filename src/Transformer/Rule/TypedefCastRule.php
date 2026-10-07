@@ -49,12 +49,19 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * operators. The offset of the operator turned into the unary one is not
  * kept in the tree, the unary expression is given the offset of its
  * operand.
+ *
+ * @template-implements TransformerRuleInterface<BinaryExpression>
  */
 final class TypedefCastRule implements TransformerRuleInterface
 {
+    public function getNodeClasses(): iterable
+    {
+        return [BinaryExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof BinaryExpression || \array_last($context->parents) instanceof BinaryExpression) {
+        if (\array_last($context->parents) instanceof BinaryExpression) {
             return null;
         }
 

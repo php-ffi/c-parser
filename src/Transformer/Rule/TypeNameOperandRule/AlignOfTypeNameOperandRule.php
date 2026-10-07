@@ -15,12 +15,19 @@ use FFI\Parser\Transformer\TransformationContext;
  * Turns `alignof` of a parenthesized expression into `alignof` of a type
  * name, when the expression starts with a typedef name: `alignof(T[3])` is
  * the alignment of an array.
+ *
+ * @template-extends TypeNameOperandRule<AlignOfExpression>
  */
 final class AlignOfTypeNameOperandRule extends TypeNameOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [AlignOfExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof AlignOfExpression || !$node->operand instanceof ParenExpression) {
+        if (!$node->operand instanceof ParenExpression) {
             return null;
         }
 

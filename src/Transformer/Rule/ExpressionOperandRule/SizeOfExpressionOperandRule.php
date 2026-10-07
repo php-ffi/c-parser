@@ -17,15 +17,18 @@ use FFI\Parser\Transformer\TransformationContext;
  *
  * The offset of the parenthesis is not kept in the tree, the parenthesized
  * expression is given the offset of the name.
+ *
+ * @template-extends ExpressionOperandRule<SizeOfTypeExpression>
  */
 final class SizeOfExpressionOperandRule extends ExpressionOperandRule
 {
+    public function getNodeClasses(): iterable
+    {
+        return [SizeOfTypeExpression::class];
+    }
+
     public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
     {
-        if (!$node instanceof SizeOfTypeExpression) {
-            return null;
-        }
-
         $operand = $this->findExpression($node->type, $context);
 
         if ($operand === null) {

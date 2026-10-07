@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Transformer\Rule;
 
 use FFI\Parser\Node\Expression\IdentifierExpression;
+use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Node\Type\NamedType;
 use FFI\Parser\Node\Type\TypeInterface;
 use FFI\Parser\Transformer\TransformationContext;
@@ -14,6 +15,10 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * Base of the rules that turn an operand parsed as a type name into an
  * expression, when the type is a name declared as an object, a function,
  * an enumeration constant or a parameter.
+ *
+ * @template TNode of NodeInterface
+ *
+ * @template-implements TransformerRuleInterface<TNode>
  */
 abstract class ExpressionOperandRule implements TransformerRuleInterface
 {
