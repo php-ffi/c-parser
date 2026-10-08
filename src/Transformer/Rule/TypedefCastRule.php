@@ -44,11 +44,8 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * a cast of the unary expression after it: `(T)-x*y` is the product of the
  * cast `(T)-x` and `y`.
  *
- * The rule rewrites the outermost binary expression of a sequence of
- * binary operators, the whole sequence is rebuilt by the precedence of the
- * operators. The offset of the operator turned into the unary one is not
- * kept in the tree, the unary expression is given the offset of its
- * operand.
+ * The offset of the operator turned into the unary one is not kept in the
+ * tree, the unary expression is given the offset of its operand.
  *
  * @template-implements TransformerRuleInterface<BinaryExpression>
  */
@@ -174,8 +171,7 @@ final class TypedefCastRule implements TransformerRuleInterface
 
     /**
      * Builds the binary expressions of the sequence by the precedence of
-     * the operators, each of them is left-associative: the root is the
-     * last operator of the lowest precedence.
+     * the operators.
      *
      * @param non-empty-list<ExpressionInterface> $items
      */
