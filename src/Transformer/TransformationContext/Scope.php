@@ -18,9 +18,6 @@ namespace FFI\Parser\Transformer\TransformationContext;
 final class Scope
 {
     /**
-     * The scopes from the file scope to the innermost one, each one maps a
-     * name to whether it is a typedef name
-     *
      * @var non-empty-list<array<string, bool>>
      */
     private array $scopes = [[]];

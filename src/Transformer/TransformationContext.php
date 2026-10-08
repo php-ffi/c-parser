@@ -37,8 +37,7 @@ final class TransformationContext
     /**
      * Checks whether the name is declared as a typedef name before the
      * node, in the file scope or in a function prototype scope that holds
-     * the node. The names are declared while the tree is walked, so the
-     * answer is the one for the node being transformed.
+     * the node.
      */
     public function isTypedefName(string $name): bool
     {
