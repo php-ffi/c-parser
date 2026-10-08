@@ -49,8 +49,8 @@ final class FunctionCallRule implements TransformerRuleInterface
     /**
      * Applies the parenthesized operand that starts the expression to the
      * function as its arguments, the postfix operators applied to the
-     * operand are applied to the call. A cast the expression starts with
-     * is a call as well: in `(f)(x)(y)` the `(x)(y)` is parsed as a cast.
+     * operand are applied to the call, a cast to a name the expression
+     * starts with is a call as well.
      *
      * @return ExpressionInterface|null the expression with the call,
      *         {@see null} in case of the expression does not start with a
