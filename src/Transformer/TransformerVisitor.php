@@ -25,16 +25,19 @@ use FFI\Parser\Traverser\VisitorInterface;
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser
- *
- * @readonly
  */
 final class TransformerVisitor implements VisitorInterface
 {
     private readonly Scope $scope;
 
+    /**
+     * @var array<class-string<NodeInterface>, array<int<0, max>, TransformerRuleInterface<covariant NodeInterface>>>
+     */
+    private array $transformersByClass = [];
+
     public function __construct(
         /**
-         * @var non-empty-list<TransformerRuleInterface>
+         * @var non-empty-list<TransformerRuleInterface<covariant NodeInterface>>
          */
         private readonly array $transformers,
     ) {
@@ -52,11 +55,16 @@ final class TransformerVisitor implements VisitorInterface
 
     public function leave(NodeInterface $node, Context $context): ?NodeInterface
     {
-        $context = new TransformationContext($context->parents, $context->declarations, $this->scope);
         $result = $node;
 
-        foreach ($this->transformers as $transformer) {
-            $result = $transformer->transform($result, $context) ?? $result;
+        if ($this->getTransformers($node) !== []) {
+            $transformationContext = new TransformationContext(
+                parents: $context->parents,
+                declarations: $context->declarations,
+                scope: $this->scope,
+            );
+
+            $result = $this->transform($node, $transformationContext);
         }
 
         $this->declare($result);
@@ -70,6 +78,63 @@ final class TransformerVisitor implements VisitorInterface
         }
 
         return $result;
+    }
+
+    private function transform(NodeInterface $node, TransformationContext $context): NodeInterface
+    {
+        $position = -1;
+        $isReplaced = true;
+
+        while ($isReplaced) {
+            $isReplaced = false;
+
+            foreach ($this->getTransformers($node) as $index => $transformer) {
+                if ($index <= $position) {
+                    continue;
+                }
+
+                $position = $index;
+                $class = $node::class;
+                // @phpstan-ignore-next-line the node is an instance of one of the classes the transformer lists
+                $node = $transformer->transform($node, $context) ?? $node;
+
+                if ($node::class !== $class) {
+                    $isReplaced = true;
+
+                    break;
+                }
+            }
+        }
+
+        return $node;
+    }
+
+    /**
+     * @return array<int<0, max>, TransformerRuleInterface<covariant NodeInterface>>
+     */
+    private function getTransformers(NodeInterface $node): array
+    {
+        return $this->transformersByClass[$node::class] ??= $this->findTransformers($node);
+    }
+
+    /**
+     * @return array<int<0, max>, TransformerRuleInterface<covariant NodeInterface>>
+     */
+    private function findTransformers(NodeInterface $node): array
+    {
+        $transformers = [];
+
+        foreach ($this->transformers as $index => $transformer) {
+            foreach ($transformer->getNodeClasses() as $class) {
+                if ($node instanceof $class) {
+                    $transformers[$index] = $transformer;
+
+                    break;
+                }
+            }
+        }
+
+        return $transformers;
     }
 
     private function declare(NodeInterface $node): void
