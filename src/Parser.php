@@ -9,6 +9,7 @@ use FFI\Parser\Exception\SyntaxErrorException;
 use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Exception\ValidationException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Parser\ParserExecutor;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 use FFI\Parser\Validator\ValidatorRuleInterface;
@@ -44,7 +45,7 @@ final class Parser
      *        default one accepts strings, files and streams
      * @param iterable<mixed, ValidatorRuleInterface>|null $rules checks of the
      *        syntax tree run by {@see parse()}
-     * @param iterable<mixed, TransformerRuleInterface>|null $transformers
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
      *        rewrites of the syntax tree run by {@see parse()} before the
      *        checks
      */
@@ -60,7 +61,7 @@ final class Parser
     }
 
     /**
-     * @param iterable<mixed, TransformerRuleInterface>|null $rules
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $rules
      */
     private static function createTransformer(?iterable $rules): Transformer
     {

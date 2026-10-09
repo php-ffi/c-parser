@@ -15,11 +15,10 @@ use FFI\Parser\Traverser\VisitorInterface;
  *
  * Every node is visited once, even a node shared by several declarations:
  * the result of its visit (the node, its replacement, or its removal) takes
- * its place in every parent. The children of a node are the nodes in its
- * properties, and in the lists the properties hold, in the order of the
- * properties, which is not always the order of the source. The visitors
- * are called in the order they are listed, each one is given the node the
- * previous one returned.
+ * its place in every parent. The children of a node are walked in the order
+ * of its properties, which is not always the order of the source. The
+ * visitors are called in the order they are listed, each one is given the
+ * node the previous one returned.
  */
 final class Traverser
 {

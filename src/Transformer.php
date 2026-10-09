@@ -6,6 +6,7 @@ namespace FFI\Parser;
 
 use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignAsExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignOfExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\SizeOfExpressionOperandRule;
@@ -26,20 +27,20 @@ use FFI\Parser\Transformer\TransformerVisitor;
 /**
  * Runs the transformers over the syntax tree.
  *
- * Each transformer is given every node once, even a node shared by several
- * declarations, after the children of the node, in the order the
- * transformers are listed. Each one is given the node the previous one
- * returned.
+ * Each transformer is given every node of its kinds once, even a node
+ * shared by several declarations, after the children of the node, in the
+ * order the transformers are listed. Each one is given the node the
+ * previous one returned.
  */
 final class Transformer
 {
     /**
-     * @var list<TransformerRuleInterface>
+     * @var list<TransformerRuleInterface<covariant NodeInterface>>
      */
     private readonly array $transformers;
 
     /**
-     * @param iterable<mixed, TransformerRuleInterface> $rules
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
      */
     public function __construct(iterable $rules = [])
     {
@@ -49,8 +50,8 @@ final class Transformer
     /**
      * TODO Since PHP 8.2 should be replaced to `iterator_to_array`
      *
-     * @param iterable<mixed, TransformerRuleInterface> $rules
-     * @return list<TransformerRuleInterface>
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
+     * @return list<TransformerRuleInterface<covariant NodeInterface>>
      */
     private static function formatTransformerRules(iterable $rules): array
     {
