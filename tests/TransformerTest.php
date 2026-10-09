@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests;
 
+use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\NodeInterface;
+use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Node\Type\NamedType;
 use FFI\Parser\Node\Type\RecordType\StructType;
 use FFI\Parser\Parser;
@@ -99,6 +101,48 @@ final class TransformerTest extends TestCase
         self::assertNotContains('  IdentifierExpression@8', $transformer->visits);
     }
 
+    public function testTransformerIsGivenTheNodesOfTheClassesItLists(): void
+    {
+        $visits = [];
+
+        (new Transformer([
+            self::createTransformer(
+                static function (NodeInterface $node) use (&$visits): ?NodeInterface {
+                    $visits[] = (new \ReflectionClass($node))->getShortName();
+
+                    return null;
+                },
+                [IntType::class, ExpressionInterface::class],
+            ),
+        ]))->transform(self::parse('int a = b + 1; char c;'));
+
+        self::assertSame(['IdentifierExpression', 'DecIntLiteral', 'AddExpression', 'IntType'], $visits);
+    }
+
+    public function testReplacementOfAnotherClassIsGivenToTheTransformersOfItsClassListedAfter(): void
+    {
+        $visits = [];
+        $record = static function (string $name) use (&$visits): \Closure {
+            return static function () use ($name, &$visits): ?NodeInterface {
+                $visits[] = $name;
+
+                return null;
+            };
+        };
+
+        (new Transformer([
+            self::createTransformer($record('paren before'), [ParenExpression::class]),
+            self::createTransformer(
+                static fn(NodeInterface $node): ?NodeInterface => new ParenExpression($node, $node->offset),
+                [IdentifierExpression::class],
+            ),
+            self::createTransformer($record('identifier after'), [IdentifierExpression::class]),
+            self::createTransformer($record('paren after'), [ParenExpression::class]),
+        ]))->transform(self::parse('int a = b;'));
+
+        self::assertSame(['paren after'], $visits);
+    }
+
     public function testContextHoldsTheDeclarations(): void
     {
         $declarations = self::parse('int x; long y;');
@@ -164,6 +208,11 @@ final class TransformerTest extends TestCase
              */
             public array $names = [];
 
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
+
             public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
             {
                 if ($node instanceof IdentifierExpression || $node instanceof NamedType) {
@@ -195,6 +244,11 @@ final class TransformerTest extends TestCase
              */
             public array $contexts = [];
 
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
+
             public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
             {
                 $this->visits[] = \str_repeat('  ', \count($context->parents))
@@ -209,15 +263,29 @@ final class TransformerTest extends TestCase
     /**
      * @param \Closure(NodeInterface, TransformationContext): (NodeInterface|null) $transform
      */
-    private static function createTransformer(\Closure $transform): TransformerRuleInterface
-    {
-        return new class ($transform) implements TransformerRuleInterface {
+    /**
+     * @param list<class-string<NodeInterface>> $classes
+     */
+    private static function createTransformer(
+        \Closure $transform,
+        array $classes = [NodeInterface::class],
+    ): TransformerRuleInterface {
+        return new class ($transform, $classes) implements TransformerRuleInterface {
             public function __construct(
                 /**
                  * @var \Closure(NodeInterface, TransformationContext): (NodeInterface|null)
                  */
                 private readonly \Closure $onTransform,
+                /**
+                 * @var list<class-string<NodeInterface>>
+                 */
+                private readonly array $classes,
             ) {}
+
+            public function getNodeClasses(): iterable
+            {
+                return $this->classes;
+            }
 
             public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
             {

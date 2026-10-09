@@ -404,6 +404,11 @@ final class ParserTest extends TestCase
              */
             public int $visits = 0;
 
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
+
             public function transform(NodeInterface $node, TransformationContext $context): ?NodeInterface
             {
                 ++$this->visits;
