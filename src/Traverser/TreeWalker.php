@@ -24,9 +24,6 @@ use FFI\Parser\Node\NodeInterface;
 final class TreeWalker
 {
     /**
-     * Results of the visited nodes, a node is its own result while its
-     * children are walked
-     *
      * @var \WeakMap<NodeInterface, NodeInterface|Action::Remove>
      */
     private readonly \WeakMap $results;
@@ -74,9 +71,6 @@ final class TreeWalker
     }
 
     /**
-     * Returns the result of the node, the one of its first visit in case of
-     * a shared node.
-     *
      * @param list<NodeInterface> $parents
      * @return NodeInterface|Action::Remove
      * @throws TraverserException in case of a visitor breaks the syntax
@@ -94,8 +88,6 @@ final class TreeWalker
     }
 
     /**
-     * Enters the node, walks its children and leaves it.
-     *
      * @param list<NodeInterface> $parents
      * @return NodeInterface|Action::Remove
      * @throws TraverserException in case of a visitor breaks the syntax
@@ -154,10 +146,6 @@ final class TreeWalker
     }
 
     /**
-     * Visits the nodes in the properties of the node and in the lists the
-     * properties hold, in the order of the properties, and puts their
-     * results in place of them.
-     *
      * @param non-empty-list<NodeInterface> $parents
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
