@@ -178,9 +178,8 @@ CastOrUnaryExpression @error("Syntax error, unexpected {token} in the expression
  * name that cannot be an expression makes a cast: "(int)-x", "(T *)-x". A
  * type name that reads as an expression other than a lone identifier is
  * never a cast (see ExpressionLikeTypeName). A lone identifier "(T)" is a
- * cast only when the next token can start an operand but cannot continue a
- * parenthesized expression (CastStart): "(T)-x" is a subtraction, "(x)[0]"
- * is a subscript.
+ * cast when the next token can start an operand (CastStart): "(T)-x" is a
+ * cast, "(x)[0]" is a subscript.
  */
 CastExpression -> {
     /**
@@ -217,6 +216,7 @@ CastStart
   | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
   | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
+  | <T_PLUS> | <T_MINUS> | <T_ASTERISK> | <T_AMPERSAND>
   | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_CALL> | <T_GENERIC> | <T_LBRACE>
   ;
 

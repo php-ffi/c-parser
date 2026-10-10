@@ -9,9 +9,8 @@ use FFI\Parser\Node\Type\TypeInterface;
 /**
  * Conversion of an operand to a type: `(T)x`.
  *
- * `(T)` is a cast only when the next token can start an operand but cannot
- * continue a parenthesized expression: `(T)-x`, `(T)*p`, `(T)[0]` and
- * `(T).m` are a parenthesized operand.
+ * `(T)` is a cast when the next token can start an operand: `(T)-x` and
+ * `(T)*p` are casts, `(T)[0]` and `(T).m` are a parenthesized operand.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.5 Cast operators
  */
