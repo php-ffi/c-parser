@@ -47,11 +47,20 @@ final class Validator
     }
 
     /**
+     * @param iterable<mixed, ValidatorRuleInterface> $append
+     * @return array<array-key, ValidatorRuleInterface>
+     */
+    public static function getDefaultRules(iterable $append = []): array
+    {
+        return [];
+    }
+
+    /**
      * TODO Add default rules
      */
     public static function createDefault(): self
     {
-        return new self();
+        return new self(self::getDefaultRules());
     }
 
     /**

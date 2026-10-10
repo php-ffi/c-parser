@@ -36,6 +36,44 @@ echo $declarations[0]->name->value; // "move"
 An invalid header throws `FFI\Parser\Exception\ParserException`, which points
 to the error in the source.
 
+### AST Transformers
+
+The parser contains a set of built-in AST transformations. To use your own,
+pass it to the constructor:
+
+```php
+// override transformers
+$parser = new FFI\Parser\Parser(transformers: [
+    new MyAstTransformer(),
+]);
+
+// or extend existing ones
+$parser = new FFI\Parser\Parser(
+    transformers: FFI\Parser\Transformer::getDefaultTransformers([
+        new MyAstTransformer(),
+    ]),
+);
+```
+
+### AST Validators
+
+The parser checks the AST with validators after the transformations. To use
+your own, pass it to the constructor:
+
+```php
+// override rules
+$parser = new FFI\Parser\Parser(rules: [
+    new MyValidatorRule(),
+]);
+
+// or extend existing ones
+$parser = new FFI\Parser\Parser(
+    rules: FFI\Parser\Validator::getDefaultRules([
+        new MyValidatorRule(),
+    ]),
+);
+```
+
 ## Benchmarks
 
 | Name              | Speed  | AST Nodes | Header Size |
@@ -89,31 +127,9 @@ the ISO/IEC 9899:2024 standard).
 
 ## Limitations
 
-The parser does not track typedef names, so code whose meaning depends on
-whether `T` is a type is always parsed one way:
+The built-in transformations rebuild the code whose meaning depends on whether
+a name is a typedef, except for:
 
-| Code                                                | Current AST                       | Expected AST                                 | When `T` is       |
-|-----------------------------------------------------|-----------------------------------|----------------------------------------------|-------------------|
-| `(T)-x*y`                                           | `Sub(Paren(T), Mul(x, y))`        | `Mul(Cast(T, Minus(x)), y)`                  | a typedef         |
-| `(T)+x`                                             | `Add(Paren(T), x)`                | `Cast(T, Plus(x))`                           | a typedef         |
-| `(T)*x`                                             | `Mul(Paren(T), x)`                | `Cast(T, Dereference(x))`                    | a typedef         |
-| `(T)&x`                                             | `BitwiseAnd(Paren(T), x)`         | `Cast(T, AddressOf(x))`                      | a typedef         |
-| `sizeof(T[3])`                                      | `SizeOf(Paren(Subscript(T, 3)))`  | `SizeOfType(SizedArray(T, 3))`               | a typedef         |
-| `typeof(T())`                                       | `TypeOf(Call(T))`                 | `TypeOfType(Function(T))`                    | a typedef         |
-| `typeof(T *(U))`                                    | `TypeOf(Mul(T, Paren(U)))`        | `TypeOfType(Function(Pointer(T), Named(U)))` | a typedef, as `U` |
-| `sizeof(T *(U))`                                    | `SizeOf(Paren(Mul(T, Paren(U))))` | `SizeOfType(Function(Pointer(T), Named(U)))` | a typedef, as `U` |
-| `(T)(x)`                                            | `Cast(T, Paren(x))`               | `Call(Paren(T), x)`                          | a function        |
-| `(T)(x, y)`                                         | `Cast(T, Paren(Comma(x, y)))`     | `Call(Paren(T), x, y)`                       | a function        |
-| `sizeof(T)`                                         | `SizeOfType(Named(T))`            | `SizeOf(Paren(T))`                           | not a type        |
-| `alignof(T)`                                        | `AlignOfType(Named(T))`           | `AlignOf(Paren(T))`                          | not a type        |
-| `typeof(T)`                                         | `TypeOfType(Named(T))`            | `TypeOf(T)`                                  | not a type        |
-| `alignas(T)`                                        | `AlignAsType(Named(T))`           | `AlignAs(T)`                                 | not a type        |
-| `_Generic(T, …)`                                    | `Generic(T, …)`                   | `Generic(Named(T), …)`                       | a typedef         |
-| `__builtin_offsetof(T, a)`, any `__builtin_*(T, …)` | `Builtin(T, a)`                   | `Builtin(Named(T), a)`                       | a typedef         |
-| `int f(int (T));`                                   | `Parameter(int, name: T)`         | `Parameter(Function(int, Named(T)))`         | a typedef         |
-
-The parentheses are kept in the tree (`Paren`), so it can be rebuilt once the
-typedef names are known.
-
-I.e. what's actually needed is a Visitor that will mutate the AST based on the 
-presence of a declaration. For now, this is a TODO :)
+| Code              | Current AST               | Expected AST                         | When `T` is |
+|-------------------|---------------------------|--------------------------------------|-------------|
+| `int f(int (T));` | `Parameter(int, name: T)` | `Parameter(Function(int, Named(T)))` | a typedef   |

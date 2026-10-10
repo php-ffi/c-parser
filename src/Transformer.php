@@ -63,13 +63,12 @@ final class Transformer
     }
 
     /**
-     * Creates the transformer with the rules that rebuild the constructs
-     * the grammar parses one way, whichever names are declared before them,
-     * by the typedef names and the other names declared in the tree.
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $append
+     * @return array<array-key, TransformerRuleInterface<covariant NodeInterface>>
      */
-    public static function createDefault(): self
+    public static function getDefaultTransformers(iterable $append = []): array
     {
-        return new self([
+        return [
             new TypedefCastRule(),
             new FunctionCallRule(),
             new SizeOfExpressionOperandRule(),
@@ -84,7 +83,18 @@ final class Transformer
             new AlignAsTypeNameOperandRule(),
             new GenericSelectionTypeNameOperandRule(),
             new BuiltinCallTypeNameOperandRule(),
-        ]);
+            ...$append,
+        ];
+    }
+
+    /**
+     * Creates the transformer with the rules that rebuild the constructs
+     * the grammar parses one way, whichever names are declared before them,
+     * by the typedef names and the other names declared in the tree.
+     */
+    public static function createDefault(): self
+    {
+        return new self(self::getDefaultTransformers());
     }
 
     /**
