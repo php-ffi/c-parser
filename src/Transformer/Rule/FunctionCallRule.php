@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Transformer\Rule;
 
+use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\BinaryExpression\CommaExpression;
 use FFI\Parser\Node\Expression\CallExpression;
 use FFI\Parser\Node\Expression\CallExpression\ArgumentList;
@@ -48,7 +49,7 @@ final class FunctionCallRule implements TransformerRuleInterface
 
     /**
      * Applies the parenthesized operand that starts the expression to the
-     * function as its arguments, the postfix operators applied to the
+     * function as its arguments, the operators applied to the
      * operand are applied to the call, a cast to a name the expression
      * starts with is a call as well.
      *
@@ -103,6 +104,16 @@ final class FunctionCallRule implements TransformerRuleInterface
             }
 
             return new ($expression::class)($object, $expression->member, $object->offset);
+        }
+
+        if ($expression instanceof BinaryExpression) {
+            $left = $this->findCall($function, $expression->left);
+
+            if ($left === null) {
+                return null;
+            }
+
+            return new ($expression::class)($left, $expression->right, $left->offset);
         }
 
         return null;
