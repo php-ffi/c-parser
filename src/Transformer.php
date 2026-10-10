@@ -7,13 +7,14 @@ namespace FFI\Parser;
 use FFI\Parser\Exception\TraverserException;
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\NodeInterface;
+use FFI\Parser\Transformer\Rule\BinaryOperatorRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignAsExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\AlignOfExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\SizeOfExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfUnqualExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\FunctionCallRule;
-use FFI\Parser\Transformer\Rule\TypedefCastRule;
+use FFI\Parser\Transformer\Rule\OperatorPrecedenceRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignAsTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\BuiltinCallTypeNameOperandRule;
@@ -69,8 +70,9 @@ final class Transformer
     public static function getDefaultTransformers(iterable $append = []): array
     {
         return [
-            new TypedefCastRule(),
+            new BinaryOperatorRule(),
             new FunctionCallRule(),
+            new OperatorPrecedenceRule(),
             new SizeOfExpressionOperandRule(),
             new AlignOfExpressionOperandRule(),
             new TypeOfExpressionOperandRule(),
