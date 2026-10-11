@@ -37,8 +37,8 @@ final class ExpressionsTest extends TestCase
         yield 'identifier' => ['a', 'a@14'];
         yield 'parenthesized' => ['(a)', '(paren a@15)@14'];
         yield 'operation on a parenthesized operand starts at the parenthesis' => [
-            '(a) + b',
-            '(+ (paren a@15)@14 b@20)@14',
+            '(a) / b',
+            '(/ (paren a@15)@14 b@20)@14',
         ];
         yield 'conditional on a parenthesized operand' => ['(a) ? b : c', '(? (paren a@15)@14 b@20 c@24)@14'];
         yield 'integer constant' => ['0x1Fu', '0x1Fu@14'];
@@ -88,11 +88,11 @@ final class ExpressionsTest extends TestCase
         yield 'cast of true' => ['(T)true', '(cast T@15 true@17)@14'];
         yield 'cast of false' => ['(T)false', '(cast T@15 false@17)@14'];
         yield 'cast of nullptr' => ['(T)nullptr', '(cast T@15 nullptr@17)@14'];
-        yield 'plus after parentheses is an addition' => ['(T)+x', '(+ (paren T@15)@14 x@18)@14'];
-        yield 'ampersand after parentheses is a bitwise and' => ['(T)&x', '(& (paren T@15)@14 x@18)@14'];
+        yield 'plus after parentheses is a cast' => ['(T)+x', '(cast T@15 (+u x@18)@17)@14'];
+        yield 'ampersand after parentheses is a cast' => ['(T)&x', '(cast T@15 (&u x@18)@17)@14'];
         yield 'nested casts' => ['(A)(B)x', '(cast A@15 (cast B@18 x@20)@17)@14'];
-        yield 'minus after parentheses is a subtraction' => ['(T)-x', '(- (paren T@15)@14 x@18)@14'];
-        yield 'asterisk after parentheses is a multiplication' => ['(T)*p', '(* (paren T@15)@14 p@18)@14'];
+        yield 'minus after parentheses is a cast' => ['(T)-x', '(cast T@15 (-u x@18)@17)@14'];
+        yield 'asterisk after parentheses is a cast' => ['(T)*p', '(cast T@15 (*u p@18)@17)@14'];
         yield 'subscript after parentheses' => ['(x)[0]', '([] (paren x@15)@14 0@18)@14'];
         yield 'member after parentheses' => ['(x).a', '(. (paren x@15)@14 a@18)@14'];
         yield 'minus after a keyword type is a cast' => ['(int)-1', '(cast int@15 (-u 1@20)@19)@14'];
@@ -135,8 +135,8 @@ final class ExpressionsTest extends TestCase
         ];
         yield 'operators of one level' => ['a < b == c > d', '(== (< a@14 b@18)@14 (> c@23 d@27)@23)@14'];
         yield 'parenthesized operand inside the expression' => [
-            'a + (b) * c',
-            '(+ a@14 (* (paren b@19)@18 c@24)@18)@14',
+            'a + (b) / c',
+            '(+ a@14 (/ (paren b@19)@18 c@24)@18)@14',
         ];
 
         yield 'sizeof of an expression' => ['sizeof x', '(sizeof x@21)@14'];
