@@ -542,7 +542,16 @@ Parameter -> {
         $offset,
     );
 }
-  : DeclarationSpecifiers() (Declarator() | AbstractDeclarator())? AttributeSpecifier()*
+  : DeclarationSpecifiers() (!ParenthesizedName() Declarator() | AbstractDeclarator())? AttributeSpecifier()*
+  ;
+
+/**
+ * 6.7.7.4 Function declarators, a declarator whose name is parenthesized
+ * alone: "(T)", "*(T)", "((T))". In a parameter such a name is read as the
+ * parameter of a function, "int (T)" is a function of T returning int.
+ */
+ParenthesizedName
+  : (Pointer() | BlockPointer() | DeclaratorAttributes())* <T_LPAREN> (ParenthesizedName() | <T_IDENTIFIER> <T_RPAREN>)
   ;
 
 /**
