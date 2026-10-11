@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Transformer\Rule;
 
 use FFI\Parser\Node\Declaration\RootDeclarationInterface;
+use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Parser;
 use FFI\Parser\Tests\NodePrinter;
 use FFI\Parser\Tests\TestCase;
@@ -15,6 +16,14 @@ abstract class RuleTestCase extends TestCase
     private const NAMES = 'typedef int T, U; int f, g, x, y, z; ';
 
     abstract protected static function createRule(): TransformerRuleInterface;
+
+    /**
+     * @return list<TransformerRuleInterface<covariant NodeInterface>>
+     */
+    protected static function createRules(): array
+    {
+        return [static::createRule()];
+    }
 
     protected static function assertDeclarationIsKept(string $code): void
     {
@@ -40,6 +49,6 @@ abstract class RuleTestCase extends TestCase
      */
     protected static function transformDeclarations(string $code): array
     {
-        return (new Parser(transformers: [static::createRule()]))->parse(self::NAMES . $code);
+        return (new Parser(transformers: static::createRules()))->parse(self::NAMES . $code);
     }
 }
