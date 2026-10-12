@@ -127,9 +127,7 @@ the ISO/IEC 9899:2024 standard).
 
 ## Limitations
 
-The built-in transformations rebuild the code whose meaning depends on whether
-a name is a typedef, except for:
-
-| Code              | Current AST               | Expected AST                         | When `T` is |
-|-------------------|---------------------------|--------------------------------------|-------------|
-| `int f(int (T));` | `Parameter(int, name: T)` | `Parameter(Function(int, Named(T)))` | a typedef   |
+The meaning of some code depends on whether a name is a typedef: `(T)-x` is
+a cast or a subtraction. The parser knows only the names declared in the
+header itself, a name from a header that is not included keeps the default
+reading: `(size_t)-1` is a cast.
