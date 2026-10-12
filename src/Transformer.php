@@ -15,6 +15,7 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfExpressionOperandRul
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfUnqualExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\FunctionCallRule;
 use FFI\Parser\Transformer\Rule\OperatorPrecedenceRule;
+use FFI\Parser\Transformer\Rule\ParameterNameRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignAsTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\BuiltinCallTypeNameOperandRule;
@@ -73,6 +74,7 @@ final class Transformer
             new BinaryOperatorRule(),
             new FunctionCallRule(),
             new OperatorPrecedenceRule(),
+            new ParameterNameRule(),
             new SizeOfExpressionOperandRule(),
             new AlignOfExpressionOperandRule(),
             new TypeOfExpressionOperandRule(),
