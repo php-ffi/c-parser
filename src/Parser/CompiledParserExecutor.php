@@ -11832,8 +11832,8 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         // The variables below are declared by the compiler
         $offset = $ctx->begin;
 
-        /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
-        if ($children[1]->items === []) {
+        /** @var array{Type\TypeInterface|null, Specifier\SpecifierList|null} $children */
+        if ($children[1] === null) {
             // Without the other specifiers at least one type specifier or
             // qualifier is written
             \assert($children[0] !== null);
@@ -11883,7 +11883,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             $type = new Type\QualifiedType($qualifiers, $type, $offset);
         }
 
-        return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset ?? $offset)];
+        if ($specifiers === []) {
+            return [$type, null];
+        }
+
+        return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
     }
 
     private static function reduceTypeDefSpecifier(\Phplrt\Parser\Context $ctx, mixed $children): mixed
@@ -12375,10 +12379,10 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var list{
          *     Type\TypeInterface|null,
-         *     Specifier\SpecifierList,
+         *     Specifier\SpecifierList|null,
          *     ...<\Closure(
          *         Type\TypeInterface|null,
-         *         Specifier\SpecifierList,
+         *         Specifier\SpecifierList|null,
          *         int<0, max>
          *     ): Type\RecordType\MemberDeclaration>
          * } $children
@@ -12428,7 +12432,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         return static function (
             ?Type\TypeInterface $type,
-            Specifier\SpecifierList $specifiers,
+            ?Specifier\SpecifierList $specifiers,
             int $start,
         ) use ($declarator, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
             \assert($start >= 0);
@@ -12757,7 +12761,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var list{
          *     Type\TypeInterface|null,
-         *     Specifier\SpecifierList,
+         *     Specifier\SpecifierList|null,
          *     ...<
          *         Node\Identifier
          *         |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
@@ -12855,7 +12859,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         return static function (
             ?Type\TypeInterface $type,
-            Specifier\SpecifierList $specifiers,
+            ?Specifier\SpecifierList $specifiers,
             int $start,
         ) use ($children, $attributes): Type\RecordType\MemberDeclaration {
             \assert($start >= 0);
@@ -13520,11 +13524,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
         /**
          * @var list{
          *     Type\TypeInterface|null,
-         *     Specifier\SpecifierList,
+         *     Specifier\SpecifierList|null,
          *     ...<
          *         \Closure(
          *             Type\TypeInterface|null,
-         *             Specifier\SpecifierList,
+         *             Specifier\SpecifierList|null,
          *             int<0, max>,
          *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
          *             Initializer\InitializerInterface|null=
@@ -13541,6 +13545,11 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
             }
 
             if ($children[0] === null) {
+                // Empty attribute specifiers alone: "[[]];", "__attribute__(());"
+                if ($children[1] === null) {
+                    return new Declaration\AttributeDeclaration(new Attribute\AttributeList([], $offset), $offset);
+                }
+
                 $attributes = [];
 
                 foreach ($children[1] as $specifier) {
@@ -13621,7 +13630,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         return static function (
             ?Type\TypeInterface $type,
-            Specifier\SpecifierList $specifiers,
+            ?Specifier\SpecifierList $specifiers,
             int $start,
             ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
             ?Initializer\InitializerInterface $initializer = null,
@@ -13643,7 +13652,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
                 );
             }
 
-            foreach ($specifiers as $specifier) {
+            foreach ($specifiers ?? [] as $specifier) {
                 if ($specifier instanceof Specifier\StorageClassSpecifier\TypeDefSpecifier) {
                     return new SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration(
                         $type,
@@ -13705,7 +13714,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
          * @var array{
          *     \Closure(
          *         Type\TypeInterface|null,
-         *         Specifier\SpecifierList,
+         *         Specifier\SpecifierList|null,
          *         int<0, max>,
          *         SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
          *         Initializer\InitializerInterface|null=
@@ -13719,7 +13728,7 @@ abstract class CompiledParserExecutor implements \Phplrt\Contracts\Parser\Parser
 
         return static function (
             ?Type\TypeInterface $type,
-            Specifier\SpecifierList $specifiers,
+            ?Specifier\SpecifierList $specifiers,
             int $start,
         ) use ($children): SpecifiedDeclaration\DeclaratorDeclaration {
             \assert($start >= 0);
