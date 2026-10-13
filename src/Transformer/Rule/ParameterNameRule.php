@@ -57,7 +57,7 @@ final class ParameterNameRule implements TransformerRuleInterface
             || !$parameter->type instanceof NamedType
             || $parameter->name !== null
             || $parameter->attributes !== null
-            || $parameter->specifiers->items !== []
+            || $parameter->specifiers !== null
             || $context->isTypedefName($parameter->type->name->value)) {
             return null;
         }
