@@ -12,8 +12,7 @@ use FFI\Parser\Node\NodeList;
  * type, in the order written, repeats included, such as `static inline` in
  * `static inline int`, and the attributes written among them or before
  * them, `[[deprecated]] static __attribute__((unused)) int`. They are not
- * checked: `static extern` gives a list as well. An empty list starts where
- * the declaration does.
+ * checked: `static extern` gives a list as well.
  *
  * @template-extends NodeList<SpecifierInterface|AttributeInterface>
  *

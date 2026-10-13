@@ -31,7 +31,7 @@ final class TagDeclaration extends SpecifiedDeclaration implements RootDeclarati
          * The declared type
          */
         public RecordType|EnumType $type,
-        SpecifierList $specifiers = new SpecifierList([]),
+        ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($specifiers, $offset);

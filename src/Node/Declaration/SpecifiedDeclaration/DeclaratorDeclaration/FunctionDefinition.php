@@ -43,7 +43,7 @@ final class FunctionDefinition extends DeclaratorDeclaration
         ?AttributeList $attributes = null,
         ?AsmLabel $asmLabel = null,
         ?InitializerInterface $initializer = null,
-        SpecifierList $specifiers = new SpecifierList([]),
+        ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($name, $attributes, $asmLabel, $initializer, $specifiers, $offset);

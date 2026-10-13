@@ -30,7 +30,7 @@ final class TypeDeclaration extends SpecifiedDeclaration implements RootDeclarat
          * specifier and no qualifier is written, such as in `static;`
          */
         public ?TypeInterface $type,
-        SpecifierList $specifiers = new SpecifierList([]),
+        ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($specifiers, $offset);

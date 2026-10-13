@@ -20,9 +20,10 @@ abstract class SpecifiedDeclaration extends Declaration
     public function __construct(
         /**
          * The storage-class, function and alignment specifiers and the
-         * attributes among them, in the order written
+         * attributes among them, in the order written, {@see null} in case
+         * of none is written
          */
-        public SpecifierList $specifiers = new SpecifierList([]),
+        public ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($offset);

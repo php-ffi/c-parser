@@ -42,7 +42,7 @@ final class Parameter extends SpecifiedDeclaration
          * whole of it, {@see null} in case of none is written
          */
         public ?AttributeList $attributes = null,
-        SpecifierList $specifiers = new SpecifierList([]),
+        ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($specifiers, $offset);

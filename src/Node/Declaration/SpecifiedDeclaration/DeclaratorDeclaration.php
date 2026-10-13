@@ -53,7 +53,7 @@ abstract class DeclaratorDeclaration extends SpecifiedDeclaration implements Roo
          * accepts it after any declarator and keeps it for a validator
          */
         public ?InitializerInterface $initializer = null,
-        SpecifierList $specifiers = new SpecifierList([]),
+        ?SpecifierList $specifiers = null,
         int $offset = 0,
     ) {
         parent::__construct($specifiers, $offset);
