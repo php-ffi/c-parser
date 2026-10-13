@@ -27,11 +27,11 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
-     *     Specifier\SpecifierList,
+     *     Specifier\SpecifierList|null,
      *     ...<
      *         \Closure(
      *             Type\TypeInterface|null,
-     *             Specifier\SpecifierList,
+     *             Specifier\SpecifierList|null,
      *             int<0, max>,
      *             SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
      *             Initializer\InitializerInterface|null=
@@ -48,6 +48,9 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
         }
 
         if ($children[0] === null) {
+            // Without a type at least one other specifier is written
+            \assert($children[1] !== null);
+
             $attributes = [];
 
             foreach ($children[1] as $specifier) {
@@ -110,7 +113,7 @@ InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
      * @var array{
      *     \Closure(
      *         Type\TypeInterface|null,
-     *         Specifier\SpecifierList,
+     *         Specifier\SpecifierList|null,
      *         int<0, max>,
      *         SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody|null=,
      *         Initializer\InitializerInterface|null=
@@ -124,7 +127,7 @@ InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
 
     return static function (
         ?Type\TypeInterface $type,
-        Specifier\SpecifierList $specifiers,
+        ?Specifier\SpecifierList $specifiers,
         int $start,
     ) use ($children): SpecifiedDeclaration\DeclaratorDeclaration {
         \assert($start >= 0);
@@ -179,7 +182,7 @@ DeclarationDeclarator -> {
 
     return static function (
         ?Type\TypeInterface $type,
-        Specifier\SpecifierList $specifiers,
+        ?Specifier\SpecifierList $specifiers,
         int $start,
         ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
         ?Initializer\InitializerInterface $initializer = null,
@@ -201,7 +204,7 @@ DeclarationDeclarator -> {
             );
         }
 
-        foreach ($specifiers as $specifier) {
+        foreach ($specifiers ?? [] as $specifier) {
             if ($specifier instanceof Specifier\StorageClassSpecifier\TypeDefSpecifier) {
                 return new SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration(
                     $type,

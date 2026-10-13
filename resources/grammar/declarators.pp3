@@ -512,7 +512,7 @@ Parameter -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
-     *     Specifier\SpecifierList,
+     *     Specifier\SpecifierList|null,
      *     ...<
      *         Node\Identifier
      *         |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)

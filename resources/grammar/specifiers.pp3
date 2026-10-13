@@ -16,8 +16,8 @@
  * error, the modifiers of the base are not checked: "long char" gives a
  * syntax tree. The type specifiers and the qualifiers build the type, the
  * other specifiers go to a list in the order written. Both are passed to
- * the parent as two children: the type, null in case of there is none, and
- * the list.
+ * the parent as two children: the type and the list, each null in case of
+ * there is none.
  */
 DeclarationSpecifiers -> {
     /**
@@ -54,7 +54,11 @@ DeclarationSpecifiers -> {
         $type = new Type\QualifiedType($qualifiers, $type, $offset);
     }
 
-    return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset ?? $offset)];
+    if ($specifiers === []) {
+        return [$type, null];
+    }
+
+    return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
 }
   : NonTypeSpecifier()+ TypeSpecifiers()?
   | TypeSpecifiers()
@@ -101,8 +105,8 @@ NonTypeSpecifier
  * member by the member itself.
  */
 TypeNameSpecifiers -> {
-    /** @var array{Type\TypeInterface|null, Specifier\SpecifierList} $children */
-    if ($children[1]->items === []) {
+    /** @var array{Type\TypeInterface|null, Specifier\SpecifierList|null} $children */
+    if ($children[1] === null) {
         // Without the other specifiers at least one type specifier or
         // qualifier is written
         \assert($children[0] !== null);
@@ -431,10 +435,10 @@ MemberDeclarations -> {
     /**
      * @var list{
      *     Type\TypeInterface|null,
-     *     Specifier\SpecifierList,
+     *     Specifier\SpecifierList|null,
      *     ...<\Closure(
      *         Type\TypeInterface|null,
-     *         Specifier\SpecifierList,
+     *         Specifier\SpecifierList|null,
      *         int<0, max>
      *     ): Type\RecordType\MemberDeclaration>
      * } $children
@@ -501,7 +505,7 @@ NamedMemberDeclarator -> {
 
     return static function (
         ?Type\TypeInterface $type,
-        Specifier\SpecifierList $specifiers,
+        ?Specifier\SpecifierList $specifiers,
         int $start,
     ) use ($declarator, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
         \assert($start >= 0);
@@ -529,7 +533,7 @@ UnnamedBitFieldDeclarator -> {
 
     return static function (
         ?Type\TypeInterface $type,
-        Specifier\SpecifierList $specifiers,
+        ?Specifier\SpecifierList $specifiers,
         int $start,
     ) use ($children, $attributes): Type\RecordType\MemberDeclaration {
         \assert($start >= 0);
