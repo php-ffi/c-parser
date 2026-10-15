@@ -346,19 +346,19 @@ final class AttributesTest extends TestCase
             'PointerType@14', 'IntType@0', 'AttributeList@15', 'KeywordAttribute@15', 'Identifier@15',
         ]];
         yield 'attributes of a declarator' => ['int f(void) __attribute__((a)) [[b]];', [
-            'FunctionDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'AttributeList@27', 'GnuAttribute@27',
+            'FunctionDeclaration@0', 'Identifier@4', 'AttributeList@27', 'GnuAttribute@27',
             'Identifier@27', 'StandardAttribute@33', 'Identifier@33', 'FunctionType@5', 'IntType@0', 'ParameterList@6',
-            'Parameter@6', 'SpecifierList@6', 'VoidType@6',
+            'Parameter@6', 'VoidType@6',
         ]];
         yield 'attributes after an array' => ['int a[2] [[x]] [3];', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'SizedArrayType@5', 'SizedArrayType@15',
+            'VariableDeclaration@0', 'Identifier@4', 'SizedArrayType@5', 'SizedArrayType@15',
             'IntType@0', 'DecIntLiteral@16', 'AttributeList@11', 'StandardAttribute@11', 'Identifier@11',
             'DecIntLiteral@6',
         ]];
         yield 'attributes of a parenthesized declarator' => ['void ( __cdecl *f)(void);', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@16', 'PointerType@15', 'AttributedType@7',
+            'VariableDeclaration@0', 'Identifier@16', 'PointerType@15', 'AttributedType@7',
             'AttributeList@7', 'KeywordAttribute@7', 'Identifier@7', 'FunctionType@18', 'VoidType@0',
-            'ParameterList@19', 'Parameter@19', 'SpecifierList@19', 'VoidType@19',
+            'ParameterList@19', 'Parameter@19', 'VoidType@19',
         ]];
         yield 'attributes before and after the specifiers' => ['[[a]] int [[b]] x;', [
             'VariableDeclaration@0', 'SpecifierList@2', 'StandardAttribute@2', 'Identifier@2', 'StandardAttribute@12',
@@ -369,11 +369,11 @@ final class AttributesTest extends TestCase
             'DecIntLiteral@17', 'Identifier@28', 'NamedType@21', 'Identifier@21',
         ]];
         yield 'attributes of a tag' => ['struct [[a]] S {} [[b]];', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@13', 'MemberDeclarationList@15',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@13', 'MemberDeclarationList@15',
             'AttributeList@9', 'StandardAttribute@9', 'Identifier@9', 'StandardAttribute@20', 'Identifier@20',
         ]];
         yield 'attributes of an enumerator' => ['enum E { A [[a]] };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'EnumType@0', 'Identifier@5', 'EnumeratorList@9', 'Enumerator@9',
+            'TagDeclaration@0', 'EnumType@0', 'Identifier@5', 'EnumeratorList@9', 'Enumerator@9',
             'Identifier@9', 'AttributeList@13', 'StandardAttribute@13', 'Identifier@13',
         ]];
     }

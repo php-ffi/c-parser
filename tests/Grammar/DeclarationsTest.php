@@ -286,8 +286,7 @@ final class DeclarationsTest extends TestCase
         yield 'variable and function' => ['static int a = 1, *f(void);', [
             'VariableDeclaration@0', 'SpecifierList@0', 'StaticSpecifier@0', 'Identifier@11', 'DecIntLiteral@15',
             'IntType@7', 'FunctionDeclaration@0', 'SpecifierList@0', 'StaticSpecifier@0', 'Identifier@19',
-            'FunctionType@20', 'PointerType@18', 'IntType@7', 'ParameterList@21', 'Parameter@21', 'SpecifierList@21',
-            'VoidType@21',
+            'FunctionType@20', 'PointerType@18', 'IntType@7', 'ParameterList@21', 'Parameter@21', 'VoidType@21',
         ]];
         yield 'typedef' => ['typedef int T;', [
             'TypeDefDeclaration@0', 'SpecifierList@0', 'TypeDefSpecifier@0', 'Identifier@12', 'IntType@8',
@@ -296,11 +295,11 @@ final class DeclarationsTest extends TestCase
             'TypeDefDeclaration@0', 'SpecifierList@4', 'TypeDefSpecifier@4', 'Identifier@12', 'IntType@0',
         ]];
         yield 'compound literal' => ['int x = (int[]){1};', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'CompoundLiteralExpression@8',
+            'VariableDeclaration@0', 'Identifier@4', 'CompoundLiteralExpression@8',
             'IncompleteArrayType@12', 'IntType@9', 'InitializerList@15', 'DecIntLiteral@16', 'IntType@0',
         ]];
         yield 'assembler label and a range designator' => ['int a[] __asm__("x") = {[0 ... 1] = 2};', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'AsmLabel@8', 'StringLiteral@16',
+            'VariableDeclaration@0', 'Identifier@4', 'AsmLabel@8', 'StringLiteral@16',
             'InitializerList@23', 'DesignatedInitializer@24', 'DesignatorList@24', 'RangeDesignator@24',
             'OctIntLiteral@25', 'DecIntLiteral@31', 'DecIntLiteral@36', 'IncompleteArrayType@5', 'IntType@0',
         ]];
@@ -309,7 +308,7 @@ final class DeclarationsTest extends TestCase
             'IntType@7', 'ParameterList@12', 'FunctionBody@15',
         ]];
         yield 'initializer list' => ['int a[] = {[0] = 1, .b.c = {}};', [
-            'VariableDeclaration@0', 'SpecifierList@0', 'Identifier@4', 'InitializerList@10',
+            'VariableDeclaration@0', 'Identifier@4', 'InitializerList@10',
             'DesignatedInitializer@11', 'DesignatorList@11', 'IndexDesignator@11', 'OctIntLiteral@12',
             'DecIntLiteral@17', 'DesignatedInitializer@20', 'DesignatorList@20', 'MemberDesignator@20', 'Identifier@21',
             'MemberDesignator@22', 'Identifier@23', 'InitializerList@27', 'IncompleteArrayType@5', 'IntType@0',

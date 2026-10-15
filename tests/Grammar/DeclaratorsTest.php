@@ -274,34 +274,34 @@ final class DeclaratorsTest extends TestCase
     public static function offsetsDataProvider(): iterable
     {
         yield 'pointer' => ['struct S { int *const p; };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'QualifiedType@15', 'PointerType@15', 'IntType@11',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'QualifiedType@15', 'PointerType@15', 'IntType@11',
             'Identifier@22',
         ]];
         yield 'array' => ['struct S { int a[static 3]; };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'SizedArrayType@16', 'IntType@11', 'DecIntLiteral@24',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'SizedArrayType@16', 'IntType@11', 'DecIntLiteral@24',
             'Identifier@15',
         ]];
         yield 'array without a size and a parenthesized pointer' => ['struct S { int a[], (*p); };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'IncompleteArrayType@16', 'IntType@11', 'Identifier@15',
-            'MemberDeclaration@11', 'SpecifierList@11', 'PointerType@21', 'IntType@11', 'Identifier@22',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'IncompleteArrayType@16', 'IntType@11', 'Identifier@15',
+            'MemberDeclaration@11', 'PointerType@21', 'IntType@11', 'Identifier@22',
         ]];
         yield 'array of unspecified size' => ['struct S { int f(int b[*]); };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'FunctionType@16', 'IntType@11', 'ParameterList@17',
-            'Parameter@17', 'SpecifierList@17', 'UnspecifiedSizeArrayType@22', 'IntType@17', 'Identifier@21',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'FunctionType@16', 'IntType@11', 'ParameterList@17',
+            'Parameter@17', 'UnspecifiedSizeArrayType@22', 'IntType@17', 'Identifier@21',
             'Identifier@15',
         ]];
         yield 'function' => ['struct S { int f(char c, ...); };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'FunctionType@16', 'IntType@11', 'ParameterList@17',
-            'Parameter@17', 'SpecifierList@17', 'CharType@17', 'Identifier@22', 'Identifier@15',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'FunctionType@16', 'IntType@11', 'ParameterList@17',
+            'Parameter@17', 'CharType@17', 'Identifier@22', 'Identifier@15',
         ]];
         yield 'empty parameter list' => ['struct S { int f(); };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
-            'MemberDeclaration@11', 'SpecifierList@11', 'FunctionType@16', 'IntType@11', 'ParameterList@16',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'MemberDeclaration@11', 'FunctionType@16', 'IntType@11', 'ParameterList@16',
             'Identifier@15',
         ]];
         yield 'type name' => ['static_assert(sizeof(int (*)[2]));', [

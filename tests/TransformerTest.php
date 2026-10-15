@@ -32,7 +32,6 @@ final class TransformerTest extends TestCase
 
         self::assertSame(
             [
-                '  SpecifierList@0',
                 '  Identifier@4',
                 '    Identifier@8',
                 '  IdentifierExpression@8',

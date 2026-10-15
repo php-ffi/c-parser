@@ -305,7 +305,7 @@ final class NodePrinter
                 $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
             ),
             $node instanceof Parameter => \implode(' ', \array_filter([
-                $this->format($node->specifiers),
+                $node->specifiers === null ? '' : $this->format($node->specifiers),
                 $this->format($node->type),
                 $node->name === null ? '' : $this->format($node->name),
                 $node->attributes === null ? '' : $this->format($node->attributes),
@@ -321,7 +321,7 @@ final class NodePrinter
                 )) . ' }',
             ),
             $node instanceof MemberDeclaration => \implode(' ', \array_filter([
-                $this->format($node->specifiers),
+                $node->specifiers === null ? '' : $this->format($node->specifiers),
                 $this->format($node->type),
                 ($node->name->value ?? '_') . ($node->width === null ? '' : ':' . $this->format($node->width)),
                 $node->attributes === null ? '' : $this->format($node->attributes),
@@ -348,7 +348,10 @@ final class NodePrinter
             $node instanceof SpecifiedDeclaration\TypeDeclaration => \sprintf(
                 '(%s %s)',
                 $node instanceof SpecifiedDeclaration\TagDeclaration ? 'tag' : 'type',
-                \implode(' ', \array_filter([$this->format($node->specifiers), $this->format($node->type)])),
+                \implode(' ', \array_filter([
+                    $node->specifiers === null ? '' : $this->format($node->specifiers),
+                    $this->format($node->type),
+                ])),
             ),
             $node instanceof SpecifiedDeclaration\DeclaratorDeclaration => \sprintf(
                 '(%s %s)',
@@ -359,7 +362,7 @@ final class NodePrinter
                     default => 'variable',
                 },
                 \implode(' ', \array_filter([
-                    $this->format($node->specifiers),
+                    $node->specifiers === null ? '' : $this->format($node->specifiers),
                     $this->format($node->type ?? null),
                     $this->format($node->name),
                     $node->attributes === null ? '' : $this->format($node->attributes),

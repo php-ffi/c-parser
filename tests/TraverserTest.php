@@ -13,7 +13,6 @@ use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\NodeInterface;
-use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Node\Type\NamedType;
 use FFI\Parser\Node\Type\RecordType\MemberDeclaration;
@@ -42,8 +41,6 @@ final class TraverserTest extends TestCase
         self::assertSame(
             [
                 '> VariableDeclaration@0',
-                '  > SpecifierList@0',
-                '  < SpecifierList@0',
                 '  > Identifier@4',
                 '  < Identifier@4',
                 '  > IdentifierExpression@8',
@@ -135,7 +132,7 @@ final class TraverserTest extends TestCase
         ]))->traverse(self::parse('int a = b;'));
 
         self::assertSame('(variable int a = (paren b))', NodePrinter::print($declarations[0]));
-        self::assertSame(['  > ParenExpression@8', '  < ParenExpression@8'], \array_slice($visits, 5, 2));
+        self::assertSame(['  > ParenExpression@8', '  < ParenExpression@8'], \array_slice($visits, 3, 2));
     }
 
     public function testVisitorIsGivenTheNodeThePreviousOneReturned(): void
@@ -203,7 +200,7 @@ final class TraverserTest extends TestCase
             self::createRecordingVisitor($visits),
         ]))->traverse(self::parse('int a = b;'));
 
-        self::assertSame(['  > IdentifierExpression@8', '  < IdentifierExpression@8'], \array_slice($visits, 5, 2));
+        self::assertSame(['  > IdentifierExpression@8', '  < IdentifierExpression@8'], \array_slice($visits, 3, 2));
     }
 
     public function testContextHoldsTheParentsAndTheDeclarations(): void
@@ -279,7 +276,7 @@ final class TraverserTest extends TestCase
         yield 'children skipped on leave' => [
             self::createVisitor(leave: static fn(): Action => Action::SkipChildren),
             ChildrenSkipException::class,
-            'The children of ' . SpecifierList::class
+            'The children of ' . Identifier::class
                 . ' cannot be skipped by a visitor that leaves the node, they are already walked',
         ];
     }

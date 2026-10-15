@@ -28,13 +28,11 @@ final class ValidatorTest extends TestCase
         self::assertSame(
             [
                 'VariableDeclaration@0',
-                '  SpecifierList@0',
                 '  Identifier@24',
                 '  StructType@0',
                 '    Identifier@7',
                 '    MemberDeclarationList@11',
                 '      MemberDeclaration@11',
-                '        SpecifierList@11',
                 '        IntType@11',
                 '        Identifier@15',
                 '        DecIntLiteral@19',

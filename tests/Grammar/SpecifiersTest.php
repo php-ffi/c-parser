@@ -212,18 +212,18 @@ final class SpecifiersTest extends TestCase
     {
         yield 'structure' => ['static struct S { int a; };', [
             'TagDeclaration@0', 'SpecifierList@0', 'StaticSpecifier@0', 'StructType@7', 'Identifier@14',
-            'MemberDeclarationList@18', 'MemberDeclaration@18', 'SpecifierList@18', 'IntType@18', 'Identifier@22',
+            'MemberDeclarationList@18', 'MemberDeclaration@18', 'IntType@18', 'Identifier@22',
         ]];
         yield 'union' => ['union U { float f : 1; };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'UnionType@0', 'Identifier@6', 'MemberDeclarationList@10',
-            'MemberDeclaration@10', 'SpecifierList@10', 'FloatType@10', 'Identifier@16', 'DecIntLiteral@20',
+            'TagDeclaration@0', 'UnionType@0', 'Identifier@6', 'MemberDeclarationList@10',
+            'MemberDeclaration@10', 'FloatType@10', 'Identifier@16', 'DecIntLiteral@20',
         ]];
         yield 'enumeration' => ['enum E : char { A = 1, B };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'EnumType@0', 'Identifier@5', 'CharType@9', 'EnumeratorList@16',
+            'TagDeclaration@0', 'EnumType@0', 'Identifier@5', 'CharType@9', 'EnumeratorList@16',
             'Enumerator@16', 'Identifier@16', 'DecIntLiteral@20', 'Enumerator@23', 'Identifier@23',
         ]];
         yield 'atomic type' => ['const _Atomic(T) volatile;', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'QualifiedType@0', 'AtomicType@6', 'NamedType@14',
+            'TypeDeclaration@0', 'QualifiedType@0', 'AtomicType@6', 'NamedType@14',
             'Identifier@14',
         ]];
         yield 'typeof and alignas' => ['alignas(T) typeof(x);', [
@@ -231,31 +231,31 @@ final class SpecifiersTest extends TestCase
             'TypeOfTypeType@11', 'NamedType@18', 'Identifier@18',
         ]];
         yield 'bit-precise integer' => ['unsigned _BitInt(8);', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'ModifiedType@0', 'BitIntType@9', 'DecIntLiteral@17',
+            'TypeDeclaration@0', 'ModifiedType@0', 'BitIntType@9', 'DecIntLiteral@17',
         ]];
         yield 'type built where the specifiers start' => ['static const unsigned int;', [
             'TypeDeclaration@0', 'SpecifierList@0', 'StaticSpecifier@0', 'QualifiedType@0', 'ModifiedType@0',
             'IntType@22',
         ]];
         yield 'members of one declaration' => ['struct S { alignas(8) int a, b : 1; };', [
-            'TagDeclaration@0', 'SpecifierList@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
+            'TagDeclaration@0', 'StructType@0', 'Identifier@7', 'MemberDeclarationList@11',
             'MemberDeclaration@11', 'SpecifierList@11', 'AlignAsSpecifier@11', 'DecIntLiteral@19', 'IntType@22',
             'Identifier@26', 'MemberDeclaration@11', 'SpecifierList@11', 'AlignAsSpecifier@11', 'DecIntLiteral@19',
             'IntType@22', 'Identifier@29', 'DecIntLiteral@33',
         ]];
         yield 'typeof of an expression' => ['typeof(x + 1);', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfType@0', 'AddExpression@7', 'IdentifierExpression@7',
+            'TypeDeclaration@0', 'TypeOfType@0', 'AddExpression@7', 'IdentifierExpression@7',
             'Identifier@7', 'DecIntLiteral@11',
         ]];
         yield 'typeof_unqual of an expression' => ['typeof_unqual(x + 1);', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfUnqualType@0', 'AddExpression@14',
+            'TypeDeclaration@0', 'TypeOfUnqualType@0', 'AddExpression@14',
             'IdentifierExpression@14', 'Identifier@14', 'DecIntLiteral@18',
         ]];
         yield 'typeof_unqual of a type' => ['typeof_unqual(int);', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'TypeOfUnqualTypeType@0', 'IntType@14',
+            'TypeDeclaration@0', 'TypeOfUnqualTypeType@0', 'IntType@14',
         ]];
         yield 'boolean base' => ['_Bool;', [
-            'TypeDeclaration@0', 'SpecifierList@0', 'BoolType@0',
+            'TypeDeclaration@0', 'BoolType@0',
         ]];
     }
 
