@@ -48,8 +48,10 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
         }
 
         if ($children[0] === null) {
-            // Without a type at least one other specifier is written
-            \assert($children[1] !== null);
+            // Empty attribute specifiers alone: "[[]];", "__attribute__(());"
+            if ($children[1] === null) {
+                return new Declaration\AttributeDeclaration(new Attribute\AttributeList([], $offset), $offset);
+            }
 
             $attributes = [];
 
