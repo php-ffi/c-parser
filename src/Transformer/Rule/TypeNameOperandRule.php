@@ -13,7 +13,6 @@ use FFI\Parser\Node\Expression\ParenExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression\DereferenceExpression;
 use FFI\Parser\Node\NodeInterface;
-use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\ArrayType\SizedArrayType;
 use FFI\Parser\Node\Type\FunctionType;
 use FFI\Parser\Node\Type\FunctionType\Parameter;
@@ -195,11 +194,7 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
                 return null;
             }
 
-            $parameters[] = new Parameter(
-                $type,
-                specifiers: new SpecifierList([], $argument->offset),
-                offset: $argument->offset,
-            );
+            $parameters[] = new Parameter($type, offset: $argument->offset);
         }
 
         return $parameters;
