@@ -28,6 +28,11 @@ final class TreeWalker
      */
     private readonly \WeakMap $results;
 
+    /**
+     * @var array<class-string<NodeInterface>, list<string>>
+     */
+    private array $properties = [];
+
     public function __construct(
         /**
          * @var non-empty-list<VisitorInterface>
@@ -152,7 +157,10 @@ final class TreeWalker
      */
     private function walkChildren(NodeInterface $node, array $parents): void
     {
-        foreach (\get_object_vars($node) as $property => $value) {
+        foreach ($this->getProperties($node) as $property) {
+            // @phpstan-ignore-next-line the property name is taken from the public properties of the same node
+            $value = $node->{$property};
+
             if ($value instanceof NodeInterface) {
                 $child = $this->visit($value, $parents);
 
@@ -167,6 +175,35 @@ final class TreeWalker
                 $this->walkList($node, $property, $value, $parents);
             }
         }
+    }
+
+    /**
+     * Returns the names of the public properties of the node, the ones of
+     * a parent class first, each in the order declared.
+     *
+     * @return list<string>
+     */
+    private function getProperties(NodeInterface $node): array
+    {
+        return $this->properties[$node::class] ??= $this->readProperties(new \ReflectionClass($node));
+    }
+
+    /**
+     * @param \ReflectionClass<object> $class
+     * @return list<string>
+     */
+    private function readProperties(\ReflectionClass $class): array
+    {
+        $parent = $class->getParentClass();
+        $properties = $parent === false ? [] : $this->readProperties($parent);
+
+        foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            if (!$property->isStatic() && !\in_array($property->name, $properties, true)) {
+                $properties[] = $property->name;
+            }
+        }
+
+        return $properties;
     }
 
     /**
