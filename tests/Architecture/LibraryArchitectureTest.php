@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Tests\Architecture;
 
 use FFI\Parser\Parser;
+use FFI\Parser\Preset;
 use FFI\Parser\Transformer;
 use FFI\Parser\Traverser;
 use FFI\Parser\Validator;
@@ -14,7 +15,7 @@ use PHPat\Test\PHPat;
 
 final class LibraryArchitectureTest
 {
-    public function testNodesDoNotDependOnTheParserTheTraverserTheTransformersOrTheValidators(): Rule
+    public function testNodesDoNotDependOnTheParserThePresetsTheTraverserTheTransformersOrTheValidators(): Rule
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('FFI\Parser\Node'))
@@ -23,6 +24,8 @@ final class LibraryArchitectureTest
             ->classes(
                 Selector::classname(Parser::class),
                 Selector::inNamespace('FFI\Parser\Parser'),
+                Selector::classname(Preset::class),
+                Selector::inNamespace('FFI\Parser\Preset'),
                 Selector::classname(Traverser::class),
                 Selector::inNamespace('FFI\Parser\Traverser'),
                 Selector::classname(Transformer::class),
@@ -30,7 +33,7 @@ final class LibraryArchitectureTest
                 Selector::classname(Validator::class),
                 Selector::inNamespace('FFI\Parser\Validator'),
             )
-            ->because('the syntax tree knows nothing of the parser, the traverser, the transformers and the validators that use it');
+            ->because('the syntax tree knows nothing of the parser, the presets, the traverser, the transformers and the validators that use it');
     }
 
     public function testParserInternalsAreUsedByTheParserOnly(): Rule
@@ -45,6 +48,22 @@ final class LibraryArchitectureTest
             ->dependOn()
             ->classes(Selector::inNamespace('FFI\Parser\Parser'))
             ->because('the generated parser is an implementation detail of the public parser');
+    }
+
+    public function testPresetsDependOnThePresetsOnly(): Rule
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::classname(Preset::class),
+                Selector::inNamespace('FFI\Parser\Preset'),
+            )
+            ->canOnly()
+            ->dependOn()
+            ->classes(
+                Selector::classname(Preset::class),
+                Selector::inNamespace('FFI\Parser\Preset'),
+            )
+            ->because('a preset lists what a compiler knows before the header and can be used without the parser');
     }
 
     public function testTraverserDependsOnTheNodesOnly(): Rule
