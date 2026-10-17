@@ -24,9 +24,11 @@ use FFI\Parser\Node\NodeInterface;
 final class TreeWalker
 {
     /**
-     * @var \WeakMap<NodeInterface, NodeInterface|Action::Remove>
+     * The result of every visited node, held until the end of the walk
+     *
+     * @var \SplObjectStorage<NodeInterface, NodeInterface|Action::Remove>
      */
-    private readonly \WeakMap $results;
+    private \SplObjectStorage $results;
 
     /**
      * @var array<class-string<NodeInterface>, list<string>>
@@ -43,11 +45,12 @@ final class TreeWalker
          */
         private readonly array $declarations,
     ) {
-        $this->results = new \WeakMap();
+        $this->results = new \SplObjectStorage();
     }
 
     /**
-     * Walks every declaration with every visitor.
+     * Walks every declaration with every visitor. The results of the
+     * visited nodes are released when the walk ends.
      *
      * @return list<RootDeclarationInterface> the declarations with the
      *         replaced ones in their places and without the removed ones
@@ -55,6 +58,20 @@ final class TreeWalker
      *         tree
      */
     public function walk(): array
+    {
+        try {
+            return $this->walkDeclarations();
+        } finally {
+            $this->results = new \SplObjectStorage();
+        }
+    }
+
+    /**
+     * @return list<RootDeclarationInterface>
+     * @throws TraverserException in case of a visitor breaks the syntax
+     *         tree
+     */
+    private function walkDeclarations(): array
     {
         $result = [];
 
