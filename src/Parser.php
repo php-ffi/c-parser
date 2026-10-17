@@ -40,24 +40,25 @@ final class Parser
     private readonly Validator $validator;
 
     /**
-     * @param SourceFactoryInterface|null $sources creates the sources out of
-     *        the values given to {@see parse()} and {@see validate()}, the
-     *        default one accepts strings, files and streams
      * @param iterable<mixed, ValidatorRuleInterface>|null $rules checks of the
      *        syntax tree run by {@see parse()}
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
      *        rewrites of the syntax tree run by {@see parse()} before the
      *        checks
+     * @param SourceFactoryInterface|null $sources creates the sources out of
+     *        the values given to {@see parse()} and {@see validate()}, the
+     *        default one accepts strings, files and streams
      */
     public function __construct(
-        ?SourceFactoryInterface $sources = null,
         ?iterable $rules = null,
         ?iterable $transformers = null,
+        ?SourceFactoryInterface $sources = null,
     ) {
         $this->parser = self::createParser();
-        $this->sources = self::createSourceFactory($sources);
+
         $this->transformer = self::createTransformer($transformers);
         $this->validator = self::createValidator($rules);
+        $this->sources = self::createSourceFactory($sources);
     }
 
     /**
