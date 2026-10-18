@@ -22,11 +22,11 @@ abstract class Preset implements PresetInterface
      */
     public static function createDefault(): CompoundPreset
     {
-        return new CompoundPreset(
+        return new CompoundPreset([
             new ClangPreset(),
             new MsvcPreset(),
             new GccPreset(),
             new PhpPreset(),
-        );
+        ]);
     }
 }

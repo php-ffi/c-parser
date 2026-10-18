@@ -7,37 +7,23 @@ namespace FFI\Parser\Preset;
 use FFI\Parser\Preset;
 
 /**
- * Union of the presets: whatever any of them knows. Without presets, it is
- * the empty preset.
+ * Union of the presets: whatever any of them knows.
  */
 final class CompoundPreset extends Preset
 {
     /**
      * @var list<non-empty-string>
      */
-    private readonly array $typedefNames;
+    private array $typedefNames;
 
-    public function __construct(PresetInterface ...$presets)
-    {
-        $this->typedefNames = self::mergeTypedefNames($presets);
-    }
-
-    /**
-     * @param array<array-key, PresetInterface> $presets
-     * @return list<non-empty-string>
-     */
-    private static function mergeTypedefNames(array $presets): array
-    {
-        $names = [];
-
-        foreach ($presets as $preset) {
-            foreach ($preset->getTypedefNames() as $name) {
-                $names[$name] = true;
-            }
-        }
-
-        return \array_keys($names);
-    }
+    public function __construct(
+        /**
+         * Presets whose names are merged
+         *
+         * @var non-empty-list<PresetInterface>
+         */
+        private readonly array $presets,
+    ) {}
 
     /**
      * {@inheritDoc}
@@ -47,6 +33,22 @@ final class CompoundPreset extends Preset
      */
     public function getTypedefNames(): array
     {
-        return $this->typedefNames;
+        return $this->typedefNames ??= $this->mergeTypedefNames();
+    }
+
+    /**
+     * @return list<non-empty-string>
+     */
+    private function mergeTypedefNames(): array
+    {
+        $names = [];
+
+        foreach ($this->presets as $preset) {
+            foreach ($preset->getTypedefNames() as $name) {
+                $names[$name] = true;
+            }
+        }
+
+        return \array_keys($names);
     }
 }

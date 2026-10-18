@@ -27,12 +27,12 @@ final class PresetTest extends TestCase
 {
     public function testDefaultPresetListsTheNamesOfEveryCompiler(): void
     {
-        $expected = new CompoundPreset(
+        $expected = new CompoundPreset([
             new ClangPreset(),
             new MsvcPreset(),
             new GccPreset(),
             new PhpPreset(),
-        );
+        ]);
 
         self::assertSame($expected->getTypedefNames(), Preset::createDefault()->getTypedefNames());
     }

@@ -12,19 +12,14 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CompoundPreset::class)]
 final class CompoundPresetTest extends TestCase
 {
-    public function testEmptyPresetListsNoNames(): void
-    {
-        self::assertSame([], (new CompoundPreset())->getTypedefNames());
-    }
-
     public function testNamesOfThePresetsAreListedInTheirOrderOnce(): void
     {
-        $preset = new CompoundPreset(
+        $preset = new CompoundPreset([
             self::createPreset(['a', 'b']),
             self::createPreset(['c', 'a']),
             self::createPreset([]),
             self::createPreset(['b', 'd']),
-        );
+        ]);
 
         self::assertSame(['a', 'b', 'c', 'd'], $preset->getTypedefNames());
     }
