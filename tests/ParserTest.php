@@ -218,7 +218,7 @@ final class ParserTest extends TestCase
             ->with('header')
             ->willReturn(VirtualSource::createFromString('header.h', ';'));
 
-        $parser = new Parser($factory);
+        $parser = new Parser(sources: $factory);
 
         self::assertSame([], $parser->parse('header'));
         self::assertTrue($parser->validate('header'));
