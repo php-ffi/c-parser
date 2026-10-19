@@ -14,6 +14,7 @@ use FFI\Parser\Node\Literal\FloatLiteral\FloatTypeSuffix;
  * There is no sign: a minus before a constant is a unary operator.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
+ * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), Annex H.5.2 Constants
  */
 abstract class FloatLiteral extends Literal
 {
@@ -61,6 +62,13 @@ abstract class FloatLiteral extends Literal
          */
         public readonly ?FloatTypeSuffix $suffix = null,
         /**
+         * The width written in the suffix of {@see $suffix}: `16` in
+         * `1.0f16`, {@see null} for a suffix without one
+         *
+         * @var int<1, max>|null
+         */
+        public readonly ?int $suffixWidth = null,
+        /**
          * GCC: whether the constant is imaginary, written with the suffix
          * `i` or `j` (`2.0i`, `3j`), its type is then the complex type of
          * the constant
@@ -98,7 +106,7 @@ abstract class FloatLiteral extends Literal
     private function representAsRawValue(): string
     {
         return $this->representAsRawNumber()
-            . $this->suffix?->value
+            . $this->suffix?->getSpelling($this->suffixWidth)
             . ($this->isImaginary ? 'i' : '');
     }
 
@@ -135,6 +143,7 @@ abstract class FloatLiteral extends Literal
             mantissa: $result->mantissa,
             exponent: $result->exponent,
             suffix: $result->suffix,
+            suffixWidth: $result->suffixWidth,
             isImaginary: $result->isImaginary,
             raw: $raw,
             offset: $offset,

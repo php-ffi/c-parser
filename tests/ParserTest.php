@@ -14,8 +14,15 @@ use FFI\Parser\Node\Type\BuiltinType\CharType;
 use FFI\Parser\Node\Type\BuiltinType\IntType;
 use FFI\Parser\Parser;
 use FFI\Parser\Parser\ParserExecutor;
+use FFI\Parser\Preset;
+use FFI\Parser\Preset\Feature;
+use FFI\Parser\Transformer;
+use FFI\Parser\Transformer\Rule\ParameterNameRule;
 use FFI\Parser\Transformer\TransformationContext;
 use FFI\Parser\Transformer\TransformerRuleInterface;
+use FFI\Parser\Validator;
+use FFI\Parser\Validator\Rule\Extension\ComplexIntegerTypeRule;
+use FFI\Parser\Validator\Rule\TypeSpecifierRule;
 use FFI\Parser\Validator\ValidationContext;
 use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
@@ -45,25 +52,25 @@ final class ParserTest extends TestCase
     {
         yield 'empty input' => [''];
         yield 'whitespace only' => [" \t\r\n\f\v"];
-        yield 'empty declaration' => [';'];
-        yield 'several empty declarations' => ["; ;\n;;"];
-        yield 'line comment' => ["// comment\n;"];
-        yield 'line comment at the end of input' => ['; // comment'];
-        yield 'block comment' => ['/* comment */ ;'];
-        yield 'multiline block comment' => ["/*\n * comment\n */\n;"];
-        yield 'block comment of stars' => ['/***/ /** comment **/ ;'];
-        yield 'line comment inside block comment' => ['/* // */ ;'];
-        yield 'block comment inside line comment' => ["// /* \n;"];
-        yield 'comments between declarations' => ["; /* a */ ; // b\n ;"];
-        yield 'CRLF line endings' => ["// comment\r\n;\r\n"];
-        yield 'invalid UTF-8 in comment' => ["/* \xFF\xFE\xC3 */ ;"];
+        yield 'empty attribute declaration' => ['[[]];'];
+        yield 'several attribute declarations' => ["[[]]; [[]];\n[[]];[[]];"];
+        yield 'line comment' => ["// comment\nint x;"];
+        yield 'line comment at the end of input' => ['int x; // comment'];
+        yield 'block comment' => ['/* comment */ int x;'];
+        yield 'multiline block comment' => ["/*\n * comment\n */\nint x;"];
+        yield 'block comment of stars' => ['/***/ /** comment **/ int x;'];
+        yield 'line comment inside block comment' => ['/* // */ int x;'];
+        yield 'block comment inside line comment' => ["// /* \nint x;"];
+        yield 'comments between declarations' => ["int x; /* a */ int y; // b\n int z;"];
+        yield 'CRLF line endings' => ["// comment\r\nint x;\r\n"];
+        yield 'invalid UTF-8 in comment' => ["/* \xFF\xFE\xC3 */ int x;"];
 
-        yield 'line marker' => ["# 1 \"x.h\" 3\n;"];
-        yield 'pragma' => ["#pragma pack(1)\n;"];
-        yield 'define' => ["#define FFI_SCOPE \"x\"\n;"];
-        yield 'indented directive' => ["  #pragma once\n;"];
-        yield 'directive between declarations' => [";\n#pragma once\n;"];
-        yield 'directive in the last line' => [";\n#pragma once"];
+        yield 'line marker' => ["# 1 \"x.h\" 3\nint x;"];
+        yield 'pragma' => ["#pragma pack(1)\nint x;"];
+        yield 'define' => ["#define FFI_SCOPE \"x\"\nint x;"];
+        yield 'indented directive' => ["  #pragma once\nint x;"];
+        yield 'directive between declarations' => ["int x;\n#pragma once\nint y;"];
+        yield 'directive in the last line' => ["int x;\n#pragma once"];
         yield 'directive only' => ['#pragma once'];
 
         yield 'declaration without declarators' => ['static const unsigned long;'];
@@ -76,8 +83,8 @@ final class ParserTest extends TestCase
 
         yield 'static assertion' => ['static_assert(sizeof(T) == 4, "T");'];
         yield 'static assertion without a message' => ['_Static_assert((T)1 + 2);'];
-        yield 'static assertions between empty declarations' => [
-            ";static_assert(1);\n;static_assert(a ? b : c, \"a\" \"b\");",
+        yield 'static assertions between declarations' => [
+            "int x;static_assert(1);\nint y;static_assert(a ? b : c, \"a\" \"b\");",
         ];
     }
 
@@ -87,12 +94,12 @@ final class ParserTest extends TestCase
     public static function syntaxErrorsDataProvider(): iterable
     {
         yield 'declaration without a semicolon' => ['int', 3, ''];
-        yield 'statement keyword' => ["; \n return", 4, 'return'];
+        yield 'statement keyword' => ["int x; \n return", 9, 'return'];
         yield 'unclosed structure' => ['struct S {', 10, ''];
-        yield 'literal' => ['; 42', 2, '42'];
-        yield 'unclosed block comment' => ['; /* comment', 2, '/'];
+        yield 'literal' => ['int x; 42', 7, '42'];
+        yield 'unclosed block comment' => ['int x; /* comment', 7, '/'];
 
-        yield 'hash not at the beginning of a line' => ['; # x', 2, '#'];
+        yield 'hash not at the beginning of a line' => ['int x; # x', 7, '#'];
         yield 'octal constant with 8' => ['08', 0, '08'];
         yield 'binary constant with 2' => ['0b2', 0, '0b2'];
         yield 'hexadecimal prefix without digits' => ['0x', 0, '0x'];
@@ -118,9 +125,9 @@ final class ParserTest extends TestCase
      */
     public static function sourcesDataProvider(): iterable
     {
-        yield 'string' => [';'];
+        yield 'string' => ['/* empty */'];
         yield 'SplFileInfo' => [new \SplFileInfo(self::HEADER_FILE)];
-        yield 'phplrt source' => [VirtualSource::createFromString('header.h', ';')];
+        yield 'phplrt source' => [VirtualSource::createFromString('header.h', '/* empty */')];
     }
 
     #[DataProvider('sourcesDataProvider')]
@@ -216,7 +223,7 @@ final class ParserTest extends TestCase
         $factory->expects(self::exactly(2))
             ->method('create')
             ->with('header')
-            ->willReturn(VirtualSource::createFromString('header.h', ';'));
+            ->willReturn(VirtualSource::createFromString('header.h', '/* empty */'));
 
         $parser = new Parser(sources: $factory);
 
@@ -301,6 +308,18 @@ final class ParserTest extends TestCase
         self::fail('ValidationException has not been thrown');
     }
 
+    public function testConstraintOfC23IsCheckedByDefault(): void
+    {
+        $code = 'static extern int x;';
+
+        self::assertSame(1, \count((new Parser(rules: []))->parse($code)));
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('Invalid combination of storage-class specifiers `static extern`');
+
+        (new Parser())->parse($code);
+    }
+
     public function testValidatorsAreGivenTheParsedDeclarations(): void
     {
         $validator = self::createRecordingValidator();
@@ -361,9 +380,110 @@ final class ParserTest extends TestCase
         self::assertSame(0, $transformer->visits);
     }
 
+    /**
+     * @return iterable<non-empty-string, array{string, string, string}>
+     */
+    public static function presetTypedefNamesDataProvider(): iterable
+    {
+        yield 'abstract declarator of a parameter' => [
+            'int f(int (size_t));',
+            '(function (fn int ((fn int (size_t)))) f)',
+            '(function (fn int (int size_t)) f)',
+        ];
+        yield 'type name of sizeof' => [
+            'int a = sizeof(uint8_t[4]);',
+            '(variable int a = (sizeof (array uint8_t 4)))',
+            '(variable int a = (sizeof (paren ([] uint8_t 4))))',
+        ];
+    }
+
+    #[DataProvider('presetTypedefNamesDataProvider')]
+    public function testTypedefNamesOfThePresetAreDeclaredBeforeTheHeader(
+        string $code,
+        string $withNames,
+        string $withoutNames,
+    ): void {
+        self::assertSame(
+            [$withNames, $withoutNames],
+            [
+                NodePrinter::print(\array_last((new Parser(preset: new Preset(typedefNames: ['uint8_t', 'size_t'])))
+                    ->parse($code))),
+                NodePrinter::print(\array_last((new Parser(preset: Preset::c23()))->parse($code))),
+            ],
+        );
+    }
+
+    public function testTypedefNamesOfThePresetAreGivenToTheGivenTransformers(): void
+    {
+        $parser = new Parser(transformers: [new ParameterNameRule()], preset: new Preset(typedefNames: ['T']));
+
+        self::assertSame(
+            '(function (fn int ((fn int (T)))) f)',
+            NodePrinter::print($parser->parse('int f(int (T));')[0]),
+        );
+    }
+
+    public function testTypedefNameOfThePresetIsHiddenByTheHeader(): void
+    {
+        $parser = new Parser(preset: new Preset(typedefNames: ['size_t', 'uint8_t']));
+
+        self::assertSame(
+            '(function (fn int (int size_t)) f)',
+            NodePrinter::print(\array_last($parser->parse('int size_t; int f(int (size_t));'))),
+        );
+    }
+
+    public function testFeaturesOfThePresetRemoveTheirRulesFromTheGivenOnes(): void
+    {
+        $parser = new Parser(
+            preset: new Preset([Feature::ComplexIntegers]),
+            rules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
+        );
+
+        self::assertSame('(variable (_Complex int) x)', NodePrinter::print($parser->parse('_Complex int x;')[0]));
+    }
+
+    public function testRulesOfTheFeaturesOfThePresetAreRunWithoutThem(): void
+    {
+        $parser = new Parser(
+            preset: Preset::c23(),
+            rules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
+        );
+
+        $this->expectException(ValidationException::class);
+
+        $parser->parse('_Complex int x;');
+    }
+
+    public function testDisabledExtensionIsRejectedByParseAtItsKeyword(): void
+    {
+        $code = 'int f(void) __attribute__((noreturn));';
+        $parser = new Parser(preset: Preset::c23());
+
+        self::assertTrue($parser->validate($code));
+
+        try {
+            $parser->parse($code);
+        } catch (SyntaxErrorException $e) {
+            self::assertSame(
+                ['Syntax error, the extension "GnuAttributes" is not enabled', 12, '__attribute__'],
+                [$e->getMessage(), $e->offset, \substr($code, $e->offset, $e->length ?? 0)],
+            );
+
+            return;
+        }
+
+        self::fail('SyntaxErrorException has not been thrown');
+    }
+
     private static function createIntTypeValidator(): ValidatorRuleInterface
     {
         return new class implements ValidatorRuleInterface {
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
+
             public function validate(NodeInterface $node, ValidationContext $context): iterable
             {
                 if ($node instanceof IntType) {
@@ -383,6 +503,11 @@ final class ParserTest extends TestCase
              * @var list<ValidationContext>
              */
             public array $contexts = [];
+
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
 
             public function validate(NodeInterface $node, ValidationContext $context): iterable
             {

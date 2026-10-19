@@ -59,7 +59,7 @@ final class TraverserTest extends TestCase
     {
         $visits = [];
 
-        (new Traverser([self::createRecordingVisitor($visits)]))->traverse(self::parse('struct S {} x, *y;'));
+        (new Traverser([self::createRecordingVisitor($visits)]))->traverse(self::parse('struct S { int a; } x, *y;'));
 
         self::assertCount(
             1,
@@ -75,7 +75,7 @@ final class TraverserTest extends TestCase
                     ? new NamedType(new Identifier('S', 7), 0)
                     : null,
             ),
-        ]))->traverse(self::parse('struct S {} x, *y;'));
+        ]))->traverse(self::parse('struct S { int a; } x, *y;'));
 
         self::assertSame(
             ['(variable S x)', '(variable (ptr S) y)'],

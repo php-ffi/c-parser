@@ -6,9 +6,8 @@ namespace FFI\Parser\Node\Expression;
 
 /**
  * GCC: a compound statement in parentheses whose value is the one of its
- * last statement, `({ int y = x; y * 2; })`. Its statements are not parsed:
- * the body is any sequence of tokens with balanced parentheses, brackets
- * and braces, and keeps its text.
+ * last statement, `({ int y = x; y * 2; })`. The body is kept as text, any
+ * sequence of tokens with balanced parentheses, brackets and braces.
  *
  * @link https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html GCC, Statements and Declarations in Expressions
  */

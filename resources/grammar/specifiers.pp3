@@ -5,8 +5,8 @@
  *
  *  The specifiers go in any order (6.7.3.1p2): the rules below collect
  *  them, the rule of a keyword gives its node or its case of an enum, and
- *  DeclarationSpecifiers sorts them out. A keyword token marks the start of
- *  the specifiers.
+ *  DeclarationSpecifiers or SpecifierQualifierList sorts them out. A
+ *  keyword token marks the start of the specifiers.
  */
 
 /**
@@ -15,8 +15,10 @@
  * "unsigned T". No more than one base is written, "int int" is a syntax
  * error, the modifiers of the base are not checked: "long char" gives a
  * syntax tree. The type specifiers and the qualifiers build the type, the
- * other specifiers go to a list in the order written. Both are passed to
- * the parent as two children: the type and the list, each null in case of
+ * other specifiers go to a list in the order written, with the attributes
+ * before the specifiers and after the last of them and the GCC attributes
+ * anywhere among them. Both are passed to the
+ * parent as two children: the type and the list, each null in case of
  * there is none.
  */
 DeclarationSpecifiers -> {
@@ -60,8 +62,8 @@ DeclarationSpecifiers -> {
 
     return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
 }
-  : NonTypeSpecifier()+ TypeSpecifiers()?
-  | TypeSpecifiers()
+  : StandardAttributeSpecifier()* (NonTypeSpecifier()+ TypeSpecifiers()? | TypeSpecifiers())
+    StandardAttributeSpecifier()*
   ;
 
 /**
@@ -76,33 +78,141 @@ TypeSpecifiers
   ;
 
 /**
- * A specifier other than a type specifier, or an attribute: attributes are
- * accepted anywhere among the specifiers, as GCC does (C allows them only
- * before and after all the specifiers, 6.7.1), and kept with the
- * specifiers in the order written
+ * A typedef name after the modifiers, followed by a declarator, possibly
+ * after other specifiers: "unsigned __int64 x", "unsigned T *p",
+ * "unsigned __int64 __cdecl f(void)", "unsigned __int64 (*f)(void)".
+ * Without a declarator after it the
+ * name is the declarator: "unsigned T;", "unsigned T[3];". The modifiers of
+ * a typedef name are checked by a validator.
+ */
+ModifiedNamedType
+  : NamedType() &ModifiedNamedTypeEnd()
+  ;
+
+ModifiedNamedTypeEnd
+  : NonTypeSpecifier()* (
+        <T_IDENTIFIER> | <T_BUILTIN_CALL> | <T_ASTERISK> | <T_CARET> | <T_CALLING_CONVENTION> | NestedDeclaratorStart()
+    )
+  ;
+
+/**
+ * The start of a parenthesized declarator, which a parameter list cannot
+ * have: "(*", "(^", "(__stdcall", "(__attribute__"
+ */
+NestedDeclaratorStart
+  : <T_LPAREN> (<T_ASTERISK> | <T_CARET> | <T_CALLING_CONVENTION> | <T_GNU_ATTRIBUTE>)
+  ;
+
+/**
+ * A specifier other than a type specifier
  */
 NonTypeSpecifier
   : StorageClassSpecifier()
   | FunctionSpecifier()
-  | TypeQualifier()
-  | AlignmentSpecifier()
-  | AttributeSpecifier()
-  | CallingConventionAttributeSpecifier()
-  | PointerModifierAttributeSpecifier()
-  | PointerModifierWithArgumentsAttributeSpecifier()
-  | NullabilityAttributeSpecifier()
-  | ForceInlineAttributeSpecifier()
+  | SpecifierQualifier()
   ;
 
 /**
- * 6.7.8 The specifiers of a type name, and of the underlying type of an
- * enumeration, which has no declarator. C allows only type specifiers,
- * qualifiers and, in a compound literal, alignment specifiers in a type
- * name (6.7.6), and no storage-class or function specifier in a member
- * declaration either (6.7.3.2). Any specifier is accepted everywhere, as
- * the parser of Clang does: the other specifiers of a type name are kept by
- * a SpecifiedType around the type of the specifiers, and the ones of a
- * member by the member itself.
+ * 6.7.3.2 The specifier qualifier list of a member declaration and of a
+ * type name: the declaration specifiers without the storage-class and the
+ * function specifiers. The attributes before the specifiers belong to a
+ * member declaration. Passed to the parent as the declaration specifiers
+ * are.
+ */
+SpecifierQualifierList -> {
+    /**
+     * @var (list<
+     *     Type\TypeInterface
+     *     |Type\ModifiedType\TypeModifier
+     *     |Type\QualifiedType\TypeQualifier
+     *     |Specifier\SpecifierInterface
+     *     |Attribute\AttributeInterface
+     * >) $children
+     */
+    $type = null;
+    $modifiers = [];
+    $qualifiers = [];
+    $specifiers = [];
+
+    foreach ($children as $child) {
+        if ($child instanceof Type\ModifiedType\TypeModifier) {
+            $modifiers[] = $child;
+        } elseif ($child instanceof Type\QualifiedType\TypeQualifier) {
+            $qualifiers[] = $child;
+        } elseif ($child instanceof Specifier\SpecifierInterface || $child instanceof Attribute\AttributeInterface) {
+            $specifiers[] = $child;
+        } else {
+            $type = $child;
+        }
+    }
+
+    if ($modifiers !== []) {
+        $type = new Type\ModifiedType($modifiers, $type, $offset);
+    }
+
+    if ($qualifiers !== []) {
+        $type = new Type\QualifiedType($qualifiers, $type, $offset);
+    }
+
+    if ($specifiers === []) {
+        return [$type, null];
+    }
+
+    return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
+}
+  : StandardAttributeSpecifier()* (SpecifierQualifier()+ QualifiedTypeSpecifiers()? | QualifiedTypeSpecifiers())
+    StandardAttributeSpecifier()*
+  ;
+
+/**
+ * A typedef name or type specifiers with at most one base, intermixed with
+ * the qualifiers and the alignment specifiers
+ */
+QualifiedTypeSpecifiers
+  : NamedType() (TypeModifier() | SpecifierQualifier())*
+  | TypeModifier() (TypeModifier() | SpecifierQualifier())*
+        ((BaseType() | QualifiedModifiedNamedType()) (TypeModifier() | SpecifierQualifier())*)?
+  | BaseType() (TypeModifier() | SpecifierQualifier())*
+  ;
+
+/**
+ * A typedef name after the modifiers in a specifier qualifier list,
+ * followed by a declarator or ending a type name: "unsigned __int64 c : 3",
+ * "(unsigned __int64)x"
+ */
+QualifiedModifiedNamedType
+  : NamedType() &QualifiedModifiedNamedTypeEnd()
+  ;
+
+QualifiedModifiedNamedTypeEnd
+  : SpecifierQualifier()* (
+        <T_IDENTIFIER> | <T_ASTERISK> | <T_CARET> | <T_CALLING_CONVENTION> | <T_RPAREN> | NestedDeclaratorStart()
+    )
+  ;
+
+/**
+ * A type qualifier or an alignment specifier, the specifiers other than
+ * the type specifiers that a specifier qualifier list allows, and the GCC
+ * and MSVC attributes, the MSVC modifiers of a pointer and the Clang
+ * nullability and signing of a pointer, which go anywhere among the
+ * specifiers
+ */
+SpecifierQualifier
+  : TypeQualifier()
+  | AlignmentSpecifier()
+  | GnuAttributeSpecifier()
+  | DeclSpecAttributeSpecifier()
+  | PointerModifier()
+  | BasedPointerModifier()
+  | Nullability()
+  | PointerAuth()
+  ;
+
+/**
+ * 6.7.8 The specifier qualifier list of a type name, and of the underlying
+ * type of an enumeration, which has no declarator and no attributes before
+ * the specifiers. The alignment specifiers and the attributes are kept by a
+ * SpecifiedType around the type of the specifiers.
  */
 TypeNameSpecifiers -> {
     /** @var array{Type\TypeInterface|null, Specifier\SpecifierList|null} $children */
@@ -116,7 +226,11 @@ TypeNameSpecifiers -> {
 
     return new Type\SpecifiedType($children[0], $children[1], $offset);
 }
-  : DeclarationSpecifiers()
+  : !AttributeSpecifierStart() SpecifierQualifierList()
+  ;
+
+AttributeSpecifierStart
+  : <T_ATTRIBUTE_START>
   ;
 
 /**
@@ -147,7 +261,12 @@ StaticSpecifier -> { return new Specifier\StorageClassSpecifier\StaticSpecifier(
   : <T_STATIC>
   ;
 
-ThreadLocalSpecifier -> { return new Specifier\StorageClassSpecifier\ThreadLocalSpecifier($offset); }
+ThreadLocalSpecifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return new Specifier\StorageClassSpecifier\ThreadLocalSpecifier($offset);
+}
   : <T_THREAD_LOCAL>
   ;
 
@@ -178,7 +297,12 @@ TypeModifier
   | ImaginaryModifier()
   ;
 
-SignedModifier -> { return Type\ModifiedType\TypeModifier::Signed; }
+SignedModifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return Type\ModifiedType\TypeModifier::Signed;
+}
   : <T_SIGNED>
   ;
 
@@ -194,7 +318,12 @@ LongModifier -> { return Type\ModifiedType\TypeModifier::Long; }
   : <T_LONG>
   ;
 
-ComplexModifier -> { return Type\ModifiedType\TypeModifier::Complex; }
+ComplexModifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return Type\ModifiedType\TypeModifier::Complex;
+}
   : <T_COMPLEX>
   ;
 
@@ -215,9 +344,10 @@ BaseType
   | FloatType()
   | DoubleType()
   | BoolType()
-  | Decimal32Type()
-  | Decimal64Type()
-  | Decimal128Type()
+  | DecimalNType()
+  | DecimalNxType()
+  | FloatNType()
+  | FloatNxType()
   | BitIntType()
   | AtomicType()
   | StructType()
@@ -253,16 +383,48 @@ BoolType -> { return new Type\BuiltinType\BoolType($offset); }
   : <T_BOOL>
   ;
 
-Decimal32Type -> { return new Type\BuiltinType\Decimal32Type($offset); }
-  : <T_DECIMAL32>
+/**
+ * 6.7.3.1 and Annex H.7: the width N of the type is the digits of its
+ * keyword, 32 in _Decimal32
+ */
+DecimalNType -> {
+    /** @var TokenInterface $children */
+    /** @var int<1, max> $width */
+    $width = (int) \substr($children->value, \strlen('_Decimal'));
+
+    return new Type\BuiltinType\DecimalNType($width, $offset);
+}
+  : <T_DECIMAL_N>
   ;
 
-Decimal64Type -> { return new Type\BuiltinType\Decimal64Type($offset); }
-  : <T_DECIMAL64>
+DecimalNxType -> {
+    /** @var TokenInterface $children */
+    /** @var int<1, max> $width */
+    $width = (int) \substr($children->value, \strlen('_Decimal'));
+
+    return new Type\BuiltinType\DecimalNxType($width, $offset);
+}
+  : <T_DECIMAL_NX>
   ;
 
-Decimal128Type -> { return new Type\BuiltinType\Decimal128Type($offset); }
-  : <T_DECIMAL128>
+FloatNType -> {
+    /** @var TokenInterface $children */
+    /** @var int<1, max> $width */
+    $width = (int) \substr($children->value, \strlen('_Float'));
+
+    return new Type\BuiltinType\FloatNType($width, $offset);
+}
+  : <T_FLOAT_N>
+  ;
+
+FloatNxType -> {
+    /** @var TokenInterface $children */
+    /** @var int<1, max> $width */
+    $width = (int) \substr($children->value, \strlen('_Float'));
+
+    return new Type\BuiltinType\FloatNxType($width, $offset);
+}
+  : <T_FLOAT_NX>
   ;
 
 BitIntType -> {
@@ -288,31 +450,16 @@ AtomicType -> {
   ;
 
 /**
- * A typedef name after the modifiers, followed by a declarator, possibly
- * after other specifiers: "unsigned __int64 x", "unsigned T *p",
- * "unsigned __int64 __cdecl f(void)", "unsigned T const *p". Without a
- * declarator after it the name is the declarator: "unsigned T;",
- * "unsigned T __attribute__((unused));".
- */
-ModifiedNamedType
-  : NamedType() &ModifiedNamedTypeEnd()
-  ;
-
-ModifiedNamedTypeEnd
-  : NonTypeSpecifier()* (<T_IDENTIFIER> | <T_ASTERISK> | <T_CARET>)
-  ;
-
-/**
- * A typedef name, of an unknown kind of type. A name before "=" is the
- * declarator of a declaration whose type is inferred (6.7.10), "static x = 1;"
- * and "constexpr auto n = 1;".
+ * A typedef name, of an unknown kind of type. A name before "=" is a
+ * declarator: "auto x = 1;" and "constexpr auto n = 1;" infer the type
+ * (6.7.10), "static x = 1;" has no type specifier.
  */
 NamedType -> {
     /** @var array{TokenInterface} $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Type\NamedType(new Node\Identifier($children[0]->value, $offset), $offset);
 }
-  : <T_IDENTIFIER> !InitializerStart()
+  : (<T_IDENTIFIER> | <T_BUILTIN_CALL>) !InitializerStart()
   ;
 
 InitializerStart
@@ -357,9 +504,11 @@ UnionType -> {
 
 /**
  * What follows "struct" or "union": a tag, a body or both, with the
- * attributes after the keyword and after the body. Passed to the parent as
- * three children: the tag, the members and the attributes, each null in
- * case of none is written.
+ * attributes after the keyword (the MSVC ones and the calling conventions
+ * of PHP FFI included) and the GCC attributes after the body, in the order
+ * written. Passed to the parent as three children:
+ * the tag, the members and the attributes, each null in case of none is
+ * written.
  */
 RecordTypeContents -> {
     /** @var list<Attribute\AttributeInterface|Node\Identifier|Type\RecordType\MemberDeclarationList> $children */
@@ -383,19 +532,22 @@ RecordTypeContents -> {
         $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
     ];
 }
-  : AttributeSpecifier()* (Identifier() RecordBody()? | RecordBody())
+  : (AttributeSpecifier() | DeclSpecAttributeSpecifier() | TagCallingConventions())*
+    (DeclaredIdentifier() RecordBody()? | RecordBody())
   ;
 
 /**
- * The members and the attributes GCC allows after the body
+ * The members and the GCC attributes after them, which belong to the
+ * structure or union
  */
 RecordBody
-  : MemberDeclarationList() AttributeSpecifier()*
+  : MemberDeclarationList() GnuAttributeSpecifier()*
   ;
 
 /**
- * The members in braces, an empty body is accepted as GCC does (C23
- * requires at least one member). The brace marks the start of the list.
+ * The members in braces, at least one. The brace marks the start of the
+ * list. GCC: no members at all, "struct S {};", requires the EmptyRecords
+ * feature.
  */
 MemberDeclarationList -> {
     /**
@@ -404,6 +556,10 @@ MemberDeclarationList -> {
      *     ...<Type\RecordType\MemberDeclaration|Declaration\StaticAssertDeclaration>
      * } $children
      */
+    if (!isset($children[1])) {
+        $this->assertFeature(Feature::EmptyRecords, $source, $children[0]->offset, $children[0]->size);
+    }
+
     $members = [];
 
     for ($i = 1, $count = \count($children); $i < $count; ++$i) {
@@ -412,18 +568,33 @@ MemberDeclarationList -> {
 
     return new Type\RecordType\MemberDeclarationList($members, $members[0]->offset ?? $offset);
 }
-  : <T_LBRACE> RecordMember()*
+  : <T_LBRACE> RecordMember()* LastMemberDeclarations()?
     ::T_RBRACE:: @error("Syntax error, unexpected {token} in the members, \"}\" expected")
   ;
 
 /**
- * A member declaration, a static assertion, or a lone ";", which GCC and
- * Clang accept and which gives nothing
+ * A member declaration or a static assertion
  */
 RecordMember
-  : MemberDeclarations()
-  | StaticAssertDeclaration()
-  | ::T_SEMICOLON::
+  : ExtensionKeyword()* (
+        MemberDeclarations()
+        ::T_SEMICOLON:: @error("Syntax error, unexpected {token} in the member declaration, \";\" expected")
+      | StaticAssertDeclaration()
+      | ExtraSemicolon()
+    )
+  ;
+
+/**
+ * PHP FFI: the last member declaration without its semicolon,
+ * "struct S { int a };". Requires the OptionalLastMemberSemicolon feature.
+ */
+LastMemberDeclarations -> {
+    /** @var non-empty-list<Type\RecordType\MemberDeclaration> $children */
+    $this->assertFeature(Feature::OptionalLastMemberSemicolon, $source, $offset, $length);
+
+    return $children;
+}
+  : ExtensionKeyword()* MemberDeclarations()
   ;
 
 /**
@@ -455,8 +626,7 @@ MemberDeclarations -> {
 
     return $members;
 }
-  : DeclarationSpecifiers() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)?
-    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} in the member declaration, \";\" expected")
+  : SpecifierQualifierList() (MemberDeclarator() (::T_COMMA:: MemberDeclarator())*)?
   ;
 
 /**
@@ -469,10 +639,8 @@ MemberDeclarator
   ;
 
 /**
- * A declarator, the width of a bit-field and the attributes GCC allows
- * before the declarator (other than the first one of the member
- * declaration, whose attributes go to the specifiers), after it and after
- * the width
+ * A declarator with the attributes after its name and the width of a
+ * bit-field, and the GCC attributes before the declarator and after it
  */
 NamedMemberDeclarator -> {
     /**
@@ -520,9 +688,12 @@ NamedMemberDeclarator -> {
         );
     };
 }
-  : AttributeSpecifier()* Declarator() (::T_COLON:: ConditionalExpression())? AttributeSpecifier()*
+  : GnuAttributeSpecifier()* Declarator() (::T_COLON:: ConditionalExpression())? GnuAttributeSpecifier()*
   ;
 
+/**
+ * The width of a bit-field without a name and the GCC attributes after it
+ */
 UnnamedBitFieldDeclarator -> {
     /** @var list{Expression\ExpressionInterface, ...<Attribute\AttributeInterface>} $children */
     $attributes = [];
@@ -531,24 +702,19 @@ UnnamedBitFieldDeclarator -> {
         $attributes[] = $children[$i];
     }
 
+    $attributeList = $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset);
+
     return static function (
         ?Type\TypeInterface $type,
         ?Specifier\SpecifierList $specifiers,
         int $start,
-    ) use ($children, $attributes): Type\RecordType\MemberDeclaration {
+    ) use ($children, $attributeList): Type\RecordType\MemberDeclaration {
         \assert($start >= 0);
 
-        return new Type\RecordType\MemberDeclaration(
-            $type,
-            null,
-            $children[0],
-            $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
-            $specifiers,
-            $start,
-        );
+        return new Type\RecordType\MemberDeclaration($type, null, $children[0], $attributeList, $specifiers, $start);
     };
 }
-  : ::T_COLON:: ConditionalExpression() AttributeSpecifier()*
+  : ::T_COLON:: ConditionalExpression() GnuAttributeSpecifier()*
   ;
 
 /**
@@ -560,7 +726,9 @@ UnnamedBitFieldDeclarator -> {
 /**
  * An enumeration with a tag (a reference to it, its declaration with the
  * underlying type only, "enum E : int;", or its definition) or an anonymous
- * one, with the attributes after the keyword and after the body
+ * one, with the attributes after the keyword of a definition. The GCC
+ * attributes and the calling conventions of PHP FFI go after the keyword of
+ * a reference as well: "enum __attribute__((packed)) E;".
  */
 EnumType -> {
     /**
@@ -594,8 +762,10 @@ EnumType -> {
         $offset,
     );
 }
-  : <T_ENUM> AttributeSpecifier()* (
-        Identifier() EnumUnderlyingType()? EnumBody()?
+  : <T_ENUM> (
+        DeclaredIdentifier() EnumUnderlyingType()? EnumBody()?
+      | (AttributeSpecifier() | TagCallingConventions())+ DeclaredIdentifier()? EnumUnderlyingType()? EnumBody()
+      | (GnuAttributeSpecifier() | TagCallingConventions())+ DeclaredIdentifier() EnumUnderlyingType()?
       | EnumUnderlyingType()? EnumBody()
     ) @error("Syntax error, unexpected {token} in the enumeration specifier, a tag, \":\" or \"{{\" expected")
   ;
@@ -606,23 +776,38 @@ EnumUnderlyingType
   ;
 
 /**
- * The enumerators and the attributes GCC allows after the body
+ * The enumerators in braces and the GCC attributes after them, which belong
+ * to the enumeration
  */
 EnumBody
-  : ::T_LBRACE::
-    EnumeratorList() @error("Syntax error, unexpected {token} in the enumerators, an enumerator expected")
-    ::T_RBRACE:: @error("Syntax error, unexpected {token} in the enumerators, \",\" or \"}\" expected")
-    AttributeSpecifier()*
+  : EnumeratorList() GnuAttributeSpecifier()*
   ;
 
 /**
- * C23 requires at least one enumerator, a trailing comma is allowed
+ * The enumerators in braces, at least one, a trailing comma is allowed.
+ * The first enumerator marks the start of the list, the brace of an empty
+ * one. Clang with the Microsoft extensions: no enumerators at all,
+ * "enum E {};", requires the EmptyEnums feature.
  */
 EnumeratorList -> {
-    /** @var non-empty-list<Type\EnumType\Enumerator> $children */
-    return new Type\EnumType\EnumeratorList($children, $offset);
+    /** @var list{TokenInterface, ...<Type\EnumType\Enumerator>} $children */
+    if (!isset($children[1])) {
+        $this->assertFeature(Feature::EmptyEnums, $source, $children[0]->offset, $children[0]->size);
+    }
+
+    $enumerators = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $enumerators[] = $children[$i];
+    }
+
+    return new Type\EnumType\EnumeratorList($enumerators, $enumerators[0]->offset ?? $offset);
 }
-  : Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
+  : <T_LBRACE> (
+        Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
+        ::T_RBRACE:: @error("Syntax error, unexpected {token} in the enumerators, \",\" or \"}\" expected")
+      | ::T_RBRACE::
+    ) @error("Syntax error, unexpected {token} in the enumerators, an enumerator or \"}\" expected")
   ;
 
 /**
@@ -648,7 +833,7 @@ Enumerator -> {
         $offset,
     );
 }
-  : Identifier() AttributeSpecifier()* (::T_ASSIGN:: ConditionalExpression())?
+  : DeclaredIdentifier() AttributeSpecifier()* (::T_ASSIGN:: ConditionalExpression())?
   ;
 
 /**
@@ -663,6 +848,8 @@ Enumerator -> {
 
 TypeOfTypeType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
+    $this->assertKeywordSpelling($source, $children[0]);
+
     return new Type\TypeOfTypeType($children[1], $offset);
 }
   : <T_TYPEOF> ::T_LPAREN:: !ExpressionLikeTypeName()
@@ -672,6 +859,8 @@ TypeOfTypeType -> {
 
 TypeOfType -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertKeywordSpelling($source, $children[0]);
+
     return new Type\TypeOfType($children[1], $offset);
 }
   : <T_TYPEOF>
@@ -682,6 +871,8 @@ TypeOfType -> {
 
 TypeOfUnqualTypeType -> {
     /** @var array{TokenInterface, Type\TypeInterface} $children */
+    $this->assertKeywordSpelling($source, $children[0]);
+
     return new Type\TypeOfUnqualTypeType($children[1], $offset);
 }
   : <T_TYPEOF_UNQUAL> ::T_LPAREN:: !ExpressionLikeTypeName()
@@ -691,6 +882,8 @@ TypeOfUnqualTypeType -> {
 
 TypeOfUnqualType -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertKeywordSpelling($source, $children[0]);
+
     return new Type\TypeOfUnqualType($children[1], $offset);
 }
   : <T_TYPEOF_UNQUAL>
@@ -712,15 +905,30 @@ TypeQualifier
   | AtomicQualifier()
   ;
 
-ConstQualifier -> { return Type\QualifiedType\TypeQualifier::Const; }
+ConstQualifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return Type\QualifiedType\TypeQualifier::Const;
+}
   : <T_CONST>
   ;
 
-VolatileQualifier -> { return Type\QualifiedType\TypeQualifier::Volatile; }
+VolatileQualifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return Type\QualifiedType\TypeQualifier::Volatile;
+}
   : <T_VOLATILE>
   ;
 
-RestrictQualifier -> { return Type\QualifiedType\TypeQualifier::Restrict; }
+RestrictQualifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return Type\QualifiedType\TypeQualifier::Restrict;
+}
   : <T_RESTRICT>
   ;
 
@@ -737,14 +945,32 @@ AtomicQualifier -> { return Type\QualifiedType\TypeQualifier::Atomic; }
 FunctionSpecifier
   : InlineSpecifier()
   | NoReturnSpecifier()
+  | ForceInlineSpecifier()
   ;
 
-InlineSpecifier -> { return new Specifier\FunctionSpecifier\InlineSpecifier($offset); }
+InlineSpecifier -> {
+    /** @var TokenInterface $children */
+    $this->assertKeywordSpelling($source, $children);
+
+    return new Specifier\FunctionSpecifier\InlineSpecifier($offset);
+}
   : <T_INLINE>
   ;
 
 NoReturnSpecifier -> { return new Specifier\FunctionSpecifier\NoReturnSpecifier($offset); }
   : <T_NORETURN>
+  ;
+
+/**
+ * MSVC: __forceinline. Requires the ForceInline feature.
+ */
+ForceInlineSpecifier -> {
+    /** @var TokenInterface $children */
+    $this->assertFeature(Feature::ForceInline, $source, $children->offset, $children->size);
+
+    return new Specifier\FunctionSpecifier\ForceInlineSpecifier($offset);
+}
+  : <T_FORCE_INLINE>
   ;
 
 /**

@@ -11,9 +11,19 @@
  */
 
 /**
- * A specifier with the attributes in brackets or parentheses
+ * A specifier with the attributes in double brackets or parentheses, where
+ * C23 allows an attribute specifier
  */
-AttributeSpecifier -> {
+AttributeSpecifier
+  : StandardAttributeSpecifier()
+  | GnuAttributeSpecifier()
+  ;
+
+/**
+ * 6.7.13.2 [[a, ns::b(1, 2)]], an empty attribute in the list is allowed:
+ * [[a, , b]]
+ */
+StandardAttributeSpecifier -> {
     /** @var list<TokenInterface|Attribute\AttributeInterface> $children */
     $attributes = [];
 
@@ -25,16 +35,6 @@ AttributeSpecifier -> {
 
     return $attributes;
 }
-  : StandardAttributeSpecifier()
-  | GnuAttributeSpecifier()
-  | DeclSpecAttributeSpecifier()
-  ;
-
-/**
- * 6.7.13.2 [[a, ns::b(1, 2)]], an empty attribute in the list is allowed:
- * [[a, , b]]
- */
-StandardAttributeSpecifier
   : <T_ATTRIBUTE_START>
         StandardAttribute()? (::T_COMMA:: StandardAttribute()?)*
     ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the attribute specifier, \",\" or \"]]\" expected")
@@ -76,10 +76,22 @@ UnprefixedStandardAttribute -> {
 
 /**
  * GCC: __attribute__((a, b(1))), also spelled __attribute. An empty
- * attribute in the list is allowed: __attribute__((a, , b)).
+ * attribute in the list is allowed: __attribute__((a, , b)). Requires the
+ * GnuAttributes feature.
  */
-GnuAttributeSpecifier
-  : <T_ATTRIBUTE>
+GnuAttributeSpecifier -> {
+    /** @var list{TokenInterface, ...<Attribute\AttributeInterface>} $children */
+    $this->assertFeature(Feature::GnuAttributes, $source, $children[0]->offset, $children[0]->size);
+
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $attributes[] = $children[$i];
+    }
+
+    return $attributes;
+}
+  : <T_GNU_ATTRIBUTE>
     ::T_LPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"((\" expected")
     ::T_LPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"((\" expected")
         GnuAttribute()? (::T_COMMA:: GnuAttribute()?)*
@@ -87,6 +99,9 @@ GnuAttributeSpecifier
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the attribute specifier, \"))\" expected")
   ;
 
+/**
+ * aligned(8), format(printf, 1, 2)
+ */
 GnuAttribute -> {
     /** @var array{Node\Identifier, 1?: Attribute\Attribute\ArgumentList} $children */
     return new Attribute\GnuAttribute($children[0], $children[1] ?? null, $offset);
@@ -96,15 +111,29 @@ GnuAttribute -> {
 
 /**
  * MSVC: __declspec(dllimport align(16)), the attributes are separated by
- * spaces
+ * spaces, the list may be empty. Requires the DeclSpec feature.
  */
-DeclSpecAttributeSpecifier
+DeclSpecAttributeSpecifier -> {
+    /** @var list{TokenInterface, ...<Attribute\AttributeInterface>} $children */
+    $this->assertFeature(Feature::DeclSpec, $source, $children[0]->offset, $children[0]->size);
+
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $attributes[] = $children[$i];
+    }
+
+    return $attributes;
+}
   : <T_DECLSPEC>
     ::T_LPAREN:: @error("Syntax error, unexpected {token} in the __declspec specifier, \"(\" expected")
         DeclSpecAttribute()*
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the __declspec specifier, \")\" expected")
   ;
 
+/**
+ * dllimport, align(16), deprecated("use g")
+ */
 DeclSpecAttribute -> {
     /** @var array{Node\Identifier, 1?: Attribute\Attribute\ArgumentList} $children */
     return new Attribute\DeclSpecAttribute($children[0], $children[1] ?? null, $offset);
@@ -113,12 +142,13 @@ DeclSpecAttribute -> {
   ;
 
 /**
- * A calling convention among the specifiers, at the start of a declarator
- * and after "*": "void __stdcall f(void);", "void (__stdcall *f)(int);",
- * "void g(int (* __cdecl)(int));"
+ * MSVC: a calling convention, __stdcall. Requires the CallingConventions
+ * feature.
  */
-CallingConventionAttributeSpecifier -> {
+CallingConvention -> {
     /** @var TokenInterface $children */
+    $this->assertFeature(Feature::CallingConventions, $source, $children->offset, $children->size);
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
 }
@@ -126,11 +156,27 @@ CallingConventionAttributeSpecifier -> {
   ;
 
 /**
- * A modifier of a pointer after "*" and among the specifiers:
- * "int * __ptr64 p;", "typedef __w64 int INT_PTR;"
+ * PHP FFI: the calling conventions after "struct", "union" or "enum", given
+ * to the tag as its attributes: "struct __cdecl S { int a; };". Requires
+ * the TrailingCallingConventions feature.
  */
-PointerModifierAttributeSpecifier -> {
+TagCallingConventions -> {
+    /** @var non-empty-list<Attribute\AttributeInterface> $children */
+    $this->assertFeature(Feature::TrailingCallingConventions, $source, $offset, $length);
+
+    return $children;
+}
+  : CallingConvention()+
+  ;
+
+/**
+ * MSVC: a modifier of a pointer, __ptr64. Requires the PointerModifiers
+ * feature.
+ */
+PointerModifier -> {
     /** @var TokenInterface $children */
+    $this->assertFeature(Feature::PointerModifiers, $source, $children->offset, $children->size);
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
 }
@@ -138,26 +184,28 @@ PointerModifierAttributeSpecifier -> {
   ;
 
 /**
- * A modifier of a pointer with arguments, after "*" and among the
- * specifiers: "void * __ptrauth(1, 0, 0) p;", "char __based(base) *p;"
+ * MSVC: the base of a pointer, __based(p), the arguments of a pointer
+ * modifier. Requires the BasedPointers feature.
  */
-PointerModifierWithArgumentsAttributeSpecifier -> {
+BasedPointerModifier -> {
     /** @var array{TokenInterface, Attribute\Attribute\ArgumentList} $children */
-    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    $name = new Node\Identifier($children[0]->value, $offset);
+    $this->assertFeature(Feature::BasedPointers, $source, $children[0]->offset, $children[0]->size);
 
-    return new Attribute\KeywordAttribute($name, $children[1], $offset);
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Attribute\KeywordAttribute(new Node\Identifier($children[0]->value, $offset), $children[1], $offset);
 }
-  : <T_POINTER_MODIFIER_WITH_ARGUMENTS>
+  : <T_BASED>
     AttributeArgumentList() @error("Syntax error, unexpected {token} in the pointer modifier, \"(\" expected")
   ;
 
 /**
- * The nullability of a pointer after "*" and among the specifiers:
- * "char * _Nonnull s;", "CFStringRef _Nonnull s;"
+ * Clang: the nullability of a pointer, _Nonnull. Requires the Nullability
+ * feature.
  */
-NullabilityAttributeSpecifier -> {
+Nullability -> {
     /** @var TokenInterface $children */
+    $this->assertFeature(Feature::Nullability, $source, $children->offset, $children->size);
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
 }
@@ -165,20 +213,24 @@ NullabilityAttributeSpecifier -> {
   ;
 
 /**
- * The __forceinline function specifier among the specifiers:
- * "static __forceinline int f(void);"
+ * Clang: the signing of a pointer, __ptrauth(1, 0, 42), the key, whether
+ * the address is mixed in and the discriminator. Requires the PointerAuth
+ * feature.
  */
-ForceInlineAttributeSpecifier -> {
-    /** @var TokenInterface $children */
+PointerAuth -> {
+    /** @var array{TokenInterface, Attribute\Attribute\ArgumentList} $children */
+    $this->assertFeature(Feature::PointerAuth, $source, $children[0]->offset, $children[0]->size);
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
+    return new Attribute\KeywordAttribute(new Node\Identifier($children[0]->value, $offset), $children[1], $offset);
 }
-  : <T_FORCE_INLINE>
+  : <T_PTRAUTH>
+    AttributeArgumentList() @error("Syntax error, unexpected {token} in the pointer qualifier, \"(\" expected")
   ;
 
 /**
  * The name and the prefix of an attribute: an identifier or a keyword of C
- * (6.7.13.2p3), as in __attribute__((const))
+ * (6.7.13.2p3), as in [[gnu::const]] and __attribute__((const))
  */
 AttributeName -> {
     /** @var TokenInterface $children */
@@ -191,8 +243,10 @@ AttributeName -> {
   | <T_REGISTER> | <T_RESTRICT> | <T_SHORT> | <T_SIGNED> | <T_SIZEOF> | <T_STATIC_ASSERT> | <T_STATIC>
   | <T_STRUCT> | <T_THREAD_LOCAL> | <T_TRUE> | <T_TYPEDEF> | <T_TYPEOF_UNQUAL> | <T_TYPEOF> | <T_UNION>
   | <T_UNSIGNED> | <T_VOID> | <T_VOLATILE> | <T_ATOMIC_SPECIFIER> | <T_ATOMIC> | <T_BITINT> | <T_COMPLEX>
-  | <T_DECIMAL128> | <T_DECIMAL32> | <T_DECIMAL64> | <T_GENERIC> | <T_IMAGINARY> | <T_NORETURN>
-  | <T_RESERVED_KEYWORD>
+  | <T_DECIMAL_NX> | <T_DECIMAL_N> | <T_FLOAT_NX> | <T_FLOAT_N> | <T_GENERIC> | <T_IMAGINARY> | <T_NORETURN>
+  | <T_RESERVED_KEYWORD> | <T_GNU_ATTRIBUTE> | <T_ASM> | <T_EXTENSION> | <T_DECLSPEC> | <T_CALLING_CONVENTION>
+  | <T_BUILTIN_CALL> | <T_POINTER_MODIFIER> | <T_FORCE_INLINE> | <T_REAL> | <T_IMAG> | <T_BASED>
+  | <T_NULLABILITY> | <T_PTRAUTH>
   ;
 
 /**
@@ -201,10 +255,10 @@ AttributeName -> {
  * -----------------------------------------------------------------------------
  *
  *  C23 allows any sequence of tokens with balanced parentheses, brackets
- *  and braces there, the arguments of GCC are expressions as a rule. The
- *  list is split at the commas outside of nested brackets: an argument that
- *  is a constant expression gives its node, any other balanced sequence its
- *  text, introduced=10.4 in availability(macos, introduced=10.4).
+ *  and braces there. The list is split at the commas outside of nested
+ *  brackets: an argument that is a constant expression gives its node, any
+ *  other balanced sequence its text, introduced=10.4 in
+ *  availability(macos, introduced=10.4).
  */
 
 /**
@@ -270,22 +324,22 @@ ArgumentClauseTokenSequence -> {
 
 /**
  * A token other than a comma, or a sequence in brackets with any tokens
- * inside. Also reads the body of a function definition.
+ * inside. Two consecutive "[" are two brackets, each closed on its own:
+ * [[1], [2]]. Also reads the body of a function definition.
  */
 BalancedToken
   : <T_LPAREN> (BalancedToken() | <T_COMMA>)* <T_RPAREN>
   | <T_LBRACKET> (BalancedToken() | <T_COMMA>)* <T_RBRACKET>
-  | <T_ATTRIBUTE_START> (BalancedToken() | <T_COMMA>)* <T_RBRACKET> <T_RBRACKET>
+  | <T_ATTRIBUTE_START> (BalancedToken() | <T_COMMA>)* <T_RBRACKET> (BalancedToken() | <T_COMMA>)* <T_RBRACKET>
   | <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   | AttributeName()
-  | <T_ATTRIBUTE> | <T_ASM> | <T_BUILTIN_CALL> | <T_DECLSPEC> | <T_CALLING_CONVENTION> | <T_POINTER_MODIFIER>
-  | <T_POINTER_MODIFIER_WITH_ARGUMENTS> | <T_NULLABILITY> | <T_FORCE_INLINE>
   | <T_HEX_FLOAT_LITERAL> | <T_DEC_FLOAT_LITERAL> | <T_HEX_INT_LITERAL> | <T_BIN_INT_LITERAL>
-  | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL> | <T_PP_NUMBER>
+  | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
   | <T_ELLIPSIS> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT> | <T_SHL_ASSIGN> | <T_SHR_ASSIGN> | <T_SHL>
   | <T_SHR> | <T_LESS_EQUAL> | <T_GREATER_EQUAL> | <T_EQUAL> | <T_NOT_EQUAL> | <T_LOGICAL_AND>
   | <T_LOGICAL_OR> | <T_MUL_ASSIGN> | <T_DIV_ASSIGN> | <T_MOD_ASSIGN> | <T_ADD_ASSIGN> | <T_SUB_ASSIGN>
-  | <T_AND_ASSIGN> | <T_XOR_ASSIGN> | <T_OR_ASSIGN> | <T_DOUBLE_COLON> | <T_DOT> | <T_AMPERSAND>
+  | <T_AND_ASSIGN> | <T_XOR_ASSIGN> | <T_OR_ASSIGN> | <T_DOUBLE_COLON> | <T_HASH_HASH> | <T_HASH>
+  | <T_DOT> | <T_AMPERSAND>
   | <T_ASTERISK> | <T_PLUS> | <T_MINUS> | <T_TILDE> | <T_EXCLAMATION> | <T_SLASH> | <T_PERCENT> | <T_LESS>
   | <T_GREATER> | <T_CARET> | <T_PIPE> | <T_QUESTION> | <T_COLON> | <T_SEMICOLON> | <T_ASSIGN>
   ;

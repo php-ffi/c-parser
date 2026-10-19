@@ -57,8 +57,12 @@ $parser = new FFI\Parser\Parser(
 
 ### AST Validators
 
-The parser checks the AST with validators after the transformations. To use
-your own, pass it to the constructor:
+The parser checks the AST with validators after the transformations. By
+default they reject the code the grammar lets through but whose tree has no
+meaning in C23, such as `long float`, `static extern int x;` or
+`int f(void)[3];`, and `parse()` throws `FFI\Parser\Exception\ValidationException`.
+To skip the checks, pass `rules: []`. To use your own, pass it to the
+constructor:
 
 ```php
 // override rules
@@ -74,21 +78,45 @@ $parser = new FFI\Parser\Parser(
 );
 ```
 
+### Compiler Presets
+
+A preset lists the extensions of C23 a compiler accepts and the typedef names
+it knows without any header. By default the parser accepts every extension it
+knows and the typedef names of every compiler (`Preset::default()`),
+`Preset::c23()` is plain C23 without any names. To change it, pass a
+`FFI\Parser\Preset` to the constructor:
+
+```php
+use FFI\Parser\Preset;
+use FFI\Parser\Preset\Feature;
+
+$parser = new FFI\Parser\Parser(preset: new Preset(
+    features: [Feature::ComplexIntegers],
+    typedefNames: ['uint8_t', 'size_t'],
+));
+```
+
+The presets of the compilers are `Preset::gcc()`, `Preset::clang()`,
+`Preset::msvc()` and `Preset::php()`:
+
+```php
+$parser = new FFI\Parser\Parser(preset: Preset::php());
+```
+
+Without these names it is not possible to obtain an unambiguous tree:
+
+```php
+// With `uint8_t` in the preset: the size of an array of 4 elements.
+// Without it: the size of the 4th element of the `uint8_t` array.
+$ast = $parser->parse('int a = sizeof(uint8_t[4]);');
+```
+
 ## Benchmarks
 
 | Name              | Speed  | AST Nodes | Header Size |
 |-------------------|--------|-----------|-------------|
-| bzip2.h           | 0.007s | 3869      | 24.1 KiB    |
-| cjson.h           | 0.003s | 1556      | 6.7 KiB     |
 | egl.h             | 0.004s | 2694      | 16.4 KiB    |
-| lua.h             | 0.013s | 6916      | 39.3 KiB    |
 | sqlite3.h         | 0.017s | 8944      | 41.6 KiB    |
-| zlib-no-markers.h | 0.011s | 6367      | 33.5 KiB    |
-| zlib.h            | 0.012s | 6367      | 50.4 KiB    |
-| zstd.h            | 0.004s | 2033      | 18.6 KiB    |
-| glfw.h            | 0.185s | 81865     | 344.4 KiB   |
-| vulkan.h          | 0.311s | 117375    | 1.05 MiB    |
-| windows.h         | 0.396s | 140673    | 1.05 MiB    |
 
 The small headers for tests are in `tests/resources/headers`.
 
@@ -100,34 +128,9 @@ The small headers for tests are in `tests/resources/headers`.
 > - CPU: AMD Ryzen 9 5900X
 > - SSD: SanDisk Ultra II (240GB)
 
-## Extensions
-
-List of supported keywords and instructions defined by various compilers (outside 
-the ISO/IEC 9899:2024 standard).
-
-| Extension                 | Example                                 | From       |
-|---------------------------|-----------------------------------------|------------|
-| Attributes                | `__attribute__((packed))`               | GCC, Clang |
-| Declspec                  | `__declspec(dllimport)`                 | MSVC       |
-| Calling conventions       | `__cdecl`, `__stdcall`, `__fastcall`    | MSVC       |
-| Pointer modifiers         | `__ptr64`, `__unaligned`, `__based(b)`  | MSVC       |
-| Pointer authentication    | `__ptrauth(k, a, d)`                    | Clang      |
-| Nullability               | `_Nonnull`, `_Nullable`                 | Clang      |
-| Block pointers            | `void (^cb)(int)`                       | Clang      |
-| Assembler labels          | `int f(void) __asm__("_f");`            | GCC, Clang |
-| Keyword spellings         | `__const__`, `__inline__`, `__typeof__` | GCC, Clang |
-| `__forceinline`           | `__forceinline int f(void);`            | MSVC       |
-| `__extension__`           | `__extension__ typedef long long i64;`  | GCC, Clang |
-| Built-in calls            | `__builtin_offsetof(struct S, x)`       | GCC, Clang |
-| Statement expressions     | `({ int y = 1; y; })`                   | GCC, Clang |
-| Range designators         | `{ [0 ... 3] = 1 }`                     | GCC, Clang |
-| `__alignof__` expressions | `__alignof__ x`                         | GCC, Clang |
-| Literal suffixes          | `1i64`, `1.0q`, `1.0w`                  | MSVC, GCC  |
-| Empty `struct` and `;`    | `struct S {};`, `;`                     | GCC, Clang |
-
 ## Limitations
 
 The meaning of some code depends on whether a name is a typedef: `(T)-x` is
 a cast or a subtraction. The parser knows only the names declared in the
-header itself, a name from a header that is not included keeps the default
-reading: `(size_t)-1` is a cast.
+header itself and the names of the preset, a name from a header that is not
+included keeps the default reading: `int f(int (T));` declares a parameter `T`.

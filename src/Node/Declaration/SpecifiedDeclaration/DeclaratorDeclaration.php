@@ -36,10 +36,9 @@ abstract class DeclaratorDeclaration extends SpecifiedDeclaration implements Roo
          */
         public Identifier $name,
         /**
-         * The attributes of the declarator: written before it (GCC allows
-         * them before any declarator but the first), after its name and
-         * after the whole of it, around the assembler label, {@see null}
-         * in case of none is written
+         * The attributes written after the declared name, and the GCC
+         * attributes before the declarator and after the whole of it,
+         * {@see null} in case of none is written
          */
         public ?AttributeList $attributes = null,
         /**

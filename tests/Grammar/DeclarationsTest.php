@@ -30,14 +30,20 @@ final class DeclarationsTest extends TestCase
         ];
         yield 'underscored spelling of static_assert' => ['_Static_assert(a);', ['(static_assert a@15)@0']];
         yield 'declarations in order' => [
-            "; static_assert(a);\n;; static_assert(b, \"b\");",
-            ['(static_assert a@16)@2', '(static_assert b@37 "b"@40)@23'],
+            "static_assert(a);\n static_assert(b, \"b\");",
+            ['(static_assert a@14)@0', '(static_assert b@33 "b"@36)@19'],
         ];
         yield 'tag declaration' => ['static struct S;', ['(tag static@0 struct S@7)@0']];
         yield 'type declaration' => ['const T;', ['(type [const T@6]@0)@0']];
         yield 'variable' => ['int a = 1;', ['(variable int@0 a@4 = 1@8)@0']];
         yield 'attribute declaration' => ['[[a]]; int x;', ['(attributes [[a@2]]@2)@0', '(variable int@7 x@11)@7']];
-        yield 'attributes and a storage class' => ['[[a]] static;', ['(type [[a@2]]@2 static@6 _)@0']];
+        yield 'attributes and a storage class' => ['[[a]] static int x;', [
+            '(variable [[a@2]]@2 static@6 int@13 x@17)@0',
+        ]];
+        yield 'attributes after the specifiers without a declarator' => ['struct S [[a]];', [
+            '(tag [[a@11]]@11 struct S@0)@0',
+        ]];
+        yield 'assignment as an initializer' => ['int x = a = 1;', ['(variable int@0 x@4 = (= a@8 1@12)@8)@0']];
         yield 'static assertion and a variable' => [
             'static_assert(1); int x;',
             ['(static_assert 1@14)@0', '(variable int@18 x@22)@18'],
@@ -120,26 +126,7 @@ final class DeclarationsTest extends TestCase
         yield 'atomic type' => ['_Atomic(int) x;', ['(variable _Atomic(int) x)']];
 
         yield 'name after a modifier' => ['unsigned T;', ['(variable (unsigned _) T)']];
-        yield 'typedef name after a modifier' => ['unsigned __int64 x;', ['(variable (unsigned __int64) x)']];
-        yield 'typedef name after a modifier before a pointer' => ['unsigned T *p;', [
-            '(variable (ptr (unsigned T)) p)',
-        ]];
-        yield 'typedef name after a modifier before a block pointer' => ['unsigned T ^b;', [
-            '(variable (block (unsigned T)) b)',
-        ]];
-        yield 'typedef name after a modifier before a calling convention' => [
-            'unsigned __int64 __cdecl f(void);',
-            ['(function __cdecl (fn (unsigned __int64) (void)) f)'],
-        ];
-        yield 'typedef name after a modifier before a qualifier' => ['unsigned T const *p;', [
-            '(variable (ptr [const (unsigned T)]) p)',
-        ]];
-        yield 'typedef name after a modifier before an attribute' => ['unsigned T __attribute__((unused)) x;', [
-            '(variable __attribute__((unused)) (unsigned T) x)',
-        ]];
-        yield 'name after a modifier before an attribute' => ['unsigned T __attribute__((unused));', [
-            '(variable (unsigned _) T __attribute__((unused)))',
-        ]];
+        yield 'modifier after a typedef name' => ['T unsigned x;', ['(variable (unsigned T) x)']];
         yield 'name after a typedef name' => ['T T;', ['(variable T T)']];
         yield 'name after a base' => ['int T;', ['(variable int T)']];
         yield 'name after a modifier and a base' => ['unsigned int T;', ['(variable (unsigned int) T)']];
@@ -186,10 +173,6 @@ final class DeclarationsTest extends TestCase
             'int x = sizeof (T[2]){0};',
             ['(variable int x = (sizeof (compound (array T 2) {0})))'],
         ];
-        yield 'alignment of a compound literal of a type that reads as an expression' => [
-            'int x = alignof (T[2]){0};',
-            ['(variable int x = (alignof (compound (array T 2) {0})))'],
-        ];
         yield 'size of a compound literal' => ['int x = sizeof (int){1};', [
             '(variable int x = (sizeof (compound int {1})))',
         ]];
@@ -197,14 +180,14 @@ final class DeclarationsTest extends TestCase
             '(variable int x = (. (compound struct S {1}) a))',
         ]];
         yield 'compound literal with a storage class' => ['int x = (static int){1};', [
-            '(variable int x = (compound {static int} {1}))',
+            '(variable int x = (compound static int {1}))',
         ]];
 
         yield 'function definition' => ['int f(void) { return 0; }', [
             '(definition (fn int (void)) f { return 0; })',
         ]];
         yield 'static inline function of glibc' => [
-            "static __inline __uint16_t\n__bswap_16 (__uint16_t __bsx)\n{\n  return __builtin_bswap16 (__bsx);\n}",
+            "static inline __uint16_t\n__bswap_16 (__uint16_t __bsx)\n{\n  return __builtin_bswap16 (__bsx);\n}",
             ['(definition static inline (fn __uint16_t (__uint16_t __bsx)) __bswap_16 '
                 . "{\n  return __builtin_bswap16 (__bsx);\n})"],
         ];
@@ -213,8 +196,8 @@ final class DeclarationsTest extends TestCase
             ['(definition (fn void (void)) f { if (x) { g("}"); } __asm__ volatile ("nop"); })'],
         ];
         yield 'empty body' => ['void f() {}', ['(definition (fn void ()) f {})']];
-        yield 'definition with attributes' => ['__attribute__((always_inline)) int f(int x) [[a]] { return x; }', [
-            '(definition __attribute__((always_inline)) (fn int (int x) [[a]]) f { return x; })',
+        yield 'definition with attributes' => ['[[gnu::always_inline]] int f(int x) [[a]] { return x; }', [
+            '(definition [[gnu::always_inline]] (fn int (int x) [[a]]) f { return x; })',
         ]];
         yield 'definitions and declarations' => ['int f(void) { return 1; } int g(void);', [
             '(definition (fn int (void)) f { return 1; })',
@@ -222,28 +205,20 @@ final class DeclarationsTest extends TestCase
         ]];
         yield 'body after a declarator of no function' => ['int x { 1 }', ['(definition int x { 1 })']];
 
-        yield 'assembler label' => ['int f(void) __asm__("_f");', ['(function (fn int (void)) f asm("_f"))']];
-        yield 'assembler label without underscores' => ['int f(void) asm("_f");', [
-            '(function (fn int (void)) f asm("_f"))',
-        ]];
-        yield 'pragma operator of MSVC' => ['__pragma(warning(push)) int x;', ['(variable int x)']];
         yield 'pragma operator' => ['int y _Pragma("weak y");', ['(variable int y)']];
-        yield 'nested parentheses in a pragma operator' => ['__pragma(warning(disable: 4996; (a))) int z;', [
-            '(variable int z)',
+        yield 'nested parentheses in a pragma operator' => ['_Pragma("a") int x _Pragma(("b")) ;', [
+            '(variable int x)',
         ]];
-        yield 'assembler label of adjacent strings' => ['extern int x __asm("_" "x") = 1;', [
-            '(variable extern int x asm((concat "_" "x")) = 1)',
+        yield 'pragma operator of MSVC' => ['__pragma(pack(push, 8)) int x; __pragma(pack(pop))', [
+            '(variable int x)',
         ]];
-        yield 'assembler labels of several declarators' => ['int a __asm__("a"), b __asm__("b");', [
-            '(variable int a asm("a"))',
-            '(variable int b asm("b"))',
+        yield 'line splice' => ["int f(void) { return 1 \\\n+ 2; } int \\\r\nx;", [
+            "(definition (fn int (void)) f { return 1 \\\n+ 2; })",
+            '(variable int x)',
         ]];
-        yield 'assembler label of a typedef' => ['typedef int T __asm__("t");', ['(typedef typedef int T asm("t"))']];
-        yield 'range designator' => ['int a[] = {[0 ... 3] = 1, [4 ... 5].x = 2};', [
-            '(variable (array int) a = {[0 ... 3]=1, [4 ... 5].x=2})',
-        ]];
-        yield 'marker of the extensions before a declaration' => ['__extension__ typedef long long T;', [
-            '(typedef typedef (long long _) T)',
+        yield 'unreserved keywords of the extensions are names' => ['int asm, cdecl;', [
+            '(variable int asm)',
+            '(variable int cdecl)',
         ]];
 
         yield 'typedef with an initializer' => ['typedef int x = 1;', ['(typedef typedef int x = 1)']];
@@ -298,11 +273,6 @@ final class DeclarationsTest extends TestCase
             'VariableDeclaration@0', 'Identifier@4', 'CompoundLiteralExpression@8',
             'IncompleteArrayType@12', 'IntType@9', 'InitializerList@15', 'DecIntLiteral@16', 'IntType@0',
         ]];
-        yield 'assembler label and a range designator' => ['int a[] __asm__("x") = {[0 ... 1] = 2};', [
-            'VariableDeclaration@0', 'Identifier@4', 'AsmLabel@8', 'StringLiteral@16',
-            'InitializerList@23', 'DesignatedInitializer@24', 'DesignatorList@24', 'RangeDesignator@24',
-            'OctIntLiteral@25', 'DecIntLiteral@31', 'DecIntLiteral@36', 'IncompleteArrayType@5', 'IntType@0',
-        ]];
         yield 'function definition' => ['static int f() { }', [
             'FunctionDefinition@0', 'SpecifierList@0', 'StaticSpecifier@0', 'Identifier@11', 'FunctionType@12',
             'IntType@7', 'ParameterList@12', 'FunctionBody@15',
@@ -350,17 +320,16 @@ final class DeclarationsTest extends TestCase
         yield 'two trailing commas' => ['int a = {1,,};', 11, ','];
         yield 'initializers without a comma' => ['int a = {1 2};', 11, '2'];
         yield 'constant instead of a declarator after a comma' => ['int a = 1, 2;', 11, '2'];
-        yield 'assignment as an initializer' => ['int x = a = 1;', 10, '='];
+        yield 'attributes before the specifiers without a declarator' => ['[[a]] static;', 12, ';'];
+        yield 'attributes before a structure without a declarator' => ['[[a]] struct S;', 14, ';'];
         yield 'comma without a declarator' => ['int x, ;', 7, ';'];
         yield 'comma before the declarators' => ['int , x;', 4, ','];
         yield 'two lists' => ['int x = {1}, {2};', 13, '{'];
-        yield 'designator of a number' => ['int x = {.1 = 2};', 12, '='];
         yield 'designator without an index' => ['int x = {[] = 2};', 10, ']'];
         yield 'unclosed compound literal' => ['int x = (int){1;', 15, ';'];
         yield 'designator without an initializer' => ['int a = {[1]};', 12, '}'];
         yield 'designator without an equals sign' => ['int a = {.a 1};', 12, '1'];
-        yield 'range without the last index' => ['int a[] = {[0 ...] = 1};', 17, ']'];
-        yield 'range of three indices' => ['int a[] = {[0 ... 1 ... 2] = 1};', 20, '...'];
+        yield 'generic selection of a type name' => ['int x = _Generic(int, int: 1);', 17, 'int'];
         yield 'name without a type specifier before an array' => ['static x[3];', 8, '['];
     }
 

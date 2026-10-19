@@ -94,7 +94,7 @@ final class SyntaxErrorsTest extends TestCase
             'const char *s = "abc;',
             16,
             '"abc;',
-            'Syntax error, unexpected "\\"abc;" (T_INVALID_STRING_LITERAL) in the initializer',
+            'Syntax error, unexpected "\\"abc;" (unknown token) in the initializer',
         ];
         yield 'invalid number in an expression' => [
             'int x = 1 + 0xG;',
@@ -112,7 +112,7 @@ final class SyntaxErrorsTest extends TestCase
             "static_assert((int)'ab);",
             19,
             "'ab);",
-            'Syntax error, unexpected "\'ab);" (T_INVALID_CHAR_LITERAL) in the expression',
+            'Syntax error, unexpected "\'ab);" (unknown token) in the expression',
         ];
         yield 'token that cannot start a declaration' => [
             'int x[];]',
@@ -149,24 +149,6 @@ final class SyntaxErrorsTest extends TestCase
             19,
             '',
             'Syntax error, unexpected end of input in the compound statement, "}" expected',
-        ];
-        yield 'assembler label without parentheses' => [
-            'int x __asm__;',
-            13,
-            ';',
-            'Syntax error, unexpected ";" (T_SEMICOLON) in the assembler label, "(" expected',
-        ];
-        yield 'assembler label without a string' => [
-            'int x __asm__(a);',
-            14,
-            'a',
-            'Syntax error, unexpected "a" (T_IDENTIFIER) in the assembler label, a string literal expected',
-        ];
-        yield 'unclosed assembler label' => [
-            'int x __asm__("a";',
-            17,
-            ';',
-            'Syntax error, unexpected ";" (T_SEMICOLON) in the assembler label, ")" expected',
         ];
         yield 'static assertion without parentheses' => [
             'static_assert 1;',
@@ -210,11 +192,11 @@ final class SyntaxErrorsTest extends TestCase
             ';',
             'Syntax error, unexpected ";" (T_SEMICOLON) in the enumeration specifier, a tag, ":" or "{" expected',
         ];
-        yield 'enumeration without enumerators' => [
-            'enum E {};',
-            8,
-            '}',
-            'Syntax error, unexpected "}" (T_RBRACE) in the enumerators, an enumerator expected',
+        yield 'enumerator without a name' => [
+            'enum E { = 1 };',
+            9,
+            '=',
+            'Syntax error, unexpected "=" (T_ASSIGN) in the enumerators, an enumerator or "}" expected',
         ];
         yield 'enumeration without an underlying type' => [
             'enum E : { A };',
@@ -318,18 +300,6 @@ final class SyntaxErrorsTest extends TestCase
             ';',
             'Syntax error, unexpected ";" (T_SEMICOLON) in the generic selection, "," or ")" expected',
         ];
-        yield 'unclosed arguments of a built-in function' => [
-            'int x = __builtin_offsetof(struct S, a;',
-            38,
-            ';',
-            'Syntax error, unexpected ";" (T_SEMICOLON) in the arguments, "," or ")" expected',
-        ];
-        yield 'unclosed statement expression' => [
-            'int x = ({ 1; );',
-            14,
-            ')',
-            'Syntax error, unexpected ")" (T_RPAREN) in the compound statement, "}" expected',
-        ];
         yield 'designated initializer without an assignment' => [
             'struct S s = {.a 1};',
             17,
@@ -365,30 +335,6 @@ final class SyntaxErrorsTest extends TestCase
             8,
             ']',
             'Syntax error, unexpected "]" (T_RBRACKET) in the attribute arguments, ")" expected',
-        ];
-        yield 'attribute specifier of GCC with a single parenthesis' => [
-            '__attribute__(a)) int x;',
-            14,
-            'a',
-            'Syntax error, unexpected "a" (T_IDENTIFIER) in the attribute specifier, "((" expected',
-        ];
-        yield 'unclosed attribute specifier of GCC' => [
-            '__attribute__((a) int x;',
-            18,
-            'int',
-            'Syntax error, unexpected "int" (T_INT) in the attribute specifier, "))" expected',
-        ];
-        yield 'unclosed attribute specifier of MSVC' => [
-            '__declspec(a int x;',
-            18,
-            ';',
-            'Syntax error, unexpected ";" (T_SEMICOLON) in the __declspec specifier, ")" expected',
-        ];
-        yield 'pointer modifier without arguments' => [
-            'int * __ptrauth p;',
-            16,
-            'p',
-            'Syntax error, unexpected "p" (T_IDENTIFIER) in the pointer modifier, "(" expected',
         ];
     }
 

@@ -10,6 +10,7 @@ use FFI\Parser\Node\Literal\FloatLiteral\FloatParser\FloatParserResult;
  * Parses the source text of a floating constant.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
+ * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), Annex H.5.2 Constants
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser\Node\Literal
@@ -92,6 +93,7 @@ final class FloatParser
             mantissa: $parts[1],
             exponent: $exponent,
             suffix: self::parseSuffix($parts[3]),
+            suffixWidth: self::parseSuffixWidth($parts[3]),
             isImaginary: self::isImaginary($parts[3]),
         );
     }
@@ -107,6 +109,7 @@ final class FloatParser
             mantissa: $parts[1],
             exponent: $parts[2],
             suffix: self::parseSuffix($parts[3]),
+            suffixWidth: self::parseSuffixWidth($parts[3]),
             isImaginary: self::isImaginary($parts[3]),
         );
     }
@@ -205,25 +208,54 @@ final class FloatParser
 
     private static function parseSuffix(string $suffix): ?FloatTypeSuffix
     {
-        return match (\strtolower(\str_ireplace(['i', 'j'], '', $suffix))) {
+        $type = self::readTypeSuffix($suffix);
+
+        return match ($type) {
+            '' => null,
             'f' => FloatTypeSuffix::Float,
             'l' => FloatTypeSuffix::LongDouble,
-            'f16' => FloatTypeSuffix::Float16,
-            'f32' => FloatTypeSuffix::Float32,
-            'f64' => FloatTypeSuffix::Float64,
-            'f128' => FloatTypeSuffix::Float128,
-            'f32x' => FloatTypeSuffix::Float32x,
-            'f64x' => FloatTypeSuffix::Float64x,
-            'f128x' => FloatTypeSuffix::Float128x,
             'df', 'd32' => FloatTypeSuffix::Decimal32,
             'dd', 'd64' => FloatTypeSuffix::Decimal64,
             'dl', 'd128' => FloatTypeSuffix::Decimal128,
-            'd64x' => FloatTypeSuffix::Decimal64x,
-            'd128x' => FloatTypeSuffix::Decimal128x,
             'q' => FloatTypeSuffix::GnuFloat128,
             'w' => FloatTypeSuffix::GnuFloat80,
+            default => self::parseWidthSuffix($type),
+        };
+    }
+
+    /**
+     * Parses `fN`, `fNx`, `dN` and `dNx` of any width N.
+     */
+    private static function parseWidthSuffix(string $type): ?FloatTypeSuffix
+    {
+        $isExtended = \str_ends_with($type, 'x');
+
+        return match ($type[0]) {
+            'f' => $isExtended ? FloatTypeSuffix::FloatNx : FloatTypeSuffix::FloatN,
+            'd' => $isExtended ? FloatTypeSuffix::DecimalNx : FloatTypeSuffix::DecimalN,
             default => null,
         };
+    }
+
+    /**
+     * @return int<1, max>|null
+     */
+    private static function parseSuffixWidth(string $suffix): ?int
+    {
+        if (self::parseSuffix($suffix)?->hasWidth() !== true) {
+            return null;
+        }
+
+        /** @var int<1, max> */
+        return (int) \substr(self::readTypeSuffix($suffix), 1);
+    }
+
+    /**
+     * Returns the type suffix in lower case without the imaginary one.
+     */
+    private static function readTypeSuffix(string $suffix): string
+    {
+        return \strtolower(\str_ireplace(['i', 'j'], '', $suffix));
     }
 
     private static function isImaginary(string $suffix): bool

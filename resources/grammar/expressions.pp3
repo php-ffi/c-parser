@@ -1,10 +1,10 @@
 /**
  * -----------------------------------------------------------------------------
- *  Constant expressions, 6.5 and 6.6.
+ *  Expressions, 6.5 and 6.6.
  * -----------------------------------------------------------------------------
  *
- *  The expressions of 6.5 without the assignment, the increment and the
- *  decrement, with the comma operator and the statement expression of GCC.
+ *  A constant expression (6.6) is a conditional expression, the operators
+ *  it may not contain are reported by a validator.
  *  "(T)(x)" with a lone identifier T is always a cast.
  *
  *  A node starts where its rule does ($offset). The parentheses around an
@@ -26,60 +26,292 @@ Expression -> {
 
     return $result;
 }
-  : ConditionalExpression() (
-        ::T_COMMA:: ConditionalExpression()
+  : AssignmentExpression() (
+        ::T_COMMA:: AssignmentExpression()
     )*
   ;
 
 /**
- * 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
- * a ? b : (c ? d : e)
+ * 6.5.17 Assignment operators, right-associative: a = b = c is a = (b = c).
+ * The left operand is a unary expression: "a + b = c" and "(int)x = 1" are
+ * not assignments, a compound literal "(int){0} = 1" is. A cast to a lone
+ * identifier, "(x)", may be a name in parentheses followed by postfix
+ * operators, "(f)(x)[0] = 1", the transformers rebuild it once the typedef
+ * names are known. A type name in parentheses is read once, as in
+ * CastExpression, and the operators after the operand are functions
+ * applied to it.
  */
-ConditionalExpression @error("Syntax error, unexpected {token} in the expression") -> {
+AssignmentExpression @error("Syntax error, unexpected {token} in the expression") -> {
     /**
-     * @var array{Expression\ExpressionInterface}|array{
-     *     Expression\ExpressionInterface,
-     *     Expression\ExpressionInterface,
-     *     Expression\ExpressionInterface
-     * } $children
+     * @var non-empty-list<
+     *     TokenInterface
+     *     |Specifier\SpecifierList
+     *     |Type\TypeInterface
+     *     |Expression\ExpressionInterface
+     *     |\Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     *     |\Closure(Expression\ExpressionInterface, int): Expression\ExpressionInterface
+     * > $children
      */
-    if (\count($children) === 1) {
-        return $children[0];
+    $result = $children[0];
+    $first = 1;
+
+    if ($result instanceof TokenInterface) {
+        // A cast or a compound literal: the parenthesis, the specifiers of a
+        // compound literal, the type name and the function of the operand
+        $specifiers = $children[1] instanceof Specifier\SpecifierList ? $children[1] : null;
+        $first = $specifiers === null ? 3 : 4;
+        $type = $children[$first - 2];
+        $operand = $children[$first - 1];
+        \assert($type instanceof Type\TypeInterface && $operand instanceof \Closure);
+
+        $result = $operand($result, $type, $specifiers);
     }
 
-    return new Expression\ConditionalExpression($children[0], $children[1], $children[2], $offset);
+    \assert($result instanceof Expression\ExpressionInterface);
+
+    for ($i = $first, $count = \count($children); $i < $count; ++$i) {
+        \assert($children[$i] instanceof \Closure);
+
+        $result = $children[$i]($result, $offset);
+    }
+
+    return $result;
 }
-  : BinaryExpression() ConditionalBranches()?
+  : <T_LPAREN> (
+        !LoneIdentifier() !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (
+            CompoundLiteral() AssignmentTail()
+          | CastOperand() BinaryOperations()? ConditionalBranches()?
+        )
+      | &LoneIdentifierCast() TypeName() ::T_RPAREN:: CastOperand() AssignmentTail()
+      | CompoundLiteralSpecifiers()? TypeName() ::T_RPAREN:: CompoundLiteral() AssignmentTail()
+    )
+  | UnaryExpression() AssignmentTail()
   ;
 
 /**
- * The expressions after "?" and after ":"
+ * What follows the left operand of an assignment: an assignment operator
+ * and its right operand, or the binary and the conditional operators
+ */
+AssignmentTail
+  : AssignmentOperator()
+  | BinaryOperations()? ConditionalBranches()?
+  ;
+
+/**
+ * An assignment operator and its right operand, a function from the left
+ * operand and the start of the whole expression to the assignment
+ */
+AssignmentOperator
+  : SimpleAssignmentOperator()
+  | MulAssignmentOperator()
+  | DivAssignmentOperator()
+  | RemAssignmentOperator()
+  | AddAssignmentOperator()
+  | SubAssignmentOperator()
+  | ShiftLeftAssignmentOperator()
+  | ShiftRightAssignmentOperator()
+  | BitwiseAndAssignmentOperator()
+  | BitwiseXorAssignmentOperator()
+  | BitwiseOrAssignmentOperator()
+  ;
+
+SimpleAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\AssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_ASSIGN:: AssignmentExpression()
+  ;
+
+MulAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\MulAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_MUL_ASSIGN:: AssignmentExpression()
+  ;
+
+DivAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\DivAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_DIV_ASSIGN:: AssignmentExpression()
+  ;
+
+RemAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\RemAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_MOD_ASSIGN:: AssignmentExpression()
+  ;
+
+AddAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\AddAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_ADD_ASSIGN:: AssignmentExpression()
+  ;
+
+SubAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\SubAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_SUB_ASSIGN:: AssignmentExpression()
+  ;
+
+ShiftLeftAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\ShiftLeftAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_SHL_ASSIGN:: AssignmentExpression()
+  ;
+
+ShiftRightAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\ShiftRightAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_SHR_ASSIGN:: AssignmentExpression()
+  ;
+
+BitwiseAndAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\BitwiseAndAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_AND_ASSIGN:: AssignmentExpression()
+  ;
+
+BitwiseXorAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\BitwiseXorAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_XOR_ASSIGN:: AssignmentExpression()
+  ;
+
+BitwiseOrAssignmentOperator -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $left, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new AssignmentExpression\BitwiseOrAssignExpression($left, $children[0], $start);
+    };
+}
+  : ::T_OR_ASSIGN:: AssignmentExpression()
+  ;
+
+/**
+ * 6.5.16 Conditional operator, right-associative: a ? b : c ? d : e is
+ * a ? b : (c ? d : e). The operators after the first operand are functions
+ * applied to it, as in an assignment expression.
+ */
+ConditionalExpression @error("Syntax error, unexpected {token} in the expression") -> {
+    /**
+     * @var list{
+     *     Expression\ExpressionInterface,
+     *     ...<\Closure(Expression\ExpressionInterface, int): Expression\ExpressionInterface>
+     * } $children
+     */
+    $result = $children[0];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $result = $children[$i]($result, $offset);
+    }
+
+    return $result;
+}
+  : CastOrUnaryExpression() BinaryOperations()? ConditionalBranches()?
+  ;
+
+/**
+ * The expressions after "?" and after ":", a function from the condition
+ * and the start of the whole expression to the conditional expression
  */
 ConditionalBranches
+  : OmittedConditionalOperand()
+  | ConditionalOperands()
+  ;
+
+/**
+ * GCC: the expression after ":" alone, a ?: b, whose middle operand is the
+ * condition. Requires the OmittedConditionalOperand feature.
+ */
+OmittedConditionalOperand -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertFeature(Feature::OmittedConditionalOperand, $source, $children[0]->offset, $children[0]->size);
+
+    return static function (Expression\ExpressionInterface $condition, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new Expression\ConditionalExpression($condition, null, $children[1], $start);
+    };
+}
+  : <T_QUESTION> ::T_COLON:: ConditionalExpression()
+  ;
+
+ConditionalOperands -> {
+    /** @var array{Expression\ExpressionInterface, Expression\ExpressionInterface} $children */
+    return static function (Expression\ExpressionInterface $condition, int $start) use ($children): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new Expression\ConditionalExpression($condition, $children[0], $children[1], $start);
+    };
+}
   : ::T_QUESTION:: Expression()
     ::T_COLON:: @error("Syntax error, unexpected {token} in the conditional expression, \":\" expected")
     ConditionalExpression()
   ;
 
 /**
- * 6.5.6 to 6.5.15 Binary operators, all the levels of precedence in one
- * rule: the operands and the operators are read as a flat sequence, and the
- * reducer builds the tree by precedence, every level left-associative:
- * a - b - c is (a - b) - c, a + b * c is a + (b * c).
+ * 6.5.6 to 6.5.15 Binary operators after the first operand, all the levels
+ * of precedence in one rule: the operators and the operands are read as a
+ * flat sequence, and the reducer builds the tree by precedence, every level
+ * left-associative: a - b - c is (a - b) - c, a + b * c is a + (b * c). A
+ * function from the first operand and the start of the whole expression to
+ * the expression.
  *
  * A node starts where its left operand does: the leftmost one at the start
- * of the rule, any other one at its own node. In "a + b * c" the product
- * starts at "b".
+ * of the whole expression, any other one at its own node. In "a + b * c"
+ * the product starts at "b".
  */
-BinaryExpression -> {
+BinaryOperations -> {
     /** @var non-empty-list<Expression\ExpressionInterface|TokenInterface> $children */
-    if (\count($children) === 1) {
-        // A single operand, an expression of a higher precedence
-        \assert($children[0] instanceof Expression\ExpressionInterface);
-
-        return $children[0];
-    }
-
     $precedence = static fn(TokenInterface $operator): int => match ($operator->id) {
         self::T_ASTERISK, self::T_SLASH, self::T_PERCENT => 10,
         self::T_PLUS, self::T_MINUS => 9,
@@ -93,73 +325,82 @@ BinaryExpression -> {
         default => 1,
     };
 
-    $build = static fn(
+    $build = static function (
         TokenInterface $operator,
         Expression\ExpressionInterface $left,
         Expression\ExpressionInterface $right,
         int $start,
-    ): Expression\ExpressionInterface => match ($operator->id) {
-        self::T_ASTERISK => new BinaryExpression\MulExpression($left, $right, $start),
-        self::T_SLASH => new BinaryExpression\DivExpression($left, $right, $start),
-        self::T_PERCENT => new BinaryExpression\RemExpression($left, $right, $start),
-        self::T_PLUS => new BinaryExpression\AddExpression($left, $right, $start),
-        self::T_MINUS => new BinaryExpression\SubExpression($left, $right, $start),
-        self::T_SHL => new BinaryExpression\ShiftLeftExpression($left, $right, $start),
-        self::T_SHR => new BinaryExpression\ShiftRightExpression($left, $right, $start),
-        self::T_LESS => new BinaryExpression\LessExpression($left, $right, $start),
-        self::T_GREATER => new BinaryExpression\GreaterExpression($left, $right, $start),
-        self::T_LESS_EQUAL => new BinaryExpression\LessOrEqualExpression($left, $right, $start),
-        self::T_GREATER_EQUAL => new BinaryExpression\GreaterOrEqualExpression($left, $right, $start),
-        self::T_EQUAL => new BinaryExpression\EqualExpression($left, $right, $start),
-        self::T_NOT_EQUAL => new BinaryExpression\NotEqualExpression($left, $right, $start),
-        self::T_AMPERSAND => new BinaryExpression\BitwiseAndExpression($left, $right, $start),
-        self::T_CARET => new BinaryExpression\BitwiseXorExpression($left, $right, $start),
-        self::T_PIPE => new BinaryExpression\BitwiseOrExpression($left, $right, $start),
-        self::T_LOGICAL_AND => new BinaryExpression\LogicalAndExpression($left, $right, $start),
-        default => new BinaryExpression\LogicalOrExpression($left, $right, $start),
+    ): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return match ($operator->id) {
+            self::T_ASTERISK => new BinaryExpression\MulExpression($left, $right, $start),
+            self::T_SLASH => new BinaryExpression\DivExpression($left, $right, $start),
+            self::T_PERCENT => new BinaryExpression\RemExpression($left, $right, $start),
+            self::T_PLUS => new BinaryExpression\AddExpression($left, $right, $start),
+            self::T_MINUS => new BinaryExpression\SubExpression($left, $right, $start),
+            self::T_SHL => new BinaryExpression\ShiftLeftExpression($left, $right, $start),
+            self::T_SHR => new BinaryExpression\ShiftRightExpression($left, $right, $start),
+            self::T_LESS => new BinaryExpression\LessExpression($left, $right, $start),
+            self::T_GREATER => new BinaryExpression\GreaterExpression($left, $right, $start),
+            self::T_LESS_EQUAL => new BinaryExpression\LessOrEqualExpression($left, $right, $start),
+            self::T_GREATER_EQUAL => new BinaryExpression\GreaterOrEqualExpression($left, $right, $start),
+            self::T_EQUAL => new BinaryExpression\EqualExpression($left, $right, $start),
+            self::T_NOT_EQUAL => new BinaryExpression\NotEqualExpression($left, $right, $start),
+            self::T_AMPERSAND => new BinaryExpression\BitwiseAndExpression($left, $right, $start),
+            self::T_CARET => new BinaryExpression\BitwiseXorExpression($left, $right, $start),
+            self::T_PIPE => new BinaryExpression\BitwiseOrExpression($left, $right, $start),
+            self::T_LOGICAL_AND => new BinaryExpression\LogicalAndExpression($left, $right, $start),
+            default => new BinaryExpression\LogicalOrExpression($left, $right, $start),
+        };
     };
 
-    // The operands built so far with their starts, and the operators that
-    // wait for their right operand, of an ascending precedence. Even
-    // children are the operands and odd ones the operators.
-    /** @var non-empty-list<Expression\ExpressionInterface> $operands */
-    $operands = [$children[0]];
-    $starts = [$offset];
-    /** @var list<TokenInterface> $operators */
-    $operators = [];
-    $depth = 0;
+    return static function (
+        Expression\ExpressionInterface $first,
+        int $start,
+    ) use ($children, $precedence, $build): Expression\ExpressionInterface {
+        // The operands built so far with their starts, and the operators that
+        // wait for their right operand, of an ascending precedence. Even
+        // children are the operators and odd ones the operands.
+        /** @var non-empty-list<Expression\ExpressionInterface> $operands */
+        $operands = [$first];
+        $starts = [$start];
+        /** @var list<TokenInterface> $operators */
+        $operators = [];
+        $depth = 0;
 
-    // Past the last operand every operator waiting is built, as if the
-    // input ended with an operator of the loosest precedence of all
-    for ($i = 1, $count = \count($children); ; $i += 2) {
-        $current = 0;
+        // Past the last operand every operator waiting is built, as if the
+        // input ended with an operator of the loosest precedence of all
+        for ($i = 0, $count = \count($children); ; $i += 2) {
+            $current = 0;
 
-        if ($i < $count) {
-            \assert($children[$i] instanceof TokenInterface);
+            if ($i < $count) {
+                \assert($children[$i] instanceof TokenInterface);
 
-            $current = $precedence($children[$i]);
+                $current = $precedence($children[$i]);
+            }
+
+            while ($depth > 0 && $precedence($operators[$depth - 1]) >= $current) {
+                --$depth;
+                $operands[$depth] = $build($operators[$depth], $operands[$depth], $operands[$depth + 1], $starts[$depth]);
+            }
+
+            if ($i >= $count) {
+                break;
+            }
+
+            \assert($children[$i] instanceof TokenInterface && $children[$i + 1] instanceof Expression\ExpressionInterface);
+
+            $operators[$depth] = $children[$i];
+            ++$depth;
+            $operands[$depth] = $children[$i + 1];
+            $starts[$depth] = $children[$i + 1]->offset;
         }
 
-        while ($depth > 0 && $precedence($operators[$depth - 1]) >= $current) {
-            --$depth;
-            $operands[$depth] = $build($operators[$depth], $operands[$depth], $operands[$depth + 1], $starts[$depth]);
-        }
-
-        if ($i >= $count) {
-            break;
-        }
-
-        \assert($children[$i] instanceof TokenInterface && $children[$i + 1] instanceof Expression\ExpressionInterface);
-
-        $operators[$depth] = $children[$i];
-        ++$depth;
-        $operands[$depth] = $children[$i + 1];
-        $starts[$depth] = $children[$i + 1]->offset;
-    }
-
-    return $operands[0];
+        return $operands[0];
+    };
 }
-  : CastOrUnaryExpression() (BinaryOperator() CastOrUnaryExpression())*
+  : (BinaryOperator() CastOrUnaryExpression())+
   ;
 
 BinaryOperator
@@ -174,56 +415,59 @@ CastOrUnaryExpression @error("Syntax error, unexpected {token} in the expression
   ;
 
 /**
- * 6.5.5 Cast operators, (T)x, and 6.5.3.6 Compound literals, (T){1}. A type
- * name that cannot be an expression makes a cast: "(int)-x", "(T *)-x". A
- * type name that reads as an expression other than a lone identifier is
- * never a cast (see ExpressionLikeTypeName). A lone identifier "(T)" is a
- * cast when the next token can start an operand (CastStart): "(T)-x" is a
- * cast, "(x)[0]" is a subscript.
+ * 6.5.5 Cast operators, (T)x, and 6.5.3.6 Compound literals, (T){1}, which
+ * are postfix expressions. The type name in parentheses is read once, the
+ * token after it decides. A type name that cannot be an expression makes a
+ * cast: "(int)-x", "(T *)-x". A type name that reads as an expression other
+ * than a lone identifier is never a cast (see ExpressionLikeTypeName). A
+ * lone identifier "(T)" is a cast when the next token can start an operand
+ * (CastStart): "(T)-x" is a cast, "(x)[0]" is a subscript. The storage-class
+ * specifiers of a compound literal go before its type name.
  */
 CastExpression -> {
     /**
-     * @var array{TokenInterface, Type\TypeInterface, Expression\ExpressionInterface}
-     *     |array{
-     *         TokenInterface,
-     *         Type\TypeInterface,
-     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
-     *     } $children
+     * @var array{
+     *     TokenInterface,
+     *     Type\TypeInterface,
+     *     \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     * }|array{
+     *     TokenInterface,
+     *     Specifier\SpecifierList,
+     *     Type\TypeInterface,
+     *     \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     * } $children
      */
-    if ($children[2] instanceof \Closure) {
-        return $children[2]($children[0], $children[1]);
+    if ($children[1] instanceof Specifier\SpecifierList) {
+        return $children[3]($children[0], $children[2], $children[1]);
     }
 
-    return new Expression\CastExpression($children[1], $children[2], $offset);
+    return $children[2]($children[0], $children[1]);
 }
   : <T_LPAREN> (
         (!LoneIdentifier() !ExpressionLikeTypeName() | &LoneIdentifierCast()) TypeName() ::T_RPAREN::
-            (CompoundLiteral() | CastOrUnaryExpression())
-      | TypeName() ::T_RPAREN:: CompoundLiteral()
+            (CompoundLiteral() | CastOperand())
+      | CompoundLiteralSpecifiers()? TypeName() ::T_RPAREN:: CompoundLiteral()
     )
   ;
 
-LoneIdentifier
-  : <T_IDENTIFIER> <T_RPAREN>
-  ;
-
-LoneIdentifierCast
-  : <T_IDENTIFIER> <T_RPAREN> CastStart()
-  ;
-
-CastStart
-  : <T_IDENTIFIER> | <T_LPAREN>
-  | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
-  | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
-  | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
-  | <T_PLUS> | <T_MINUS> | <T_ASTERISK> | <T_AMPERSAND>
-  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_BUILTIN_CALL> | <T_GENERIC> | <T_LBRACE>
+/**
+ * The operand of a cast, a function from the parenthesis and the type name
+ * to the cast
+ */
+CastOperand -> {
+    /** @var array{Expression\ExpressionInterface} $children */
+    return static function (TokenInterface $parenthesis, Type\TypeInterface $type) use ($children): Expression\ExpressionInterface {
+        return new Expression\CastExpression($type, $children[0], $parenthesis->offset);
+    };
+}
+  : CastOrUnaryExpression()
   ;
 
 /**
  * The braces of a compound literal after its type name, and the postfix
  * operators applied to the literal: (struct S){1}.a. A function from the
- * parenthesis and the type name to the expression.
+ * parenthesis, the type name and the storage-class specifiers to the
+ * expression.
  */
 CompoundLiteral -> {
     /**
@@ -235,8 +479,14 @@ CompoundLiteral -> {
     return static function (
         TokenInterface $parenthesis,
         Type\TypeInterface $type,
+        ?Specifier\SpecifierList $specifiers = null,
     ) use ($children): Expression\ExpressionInterface {
-        $result = new Expression\CompoundLiteralExpression($type, $children[0], $parenthesis->offset);
+        $result = new Expression\CompoundLiteralExpression(
+            $type,
+            $children[0],
+            $specifiers,
+            $parenthesis->offset,
+        );
 
         for ($i = 1, $count = \count($children); $i < $count; ++$i) {
             $result = $children[$i]($result, $parenthesis->offset);
@@ -249,10 +499,73 @@ CompoundLiteral -> {
   ;
 
 /**
+ * The storage-class specifiers of a compound literal
+ */
+CompoundLiteralSpecifiers -> {
+    /** @var non-empty-list<Specifier\StorageClassSpecifier> $children */
+    return new Specifier\SpecifierList($children, $offset);
+}
+  : StorageClassSpecifier()+
+  ;
+
+/**
+ * 6.5.3.6 A compound literal as the operand of a prefix increment or
+ * decrement, ++(int){1}, whose operand is a unary expression and no cast
+ */
+CompoundLiteralExpression -> {
+    /**
+     * @var array{
+     *     TokenInterface,
+     *     Type\TypeInterface,
+     *     \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     * }|array{
+     *     TokenInterface,
+     *     Specifier\SpecifierList,
+     *     Type\TypeInterface,
+     *     \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     * } $children
+     */
+    if ($children[1] instanceof Specifier\SpecifierList) {
+        return $children[3]($children[0], $children[2], $children[1]);
+    }
+
+    return $children[2]($children[0], $children[1]);
+}
+  : <T_LPAREN> CompoundLiteralSpecifiers()? TypeName() ::T_RPAREN:: CompoundLiteral()
+  ;
+
+/**
+ * The operand of a prefix increment or decrement: a unary expression
+ */
+UnaryOperand
+  : CompoundLiteralExpression()
+  | UnaryExpression()
+  ;
+
+LoneIdentifier
+  : <T_IDENTIFIER> <T_RPAREN>
+  ;
+
+LoneIdentifierCast
+  : <T_IDENTIFIER> <T_RPAREN> CastStart()
+  ;
+
+CastStart
+  : <T_IDENTIFIER> | <T_BUILTIN_CALL> | <T_LPAREN>
+  | <T_DEC_INT_LITERAL> | <T_HEX_INT_LITERAL> | <T_OCT_INT_LITERAL> | <T_BIN_INT_LITERAL>
+  | <T_DEC_FLOAT_LITERAL> | <T_HEX_FLOAT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
+  | <T_TRUE> | <T_FALSE> | <T_NULLPTR>
+  | <T_PLUS> | <T_MINUS> | <T_ASTERISK> | <T_AMPERSAND> | <T_INCREMENT> | <T_DECREMENT>
+  | <T_TILDE> | <T_EXCLAMATION> | <T_SIZEOF> | <T_ALIGNOF> | <T_GENERIC> | <T_EXTENSION> | <T_REAL> | <T_IMAG>
+  ;
+
+/**
  * 6.5.4 Unary operators
  */
 UnaryExpression
-  : PlusExpression()
+  : PreIncrementExpression()
+  | PreDecrementExpression()
+  | PlusExpression()
   | MinusExpression()
   | LogicalNotExpression()
   | BitwiseNotExpression()
@@ -262,7 +575,64 @@ UnaryExpression
   | SizeOfExpression()
   | AlignOfTypeExpression()
   | AlignOfExpression()
+  | RealPartExpression()
+  | ImagPartExpression()
+  | ExtensionExpression()
   | PostfixExpression()
+  ;
+
+/**
+ * GCC: the real part of a complex number, __real__ z. Requires the
+ * ComplexParts feature.
+ */
+RealPartExpression -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertFeature(Feature::ComplexParts, $source, $children[0]->offset, $children[0]->size);
+
+    return new UnaryExpression\RealPartExpression($children[1], $offset);
+}
+  : <T_REAL> CastOrUnaryExpression()
+  ;
+
+/**
+ * GCC: the imaginary part of a complex number, __imag__ z. Requires the
+ * ComplexParts feature.
+ */
+ImagPartExpression -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertFeature(Feature::ComplexParts, $source, $children[0]->offset, $children[0]->size);
+
+    return new UnaryExpression\ImagPartExpression($children[1], $offset);
+}
+  : <T_IMAG> CastOrUnaryExpression()
+  ;
+
+/**
+ * GCC: __extension__ before an operand, which gives the operand itself
+ */
+ExtensionExpression
+  : ExtensionKeyword() CastOrUnaryExpression()
+  ;
+
+/**
+ * 6.5.4.1 Prefix increment and decrement operators, ++x, whose operand is a
+ * unary expression: "++(T)x" is not one
+ */
+PreIncrementExpression -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    return new UnaryExpression\PreIncrementExpression($children[1], $offset);
+}
+  : <T_INCREMENT> UnaryOperand()
+  ;
+
+/**
+ * --x
+ */
+PreDecrementExpression -> {
+    /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    return new UnaryExpression\PreDecrementExpression($children[1], $offset);
+}
+  : <T_DECREMENT> UnaryOperand()
   ;
 
 /**
@@ -335,9 +705,20 @@ SizeOfTypeExpression -> {
      *         TokenInterface,
      *         TokenInterface,
      *         Type\TypeInterface,
-     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
+     *         \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     *     }
+     *     |array{
+     *         TokenInterface,
+     *         TokenInterface,
+     *         Specifier\SpecifierList,
+     *         Type\TypeInterface,
+     *         \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
      *     } $children
      */
+    if (isset($children[4])) {
+        return new Expression\SizeOfExpression($children[4]($children[1], $children[3], $children[2]), $offset);
+    }
+
     if (isset($children[3])) {
         return new Expression\SizeOfExpression($children[3]($children[1], $children[2]), $offset);
     }
@@ -359,7 +740,8 @@ SizeOfExpression -> {
 
 /**
  * 6.5.4.4 The sizeof and alignof operators, alignof(T), also spelled
- * _Alignof and __alignof__. An expression is allowed as well, as GCC does.
+ * _Alignof. As in sizeof, a compound literal after the type name makes the
+ * operand an expression, which GCC allows: alignof (int){1}.
  */
 AlignOfTypeExpression -> {
     /**
@@ -368,9 +750,22 @@ AlignOfTypeExpression -> {
      *         TokenInterface,
      *         TokenInterface,
      *         Type\TypeInterface,
-     *         \Closure(TokenInterface, Type\TypeInterface): Expression\ExpressionInterface
+     *         \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
+     *     }
+     *     |array{
+     *         TokenInterface,
+     *         TokenInterface,
+     *         Specifier\SpecifierList,
+     *         Type\TypeInterface,
+     *         \Closure(TokenInterface, Type\TypeInterface, Specifier\SpecifierList|null=): Expression\ExpressionInterface
      *     } $children
      */
+    $this->assertKeywordSpelling($source, $children[0]);
+
+    if (isset($children[4])) {
+        return new Expression\AlignOfExpression($children[4]($children[1], $children[3], $children[2]), $offset);
+    }
+
     if (isset($children[3])) {
         return new Expression\AlignOfExpression($children[3]($children[1], $children[2]), $offset);
     }
@@ -381,32 +776,35 @@ AlignOfTypeExpression -> {
   ;
 
 /**
- * The type name in parentheses of sizeof and alignof. A single name is read
- * as a type unless a postfix operator follows it: sizeof(x)[0] is
- * sizeof((x)[0]). A brace after the type name makes the operand a compound
- * literal, sizeof (int){1}. Passed to the parent as the parenthesis, the
- * type name and the compound literal, if one is written.
- */
-TypeOperand
-  : <T_LPAREN> (
-        !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
-      | TypeName() ::T_RPAREN:: CompoundLiteral()
-    )
-  ;
-
-/**
- * GCC: __alignof__ x
+ * GCC: alignof applied to an expression, __alignof__ x
  */
 AlignOfExpression -> {
     /** @var array{TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertKeywordSpelling($source, $children[0]);
+
     return new Expression\AlignOfExpression($children[1], $offset);
 }
   : <T_ALIGNOF> UnaryExpression()
   ;
 
 /**
- * 6.5.3 Postfix operators, a[i], f(x), s.member, p->member. Every node of
- * the chain starts where the whole expression does.
+ * The type name in parentheses of sizeof and alignof. A single name is read
+ * as a type unless a postfix operator follows it: sizeof(x)[0] is
+ * sizeof((x)[0]). A brace after the type name makes the operand a compound
+ * literal, sizeof (int){1}, read along with the type name. Passed to the
+ * parent as the parenthesis, the storage-class specifiers of a compound
+ * literal, the type name and the compound literal, if they are written.
+ */
+TypeOperand
+  : <T_LPAREN> (
+        !ExpressionLikeTypeName() TypeName() ::T_RPAREN:: (CompoundLiteral() | !PostfixOperatorStart())
+      | CompoundLiteralSpecifiers()? TypeName() ::T_RPAREN:: CompoundLiteral()
+    )
+  ;
+
+/**
+ * 6.5.3 Postfix operators, a[i], f(x), s.member, p->member, x++ and x--.
+ * Every node of the chain starts where the whole expression does.
  */
 PostfixExpression -> {
     /**
@@ -436,6 +834,8 @@ PostfixOperator
   | CallOperator()
   | DirectMemberOperator()
   | PointerMemberOperator()
+  | PostIncrementOperator()
+  | PostDecrementOperator()
   ;
 
 SubscriptOperator -> {
@@ -470,7 +870,7 @@ CallOperator -> {
         return new Expression\CallExpression($operand, $list, $start);
     };
 }
-  : <T_LPAREN> (ConditionalExpression() (::T_COMMA:: ConditionalExpression())*)?
+  : <T_LPAREN> (AssignmentExpression() (::T_COMMA:: AssignmentExpression())*)?
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
   ;
 
@@ -496,32 +896,122 @@ PointerMemberOperator -> {
   : ::T_ARROW:: Identifier() @error("Syntax error, unexpected {token} in the member access, a member name expected")
   ;
 
+/**
+ * 6.5.3.5 Postfix increment and decrement operators, x++
+ */
+PostIncrementOperator -> {
+    return static function (Expression\ExpressionInterface $operand, int $start): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new PostfixExpression\PostIncrementExpression($operand, $start);
+    };
+}
+  : <T_INCREMENT>
+  ;
+
+/**
+ * x--
+ */
+PostDecrementOperator -> {
+    return static function (Expression\ExpressionInterface $operand, int $start): Expression\ExpressionInterface {
+        \assert($start >= 0);
+
+        return new PostfixExpression\PostDecrementExpression($operand, $start);
+    };
+}
+  : <T_DECREMENT>
+  ;
+
 PostfixOperatorStart
-  : <T_LBRACKET> | <T_LPAREN> | <T_DOT> | <T_ARROW>
+  : <T_LBRACKET> | <T_LPAREN> | <T_DOT> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT>
   ;
 
 /**
  * 6.5.2 Primary expressions
  */
 PrimaryExpression
-  : IdentifierExpression()
+  : BuiltinCallExpression()
+  | IdentifierExpression()
   | Constant()
   | ConcatenatedStringExpression()
   | StatementExpression()
   | ParenthesizedExpression()
-  | BuiltinCallExpression()
   | GenericSelectionExpression()
   ;
 
 /**
- * GCC: a statement expression, ({ int y = x; y * 2; })
+ * GCC: a statement expression, ({ int y = x; y * 2; }). Requires the
+ * StatementExpressions feature.
  */
 StatementExpression -> {
     /** @var array{TokenInterface, non-empty-string} $children */
+    $this->assertFeature(Feature::StatementExpressions, $source, $children[0]->offset, $children[0]->size);
+
     return new Expression\StatementExpression($children[1], $offset);
 }
   : <T_LPAREN> CompoundStatement()
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the statement expression, \")\" expected")
+  ;
+
+/**
+ * GCC and Clang: a call of a built-in function, whose arguments may be type
+ * names, __builtin_offsetof(struct S, a.b[2]). With expressions only it is
+ * a call of a function as any other, __builtin_expect(x, 1).
+ */
+BuiltinCallExpression -> {
+    /** @var list{TokenInterface, TokenInterface, ...<Expression\ExpressionInterface|Type\TypeInterface>} $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    $name = new Node\Identifier($children[0]->value, $offset);
+    $arguments = [];
+    $isBuiltin = false;
+
+    for ($i = 2, $count = \count($children); $i < $count; ++$i) {
+        $arguments[] = $children[$i];
+        $isBuiltin = $isBuiltin || $children[$i] instanceof Type\TypeInterface;
+    }
+
+    $start = $arguments[0]->offset ?? $children[1]->offset;
+
+    if ($isBuiltin) {
+        $list = new Expression\BuiltinCallExpression\ArgumentList($arguments, $start);
+
+        return new Expression\BuiltinCallExpression($name, $list, $offset);
+    }
+
+    $expressions = [];
+
+    foreach ($arguments as $argument) {
+        \assert($argument instanceof Expression\ExpressionInterface);
+        $expressions[] = $argument;
+    }
+
+    return new Expression\CallExpression(
+        new Expression\IdentifierExpression($name, $offset),
+        new Expression\CallExpression\ArgumentList($expressions, $start),
+        $offset,
+    );
+}
+  : <T_BUILTIN_CALL> <T_LPAREN> (::T_RPAREN:: | BuiltinArgumentBeforeComma()* LastBuiltinArgument())
+  ;
+
+/**
+ * An expression, or a type name where it cannot be one, followed by a
+ * comma
+ */
+BuiltinArgumentBeforeComma
+  : AssignmentExpression() ::T_COMMA::
+  | TypeName() ::T_COMMA::
+  ;
+
+/**
+ * The last argument, an expression or a type name, and the closing
+ * parenthesis
+ */
+LastBuiltinArgument @error("Syntax error, unexpected {token} in the arguments, an expression or a type name expected")
+  : AssignmentExpression()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
+  | TypeName()
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
   ;
 
 /**
@@ -531,7 +1021,7 @@ GenericSelectionExpression -> {
     /**
      * @var array{
      *     TokenInterface,
-     *     Expression\ExpressionInterface|Type\TypeInterface,
+     *     Expression\ExpressionInterface,
      *     Expression\GenericSelectionExpression\GenericAssociationList
      * } $children
      */
@@ -545,13 +1035,10 @@ GenericSelectionExpression -> {
   ;
 
 /**
- * An expression, or a type name where it cannot be one (Clang and C2y),
- * and the comma after it
+ * The controlling expression and the comma after it
  */
-GenericControllingOperand @error("Syntax error, unexpected {token} in the generic selection, an expression or a type name expected")
-  : ConditionalExpression()
-    ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
-  | TypeName()
+GenericControllingOperand @error("Syntax error, unexpected {token} in the generic selection, an expression expected")
+  : AssignmentExpression()
     ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
   ;
 
@@ -574,58 +1061,7 @@ GenericAssociation -> {
 }
   : (<T_DEFAULT> | TypeName()) @error("Syntax error, unexpected {token} in the generic selection, a type name or \"default\" expected")
     ::T_COLON:: @error("Syntax error, unexpected {token} in the generic association, \":\" expected")
-    ConditionalExpression()
-  ;
-
-/**
- * GCC and Clang: a built-in function, __builtin_offsetof(struct S, a.b[2])
- * or __builtin_types_compatible_p(int, T)
- */
-BuiltinCallExpression -> {
-    /** @var array{TokenInterface, Expression\BuiltinCallExpression\ArgumentList} $children */
-    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
-    $name = new Node\Identifier($children[0]->value, $offset);
-
-    return new Expression\BuiltinCallExpression($name, $children[1], $offset);
-}
-  : <T_BUILTIN_CALL> BuiltinArgumentList()
-  ;
-
-/**
- * (), (x) or (struct S, a.b[2]). The parenthesis marks the start of the
- * list.
- */
-BuiltinArgumentList -> {
-    /** @var list{TokenInterface, ...<Expression\ExpressionInterface|Type\TypeInterface>} $children */
-    $arguments = [];
-
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        $arguments[] = $children[$i];
-    }
-
-    return new Expression\BuiltinCallExpression\ArgumentList($arguments, $arguments[0]->offset ?? $offset);
-}
-  : <T_LPAREN> (::T_RPAREN:: | BuiltinArgumentBeforeComma()* LastBuiltinArgument())
-  ;
-
-/**
- * An expression, or a type name where it cannot be one, followed by a
- * comma
- */
-BuiltinArgumentBeforeComma
-  : ConditionalExpression() ::T_COMMA::
-  | TypeName() ::T_COMMA::
-  ;
-
-/**
- * The last argument, an expression or a type name, and the closing
- * parenthesis
- */
-LastBuiltinArgument @error("Syntax error, unexpected {token} in the arguments, an expression or a type name expected")
-  : ConditionalExpression()
-    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
-  | TypeName()
-    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the arguments, \",\" or \")\" expected")
+    AssignmentExpression()
   ;
 
 /**
@@ -656,5 +1092,37 @@ Identifier -> {
     return new Node\Identifier($children->value, $offset);
 }
   : <T_IDENTIFIER>
+  | <T_BUILTIN_CALL>
+  ;
+
+/**
+ * The name a declaration introduces as a tag or an enumerator: an
+ * identifier, or a keyword in PHP FFI
+ */
+DeclaredIdentifier -> {
+    /** @var TokenInterface $children */
+    // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
+    return new Node\Identifier($children->value, $offset);
+}
+  : <T_IDENTIFIER>
+  | KeywordIdentifier()
+  ;
+
+/**
+ * PHP FFI: a keyword of C23 or of an extension as the name of a variable, a
+ * member, a parameter, a typedef name, a tag or an enumerator: "int bool;",
+ * "enum { false, true };". Gives the token. Requires the KeywordIdentifiers
+ * feature.
+ */
+KeywordIdentifier -> {
+    /** @var TokenInterface $children */
+    $this->assertFeature(Feature::KeywordIdentifiers, $source, $children->offset, $children->size);
+
+    return $children;
+}
+  : <T_BOOL> | <T_TRUE> | <T_FALSE> | <T_NULLPTR> | <T_ALIGNAS> | <T_ALIGNOF> | <T_TYPEOF>
+  | <T_TYPEOF_UNQUAL> | <T_STATIC_ASSERT> | <T_GENERIC> | <T_BITINT> | <T_DECIMAL_NX> | <T_DECIMAL_N>
+  | <T_FLOAT_NX> | <T_FLOAT_N> | <T_ASM> | <T_CONSTEXPR> | <T_THREAD_LOCAL> | <T_IMAGINARY>
+  | <T_FORCE_INLINE> | <T_POINTER_MODIFIER> | <T_REAL> | <T_IMAG> | <T_BASED> | <T_NULLABILITY> | <T_PTRAUTH>
   ;
 

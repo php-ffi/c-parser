@@ -14,9 +14,8 @@ use FFI\Parser\Node\Type\TypeInterface;
 /**
  * Declaration of an object, `extern const char *const names[16];`. A
  * function whose type is not written by its declarator gives this node as
- * well: `F f;` with a typedef function type `F`, `typeof(int (void)) f;`
- * and a function wrapped into attributes at the start of a parenthesized
- * declarator, `void (__stdcall f)(int);`.
+ * well: `F f;` with a typedef function type `F` and
+ * `typeof(int (void)) f;`.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */

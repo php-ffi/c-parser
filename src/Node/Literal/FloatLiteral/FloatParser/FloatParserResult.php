@@ -37,6 +37,13 @@ final class FloatParserResult
          */
         public ?FloatTypeSuffix $suffix,
         /**
+         * The width written in the suffix, {@see null} in case of the
+         * suffix has none
+         *
+         * @var int<1, max>|null
+         */
+        public ?int $suffixWidth,
+        /**
          * Whether the imaginary suffix of GCC is written
          */
         public bool $isImaginary,

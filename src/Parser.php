@@ -22,11 +22,10 @@ use Phplrt\Parser\Exception\UnexpectedTokenException;
 use Phplrt\Source\SourceFactory;
 
 /**
- * Parses preprocessed C23 headers, with the extensions of the compilers,
- * into the syntax tree.
+ * Parses preprocessed C23 headers into the syntax tree.
  *
  * The parser checks the syntax. Whatever is syntactically valid gives a
- * syntax tree, even if a compiler would reject it, unless one of the given
+ * syntax tree, even if a compiler rejects it, unless one of the given
  * validators rejects it.
  */
 final class Parser
@@ -40,49 +39,60 @@ final class Parser
     private readonly Validator $validator;
 
     /**
-     * @param iterable<mixed, ValidatorRuleInterface>|null $rules checks of the
-     *        syntax tree run by {@see parse()}
+     * @param Preset|null $preset what the compiler knows before the header,
+     *        the default one is {@see Preset::default()}, which accepts every
+     *        extension and knows no typedef names
+     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $rules
+     *        checks of the syntax tree run by {@see parse()} without the ones
+     *        the features of the preset remove, the default ones are
+     *        {@see Validator::getDefaultRules()}
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
      *        rewrites of the syntax tree run by {@see parse()} before the
-     *        checks
+     *        checks, the default ones are
+     *        {@see Transformer::getDefaultTransformers()}
      * @param SourceFactoryInterface|null $sources creates the sources out of
      *        the values given to {@see parse()} and {@see validate()}, the
      *        default one accepts strings, files and streams
      */
     public function __construct(
+        ?Preset $preset = null,
         ?iterable $rules = null,
         ?iterable $transformers = null,
         ?SourceFactoryInterface $sources = null,
     ) {
-        $this->parser = self::createParser();
+        $preset ??= Preset::default();
 
-        $this->transformer = self::createTransformer($transformers);
-        $this->validator = self::createValidator($rules);
+        $this->parser = self::createParser($preset);
+        $this->transformer = self::createTransformer($preset, $transformers);
+        $this->validator = self::createValidator($preset, $rules);
         $this->sources = self::createSourceFactory($sources);
     }
 
     /**
-     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $rules
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
      */
-    private static function createTransformer(?iterable $rules): Transformer
+    private static function createTransformer(Preset $preset, ?iterable $transformers): Transformer
     {
-        if ($rules === null) {
-            return Transformer::createDefault();
-        }
-
-        return new Transformer($rules);
+        return new Transformer(
+            rules: $transformers ?? Transformer::getDefaultTransformers(),
+            typedefNames: $preset->typedefNames,
+        );
     }
 
     /**
-     * @param iterable<mixed, ValidatorRuleInterface>|null $rules
+     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $rules
      */
-    private static function createValidator(?iterable $rules): Validator
+    private static function createValidator(Preset $preset, ?iterable $rules): Validator
     {
-        if ($rules === null) {
-            return Validator::createDefault();
+        $result = [];
+
+        foreach ($rules ?? Validator::getDefaultRules() as $rule) {
+            if (!$preset->isRuleRemoved($rule)) {
+                $result[] = $rule;
+            }
         }
 
-        return new Validator($rules);
+        return new Validator($result);
     }
 
     private static function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
@@ -94,9 +104,9 @@ final class Parser
         return $sources;
     }
 
-    private static function createParser(): ParserExecutor
+    private static function createParser(Preset $preset): ParserExecutor
     {
-        return new ParserExecutor();
+        return new ParserExecutor($preset->features);
     }
 
     /**
@@ -110,7 +120,9 @@ final class Parser
      *         are not listed
      * @throws InternalException in case of the header cannot be read or the
      *         lexer fails on it
-     * @throws SyntaxErrorException in case of the header is not syntactically valid
+     * @throws SyntaxErrorException in case of the header is not syntactically
+     *         valid or is written in an extension of C23 the preset does not
+     *         accept
      * @throws TraverserException in case of a transformer breaks the syntax
      *         tree
      * @throws ValidationException in case of the syntax tree breaks a rule of
@@ -130,7 +142,9 @@ final class Parser
 
     /**
      * Checks whether the header is syntactically valid, without building
-     * the syntax tree. The validators are not run.
+     * the syntax tree. The validators are not run, and the syntax of every
+     * extension of C23 the grammar knows is accepted, whichever features
+     * the preset has.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source

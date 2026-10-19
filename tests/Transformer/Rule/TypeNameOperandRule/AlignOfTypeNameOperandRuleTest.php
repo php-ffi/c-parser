@@ -22,6 +22,11 @@ final class AlignOfTypeNameOperandRuleTest extends RuleTestCase
         self::assertSame('(variable int r = (alignof (array T 3)))', self::transform('int r = alignof(T[3]);'));
     }
 
+    public function testExpressionStartingWithUndeclaredNameIsTurnedIntoTypeName(): void
+    {
+        self::assertSame('(variable int r = (alignof (array V 3)))', self::transform('int r = alignof(V[3]);'));
+    }
+
     public function testExpressionIsKept(): void
     {
         self::assertDeclarationIsKept('int r = alignof(x[3]);');

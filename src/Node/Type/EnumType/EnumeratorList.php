@@ -8,7 +8,7 @@ use FFI\Parser\Node\NodeList;
 
 /**
  * Enumerators of an enumeration, the body between the braces. C23 requires
- * at least one enumerator.
+ * at least one enumerator, Clang with the Microsoft extensions allows none.
  *
  * @template-extends NodeList<Enumerator>
  *

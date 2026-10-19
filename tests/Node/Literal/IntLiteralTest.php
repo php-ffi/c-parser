@@ -171,6 +171,7 @@ final class IntLiteralTest extends TestCase
         yield 'UI64' => [DecIntLiteral::class, '1UI64', IntTypeSuffix::UnsignedInt64];
         yield 'hexadecimal with i64' => [HexIntLiteral::class, '0xFFi64', IntTypeSuffix::Int64];
         yield 'octal with ui64' => [OctIntLiteral::class, '017ui64', IntTypeSuffix::UnsignedInt64];
+        yield 'binary with i32' => [BinIntLiteral::class, '0b1i32', IntTypeSuffix::Int32];
     }
 
     /**
@@ -222,7 +223,6 @@ final class IntLiteralTest extends TestCase
     {
         yield 'decimal' => [new DecIntLiteral(42), '42'];
         yield 'decimal with a suffix' => [new DecIntLiteral(42, suffix: IntTypeSuffix::UnsignedLong), '42ul'];
-        yield 'decimal with an MSVC suffix' => [new DecIntLiteral(42, suffix: IntTypeSuffix::UnsignedInt64), '42ui64'];
         yield 'decimal beyond the native integer' => [
             new DecIntLiteral(\PHP_INT_MAX, '18446744073709551615', IntTypeSuffix::Unsigned),
             '18446744073709551615u',

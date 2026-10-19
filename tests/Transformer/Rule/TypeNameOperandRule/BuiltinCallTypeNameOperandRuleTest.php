@@ -21,16 +21,25 @@ final class BuiltinCallTypeNameOperandRuleTest extends RuleTestCase
         return new BuiltinCallTypeNameOperandRule();
     }
 
-    public function testArgumentsAreTurnedIntoTypeNames(): void
+    public function testCallWithTypedefNamesIsTurnedIntoBuiltinCall(): void
     {
         self::assertSame(
             '(variable int r = (__builtin_types_compatible_p T (array U 2)))',
             self::transform('int r = __builtin_types_compatible_p(T, U[2]);'),
         );
+    }
 
-        $arguments = self::findArguments('int r = __builtin_types_compatible_p(T, x);');
+    public function testArgumentsOfBuiltinCallAreTurnedIntoTypeNames(): void
+    {
+        $arguments = self::findArguments('int r = __builtin_types_compatible_p(T, int);');
 
         self::assertInstanceOf(NamedType::class, $arguments[0]);
+    }
+
+    public function testExpressionsAreKept(): void
+    {
+        $arguments = self::findArguments('int r = __builtin_types_compatible_p(int, x);');
+
         self::assertInstanceOf(IdentifierExpression::class, $arguments[1]);
     }
 
@@ -40,6 +49,16 @@ final class BuiltinCallTypeNameOperandRuleTest extends RuleTestCase
 
         self::assertInstanceOf(NamedType::class, $arguments[0]);
         self::assertInstanceOf(IdentifierExpression::class, $arguments[1]);
+    }
+
+    public function testCallOfOtherFunctionIsKept(): void
+    {
+        self::assertDeclarationIsKept('int r = f(T);');
+    }
+
+    public function testCallOfBuiltinFunctionWithExpressionsIsKept(): void
+    {
+        self::assertDeclarationIsKept('int r = __builtin_expect(x, 1);');
     }
 
     /**

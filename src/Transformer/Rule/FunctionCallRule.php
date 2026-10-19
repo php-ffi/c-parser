@@ -13,6 +13,7 @@ use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\ParenExpression;
+use FFI\Parser\Node\Expression\PostfixExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Node\Type\NamedType;
@@ -104,6 +105,16 @@ final class FunctionCallRule implements TransformerRuleInterface
             }
 
             return new ($expression::class)($object, $expression->member, $object->offset);
+        }
+
+        if ($expression instanceof PostfixExpression) {
+            $operand = $this->findCall($function, $expression->operand);
+
+            if ($operand === null) {
+                return null;
+            }
+
+            return new ($expression::class)($operand, $operand->offset);
         }
 
         if ($expression instanceof BinaryExpression) {

@@ -71,9 +71,18 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
         return $this->findSuffixedType($expression, $operand, $type, $context);
     }
 
+    /**
+     * Whether the name an expression starts with is the typedef name a
+     * type name starts with.
+     */
+    protected function isTypeName(string $name, TransformationContext $context): bool
+    {
+        return $context->isTypedefName($name);
+    }
+
     private function findTypedefName(ExpressionInterface $expression, TransformationContext $context): ?NamedType
     {
-        if (!$expression instanceof IdentifierExpression || !$context->isTypedefName($expression->name->value)) {
+        if (!$expression instanceof IdentifierExpression || !$this->isTypeName($expression->name->value, $context)) {
             return null;
         }
 

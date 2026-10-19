@@ -10,8 +10,8 @@ use FFI\Parser\Node\NodeList;
 /**
  * Specifiers of a declaration or a type name that are not a part of the
  * type, in the order written, repeats included, such as `static inline` in
- * `static inline int`, and the attributes written among them or before
- * them, `[[deprecated]] static __attribute__((unused)) int`. They are not
+ * `static inline int`, and the attributes written before them and after
+ * the last of them, `[[deprecated]] static int [[gnu::unused]]`. They are not
  * checked: `static extern` gives a list as well.
  *
  * @template-extends NodeList<SpecifierInterface|AttributeInterface>

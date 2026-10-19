@@ -56,6 +56,13 @@ final class SpecifiersTest extends TestCase
         yield '_Decimal32' => ['_Decimal32', '_Decimal32'];
         yield '_Decimal64' => ['_Decimal64', '_Decimal64'];
         yield '_Decimal128' => ['_Decimal128', '_Decimal128'];
+        yield '_Decimal96' => ['_Decimal96', '_Decimal96'];
+        yield '_Decimal64x' => ['_Decimal64x', '_Decimal64x'];
+        yield '_Float16' => ['_Float16', '_Float16'];
+        yield '_Float128' => ['_Float128', '_Float128'];
+        yield '_Float32x' => ['_Float32x', '_Float32x'];
+        yield '_Float32 complex' => ['_Float32 _Complex', '(_Complex _Float32)'];
+        yield '_Float64x imaginary' => ['_Float64x _Imaginary', '(_Imaginary _Float64x)'];
         yield 'bool' => ['bool', 'bool'];
         yield '_Bool' => ['_Bool', 'bool'];
         yield 'float complex' => ['float _Complex', '(_Complex float)'];
@@ -97,13 +104,7 @@ final class SpecifiersTest extends TestCase
         yield 'signed unsigned int' => ['signed unsigned int', '(signed unsigned int)'];
         yield 'short double' => ['short double', '(short double)'];
 
-        yield 'spellings of GCC' => [
-            '__const __volatile__ __signed__ __complex__ double',
-            '[const volatile (signed _Complex double)]',
-        ];
-        yield '__typeof__' => ['__typeof__(int)', 'typeof(int)'];
-        yield '__typeof_unqual__' => ['__typeof_unqual__(const int)', 'typeof_unqual([const int])'];
-        yield 'type names of GCC are typedef names' => ['__builtin_va_list', '__builtin_va_list'];
+        yield 'reserved identifier is a typedef name' => ['__builtin_va_list', '__builtin_va_list'];
         yield 'floating types of TS 18661 are typedef names' => ['_Float128', '_Float128'];
     }
 
@@ -163,20 +164,10 @@ final class SpecifiersTest extends TestCase
             '(tag struct S { struct T { int x } t })',
         ];
         yield 'member with every specifier' => [
-            'struct S { static const int inline alignas(4) a; };',
-            '(tag struct S { static inline alignas(4) [const int] a })',
+            'struct S { const int alignas(4) [[a]] a; };',
+            '(tag struct S { alignas(4) [[a]] [const int] a })',
         ];
         yield 'storage class of a tag' => ['static struct S { int a; };', '(tag static struct S { int a })'];
-        yield 'empty structure of GCC' => ['struct S {};', '(tag struct S {  })'];
-        yield 'empty anonymous union of GCC' => ['union {};', '(tag union _ {  })'];
-        yield 'extra semicolons among the members' => [
-            'struct S { ; int a;; static_assert(1);; };',
-            '(tag struct S { int a; (static_assert 1) })',
-        ];
-        yield 'marker of the extensions before a member' => [
-            'struct S { __extension__ union { int a; }; };',
-            '(tag struct S { union _ { int a } _ })',
-        ];
         yield 'enumeration reference' => ['enum E;', '(tag enum E)'];
         yield 'enumeration' => ['enum E { A, B = 2 };', '(tag enum E { A, B=2 })'];
         yield 'trailing comma' => ['enum E { A, };', '(tag enum E { A })'];
@@ -187,7 +178,6 @@ final class SpecifiersTest extends TestCase
             '(tag enum _ : (long _) { A })',
         ];
         yield 'enumeration declared with its underlying type' => ['enum E : int;', '(tag enum E : int)'];
-        yield 'storage class in an underlying type' => ['enum E : static int;', '(tag enum E : {static int})'];
         yield 'alignment specifier in an underlying type' => [
             'enum E : alignas(4) int { A };',
             '(tag enum E : {alignas(4) int} { A })',
@@ -274,12 +264,13 @@ final class SpecifiersTest extends TestCase
     public static function invalidDeclarationsDataProvider(): iterable
     {
         yield 'two bases' => ['int int;', 4, 'int'];
+        yield 'storage class in an underlying type' => ['enum E : static int;', 9, 'static'];
+        yield 'function specifier in an underlying type' => ['enum E : inline int { A };', 9, 'inline'];
         yield 'alignment specifier without an operand' => ['alignas() int;', 8, ')'];
         yield 'typeof_unqual without an operand' => ['typeof_unqual();', 14, ')'];
         yield 'underlying type missing' => ['enum E : ;', 9, ';'];
         yield 'two different bases' => ['char double;', 5, 'double'];
-        yield 'member without a semicolon' => ['struct { int a };', 15, '}'];
-        yield 'empty enumeration' => ['enum E {};', 8, '}'];
+        yield 'enumeration with a value and without a name' => ['enum E { = 1 };', 9, '='];
         yield 'structure without a name and a body' => ['struct;', 6, ';'];
         yield 'union without a name and a body' => ['union;', 5, ';'];
         yield 'enumeration without a name and a body' => ['enum;', 4, ';'];

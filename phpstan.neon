@@ -26,6 +26,12 @@ parameters:
     -
       identifier: method.unusedParameter
       path: src/Parser/CompiledParserExecutor.php
+    # The reducers check the extensions through the methods of the
+    # hand-written ParserExecutor, which extends the generated class.
+    -
+      identifier: method.notFound
+      message: '#::assert(Feature|KeywordSpelling)\(\)#'
+      path: src/Parser/CompiledParserExecutor.php
 services:
   -
     class: FFI\Parser\Tests\Architecture\LibraryArchitectureTest

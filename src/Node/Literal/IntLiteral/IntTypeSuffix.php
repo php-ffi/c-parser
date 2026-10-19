@@ -11,7 +11,6 @@ namespace FFI\Parser\Node\Literal\IntLiteral;
  * the spelling a constant built without the source text gets.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.2 Integer constants
- * @link https://learn.microsoft.com/en-us/cpp/c-language/c-integer-constants MSVC, integer constants
  */
 enum IntTypeSuffix: string
 {
@@ -89,4 +88,16 @@ enum IntTypeSuffix: string
      * MSVC: `ui64` in any case, the `unsigned __int64` type.
      */
     case UnsignedInt64 = 'ui64';
+
+    /**
+     * Whether the suffix is one of the MSVC sized integer types, `i64`.
+     */
+    public function isSized(): bool
+    {
+        return match ($this) {
+            self::Int8, self::Int16, self::Int32, self::Int64,
+            self::UnsignedInt8, self::UnsignedInt16, self::UnsignedInt32, self::UnsignedInt64 => true,
+            default => false,
+        };
+    }
 }

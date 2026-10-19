@@ -44,14 +44,18 @@ $compiler
     ->withClassImport('FFI\Parser\Node\Declaration')
     ->withClassImport('FFI\Parser\Node\Declaration\SpecifiedDeclaration')
     ->withClassImport('FFI\Parser\Node\Expression')
+    ->withClassImport('FFI\Parser\Node\Expression\AssignmentExpression')
     ->withClassImport('FFI\Parser\Node\Expression\BinaryExpression')
     ->withClassImport('FFI\Parser\Node\Expression\MemberExpression')
+    ->withClassImport('FFI\Parser\Node\Expression\PostfixExpression')
     ->withClassImport('FFI\Parser\Node\Expression\UnaryExpression')
     ->withClassImport('FFI\Parser\Node\Initializer')
     ->withClassImport('FFI\Parser\Node\Initializer\InitializerList\DesignatedInitializer')
     ->withClassImport('FFI\Parser\Node\Literal')
     ->withClassImport('FFI\Parser\Node\Specifier')
     ->withClassImport('FFI\Parser\Node\Type')
+    // The extensions the reducers check
+    ->withClassImport('FFI\Parser\Preset\Feature')
     // The token the @var tags of the reducers refer to
     ->withClassImport('Phplrt\Contracts\Lexer\TokenInterface')
     ->withNamespaceName('FFI\Parser\Parser')

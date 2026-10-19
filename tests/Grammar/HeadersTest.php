@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Grammar;
 
-use FFI\Parser\Node\Node;
+use FFI\Parser\Node\NodeInterface;
+use FFI\Parser\Parser;
+use FFI\Parser\Preset;
 use FFI\Parser\Tests\NodePrinter;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -16,18 +18,19 @@ final class HeadersTest extends TestCase
     private const HEADERS = __DIR__ . '/../resources/headers/';
 
     /**
-     * @return iterable<non-empty-string, array{non-empty-string, int<0, max>}>
+     * @return iterable<non-empty-string, array{non-empty-string, int<0, max>, Preset}>
      */
     public static function headersDataProvider(): iterable
     {
-        yield 'bzip2' => ['bzip2.h', 210];
-        yield 'cJSON' => ['cjson.h', 85];
-        yield 'EGL' => ['egl.h', 214];
-        yield 'Lua' => ['lua.h', 388];
-        yield 'SQLite' => ['sqlite3.h', 355];
-        yield 'zlib' => ['zlib.h', 373];
-        yield 'zlib without line markers' => ['zlib-no-markers.h', 373];
-        yield 'zstd' => ['zstd.h', 91];
+        yield 'bzip2' => ['bzip2.h', 210, Preset::gcc()];
+        yield 'cJSON' => ['cjson.h', 85, Preset::gcc()];
+        yield 'EGL' => ['egl.h', 214, Preset::c23()];
+        yield 'Lua' => ['lua.h', 388, Preset::gcc()];
+        yield 'SQLite' => ['sqlite3.h', 355, Preset::c23()];
+        yield 'Windows' => ['windows.h', 6907, Preset::msvc()];
+        yield 'zlib' => ['zlib.h', 373, Preset::gcc()];
+        yield 'zlib without line markers' => ['zlib-no-markers.h', 373, Preset::gcc()];
+        yield 'zstd' => ['zstd.h', 91, Preset::gcc()];
     }
 
     /**
@@ -35,15 +38,15 @@ final class HeadersTest extends TestCase
      * @param int<0, max> $declarations
      */
     #[DataProvider('headersDataProvider')]
-    public function testHeaderOfLibraryIsParsed(string $file, int $declarations): void
+    public function testHeaderOfLibraryIsParsedWithoutViolations(string $file, int $declarations, Preset $preset): void
     {
-        self::assertCount($declarations, self::parse(self::read($file)));
+        self::assertCount($declarations, (new Parser(preset: $preset))->parse(self::read($file)));
     }
 
     public function testLineMarkersDoNotChangeTheTree(): void
     {
         $print = static fn(string $file): array => \array_map(
-            static fn(Node $node): string => (string) \preg_replace('/\s+/', ' ', NodePrinter::print($node)),
+            static fn(NodeInterface $node): string => (string) \preg_replace('/\s+/', ' ', NodePrinter::print($node)),
             self::parse(self::read($file)),
         );
 

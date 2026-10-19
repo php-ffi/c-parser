@@ -52,7 +52,6 @@ final class ExpressionsTest extends TestCase
         yield 'true' => ['true', 'true@14'];
         yield 'false' => ['false', 'false@14'];
         yield 'nullptr' => ['nullptr', 'nullptr@14'];
-        yield 'imaginary constant' => ['2.0i', '2.0i@14'];
 
         yield 'left associativity' => ['1 - 2 - 3', '(- (- 1@14 2@18)@14 3@22)@14'];
         yield 'multiplication binds tighter' => ['1 + 2 * 3', '(+ 1@14 (* 2@18 3@22)@18)@14'];
@@ -105,12 +104,16 @@ final class ExpressionsTest extends TestCase
             '(cast [const T@21]@15 (-u x@24)@23)@14',
         ];
         yield 'sizeof of a keyword type' => ['sizeof(unsigned int)', '(sizeof (unsigned int@30)@21)@14'];
+        yield 'sizeof of an array of an interchange floating type' => [
+            'sizeof(_Float16[2])',
+            '(sizeof (array _Float16@21 2@30)@29)@14',
+        ];
+        yield 'cast to an extended floating type' => ['(_Float32x)-x', '(cast _Float32x@15 (-u x@26)@25)@14'];
         yield 'alignof of a structure' => ['alignof(struct S)', '(alignof struct S@22)@14'];
         yield 'sizeof of a type with an alignment specifier' => [
             'sizeof(alignas(8) int)',
             '(sizeof {alignas(8@29)@21 int@32}@21)@14',
         ];
-        yield 'cast to a type with a storage class' => ['(static int)1', '(cast {static@15 int@22}@15 1@26)@14'];
         yield 'sizeof of an alignment specifier alone' => ['sizeof(alignas(8))', '(sizeof {alignas(8@29)@21 _}@21)@14'];
 
         yield 'chain of postfix operators' => ['p->m.n[2]', '([] (. (-> p@14 m@17)@14 n@19)@14 2@21)@14'];
@@ -156,17 +159,6 @@ final class ExpressionsTest extends TestCase
         yield 'sizeof in a sum' => ['sizeof(T) + 1', '(+ (sizeof T@21)@14 1@26)@14'];
         yield 'alignof' => ['alignof(T)', '(alignof T@22)@14'];
         yield '_Alignof' => ['_Alignof(T)', '(alignof T@23)@14'];
-        yield '__alignof__' => ['__alignof__(T)', '(alignof T@26)@14'];
-        yield 'alignof of an expression' => ['__alignof__ x', '(alignof x@26)@14'];
-        yield 'alignof of a subscript in parentheses' => [
-            '__alignof__(x)[0]',
-            '(alignof ([] (paren x@26)@25 0@29)@25)@14',
-        ];
-        yield 'alignof of an expression that reads as a type' => [
-            '__alignof__(x[0])',
-            '(alignof (paren ([] x@26 0@28)@26)@25)@14',
-        ];
-        yield 'alignof of a compound literal' => ['alignof(int){1}', '(alignof (compound int@22 {1@27}@26)@21)@14'];
         yield 'sizeof of a call without arguments' => ['sizeof(f())', '(sizeof (paren (call f@21)@21)@20)@14'];
         yield 'sizeof of a call' => ['sizeof(f(x, y))', '(sizeof (paren (call f@21 x@23 y@26)@21)@20)@14'];
         yield 'sizeof of a call of a name in parentheses' => [
@@ -183,46 +175,13 @@ final class ExpressionsTest extends TestCase
             '_Generic(x, int: 1, default: 0)',
             '(_Generic x@23 int@26:1@31@26 default:0@43@34)@14',
         ];
-        yield 'generic selection of a type name' => [
-            '_Generic(int, T *: 1)',
-            '(_Generic int@23 (ptr T@28)@30:1@33@28)@14',
-        ];
         yield 'generic selection of a lone name' => ['_Generic(a, T: 1)', '(_Generic a@23 T@26:1@29@26)@14'];
         yield 'cast of a generic selection' => [
             '(T)_Generic(x, default: 0)',
             '(cast T@15 (_Generic x@26 default:0@38@29)@17)@14',
         ];
 
-        yield 'statement expression' => ['({ int y = 1; y; })', '({ int y = 1; y; })@14'];
-        yield 'cast of a statement expression' => ['(T)({ 1; })', '(cast T@15 ({ 1; })@17)@14'];
-        yield 'statement expression in a sum' => ['1 + ({ 2; })', '(+ 1@14 ({ 2; })@18)@14'];
-
-        yield 'offsetof' => [
-            '__builtin_offsetof(struct S, a)',
-            '(__builtin_offsetof struct S@33 a@43)@14',
-        ];
-        yield 'offsetof of a nested member and an element' => [
-            '__builtin_offsetof(T, a.b[2].c)',
-            '(__builtin_offsetof T@33 (. ([] (. a@36 b@38)@36 2@40)@36 c@43)@36)@14',
-        ];
-        yield 'built-in function of types' => [
-            '__builtin_types_compatible_p(int, T *)',
-            '(__builtin_types_compatible_p int@43 (ptr T@48)@50)@14',
-        ];
         yield 'name of a built-in function without a parenthesis' => ['__builtin_va_list', '__builtin_va_list@14'];
-        yield 'built-in function without arguments' => ['__builtin_huge_val()', '(__builtin_huge_val)@14'];
-        yield 'built-in function with a space before the parenthesis' => [
-            '__builtin_constant_p (1)',
-            '(__builtin_constant_p 1@36)@14',
-        ];
-        yield 'built-in function in a sum' => [
-            '1 + __builtin_offsetof(T, a)',
-            '(+ 1@14 (__builtin_offsetof T@37 a@40)@18)@14',
-        ];
-        yield 'cast of a built-in function' => [
-            '(T)__builtin_offsetof(U, a)',
-            '(cast T@15 (__builtin_offsetof U@36 a@39)@17)@14',
-        ];
 
         foreach (NodePrinter::BINARY_OPERATORS as $operator) {
             yield 'binary ' . $operator => $operator === ','
@@ -231,8 +190,57 @@ final class ExpressionsTest extends TestCase
         }
 
         foreach (NodePrinter::UNARY_OPERATORS as $operator) {
-            yield 'unary ' . $operator => [$operator . 'a', \sprintf('(%su a@15)@14', $operator)];
+            yield 'unary ' . $operator => [
+                $operator . ' a',
+                \sprintf('(%su a@%d)@14', $operator, 15 + \strlen($operator)),
+            ];
         }
+
+        foreach (NodePrinter::ASSIGNMENT_OPERATORS as $operator) {
+            yield 'assignment ' . $operator => [
+                '(a ' . $operator . ' b)',
+                \sprintf('(paren (%s a@15 b@%d)@15)@14', $operator, 18 + \strlen($operator)),
+            ];
+        }
+
+        yield 'assignment is right associative' => ['(a = b += c)', '(paren (= a@15 (+= b@19 c@24)@19)@15)@14'];
+        yield 'assignment binds looser than conditional' => [
+            '(a = b ? c : d)',
+            '(paren (= a@15 (? b@19 c@23 d@27)@19)@15)@14',
+        ];
+        yield 'assignment binds tighter than comma' => ['(a = b, c)', '(paren (, (= a@15 b@19)@15 c@22)@15)@14'];
+        yield 'assignment to a compound literal' => [
+            '((int){0} = 1)',
+            '(paren (= (compound int@16 {0@21}@20)@15 1@26)@15)@14',
+        ];
+        yield 'assignment to a member of a compound literal' => [
+            '((struct S){0}.a = 1)',
+            '(paren (= (. (compound struct S@16 {0@26}@25)@15 a@29)@15 1@33)@15)@14',
+        ];
+        yield 'assignment to a cast of a lone name' => ['((T)x = 1)', '(paren (= (cast T@16 x@18)@15 1@22)@15)@14'];
+        yield 'prefix increment of a compound literal' => ['++(int){0}', '(++u (compound int@17 {0@22}@21)@16)@14'];
+        yield 'compound literal with storage-class specifiers' => [
+            'sizeof (static constexpr int){1}',
+            '(sizeof (compound static@22 constexpr@29 int@39 {1@44}@43)@21)@14',
+        ];
+        yield 'postfix increment' => ['a++', '(++p a@14)@14'];
+        yield 'postfix decrement of a member' => ['a.b--', '(--p (. a@14 b@16)@14)@14'];
+        yield 'postfix increment in a chain' => ['a[0]++->b', '(-> (++p ([] a@14 0@16)@14)@14 b@22)@14'];
+        yield 'prefix increment of a postfix increment' => ['++a++', '(++u (++p a@16)@16)@14'];
+        yield 'postfix increment of a compound literal' => ['(int){1}++', '(++p (compound int@15 {1@20}@19)@14)@14'];
+        yield 'cast of a prefix increment' => ['(T)++x', '(cast T@15 (++u x@19)@17)@14'];
+        yield 'postfix increment of a parenthesized name' => ['(x)++', '(++p (paren x@15)@14)@14'];
+        yield 'sizeof of a postfix increment' => ['sizeof(x)++', '(sizeof (++p (paren x@21)@20)@20)@14'];
+        yield 'sizeof of an assignment' => ['sizeof(x = 1)', '(sizeof (paren (= x@21 1@25)@21)@20)@14'];
+        yield 'typeof of an assignment' => [
+            'sizeof(typeof(x = 1))',
+            '(sizeof typeof((= x@28 1@32)@28)@21)@14',
+        ];
+        yield 'generic selection of an increment' => [
+            '_Generic(x++, int: y = 1)',
+            '(_Generic (++p x@23)@23 int@28:(= y@33 1@37)@33@28)@14',
+        ];
+        yield 'call with an assignment' => ['f(x = 1, y)', '(call f@14 (= x@16 1@20)@16 y@23)@14'];
     }
 
     #[DataProvider('expressionsDataProvider')]
@@ -312,12 +320,19 @@ final class ExpressionsTest extends TestCase
         yield 'unclosed parenthesis' => ['(1', 17, ';'];
         yield 'conditional without else' => ['a ? b', 19, ')'];
         yield 'assignment' => ['a = 1', 16, '='];
+        yield 'assignment to a binary operation' => ['(a + b = c)', 21, '='];
+        yield 'assignment to a cast' => ['((int)x = 1)', 22, '='];
+        yield 'assignment to a conditional' => ['(a ? b : c = d)', 25, '='];
+        yield 'storage class in a cast' => ['(static int)1', 26, '1'];
+        yield 'function specifier in sizeof' => ['sizeof(inline int)', 21, 'inline'];
+        yield 'storage class after the type name of a compound literal' => ['(int static){1}', 19, 'static'];
         yield 'leading assignment' => ['= 1', 14, '='];
         yield 'function call with an empty argument' => ['f(1, )', 19, ')'];
         yield 'generic selection without associations' => ['_Generic(x)', 24, ')'];
         yield 'generic association without an expression' => ['_Generic(x, int:)', 30, ')'];
         yield 'statement expression without parentheses' => ['{ 1; }', 14, '{'];
-        yield 'increment' => ['a++', 15, '++'];
+        yield 'prefix increment of a cast' => ['++(T)x', 19, 'x'];
+        yield 'assignment in a constant expression' => ['a += 1', 16, '+='];
         yield 'sizeof without an operand' => ['sizeof', 20, ')'];
         yield 'cast without an operand' => ['(T)~', 18, ')'];
         yield 'unclosed subscript' => ['a[1', 17, ')'];

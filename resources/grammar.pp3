@@ -1,7 +1,6 @@
 /**
  * -----------------------------------------------------------------------------
- *  C23 (ISO/IEC 9899:2024) headers with the extensions of the compilers,
- *  after preprocessing.
+ *  C23 (ISO/IEC 9899:2024) headers after preprocessing.
  * -----------------------------------------------------------------------------
  *
  *  The lexer works with bytes: offsets are byte offsets, and a header in any

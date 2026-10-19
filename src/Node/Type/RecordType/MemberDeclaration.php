@@ -47,10 +47,8 @@ final class MemberDeclaration extends SpecifiedDeclaration
          */
         public ?ExpressionInterface $width = null,
         /**
-         * The attributes of the declarator: written before it (GCC allows
-         * them before any declarator but the first), after its name and
-         * after the whole of it, the width of a bit-field included,
-         * {@see null} in case of none is written
+         * The attributes written after the declared name, {@see null} in
+         * case of none is written
          */
         public ?AttributeList $attributes = null,
         ?SpecifierList $specifiers = null,

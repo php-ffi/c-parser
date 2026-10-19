@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests\Grammar;
 
+use FFI\Parser\Parser;
+use FFI\Parser\Preset;
 use FFI\Parser\Tests\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -20,7 +22,7 @@ final class FFICompatibilityTest extends TestCase
      */
     public static function headersDataProvider(): iterable
     {
-        foreach (['bzip2', 'cjson', 'egl', 'lua', 'sqlite3', 'zlib', 'zlib-no-markers', 'zstd'] as $name) {
+        foreach (['cjson', 'egl', 'sqlite3'] as $name) {
             $code = \file_get_contents(self::HEADERS . $name . '.h');
 
             self::assertIsString($code);
@@ -40,15 +42,16 @@ final class FFICompatibilityTest extends TestCase
             'typedef void (*callback_t)(void *ctx, int code); int (*signal(int, void (*)(int)))(int);',
         ];
         yield 'qualifiers' => ['extern const char *const restrict names[16]; volatile int v;'];
-        yield 'attributes of GCC that PHP FFI knows' => [
-            'struct __attribute__((packed)) P { char c; int i; } __attribute__((aligned(8)));',
+        yield 'last member without its semicolon' => ['struct S { int a; int b }; union U { int a };'];
+        yield 'increment in an initializer' => ['int y; int x = y++; int z = --y;'];
+        yield 'calling convention after the declarator' => [
+            'int f(void) __cdecl; typedef int F(void) __stdcall; int g(void) __asm__("x") __cdecl;',
         ];
-        yield 'calling conventions' => ['typedef int (__cdecl *F)(int); typedef int (__stdcall *G)(int);'];
-        yield '__declspec' => ['__declspec(align(16)) struct A { int x; };'];
-        yield 'GCC spellings' => [
-            '__const int a; int *__restrict p; __inline int f(void); __volatile__ int v;',
+        yield 'calling convention after struct' => ['struct __cdecl S { int a; };'];
+        yield 'keywords as names' => [
+            'int bool; struct true { int a; }; enum { false, nullptr }; int f(int alignas, int typeof);',
         ];
-        yield '__extension__' => ['__extension__ typedef long long ll;'];
+        yield 'keywords as enumerators' => ['enum E { constexpr, thread_local, __forceinline, __ptr64, __thread };'];
     }
 
     #[DataProvider('headersDataProvider')]
@@ -63,6 +66,6 @@ final class FFICompatibilityTest extends TestCase
         } catch (\FFI\Exception) {
         }
 
-        self::parse($stripped);
+        self::assertNotSame([], (new Parser(preset: Preset::php()))->parse($stripped));
     }
 }

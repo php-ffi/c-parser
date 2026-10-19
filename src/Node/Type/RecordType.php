@@ -33,8 +33,7 @@ abstract class RecordType extends Type implements DeclarationInterface
          */
         public ?MemberDeclarationList $members = null,
         /**
-         * The attributes after `struct` or `union` and, as GCC allows,
-         * after the body, `struct [[a]] S { int x; } __attribute__((b))`.
+         * The attributes after `struct` or `union`, `struct [[a]] S { int x; }`.
          * The ones after a tag without a body, `struct S [[a]];`, are among
          * the specifiers. {@see null} in case of none is written
          */

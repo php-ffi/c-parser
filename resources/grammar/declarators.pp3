@@ -17,15 +17,19 @@
  * 6.7.7.1 General, a declarator with a name
  */
 Declarator
-  : PointerDeclarator()
+  : AttributedNameDeclarator()
+  | PointerDeclarator()
   | NameDeclarator()
   | NestedDeclarator()
   ;
 
 /**
- * A pointer, or the attributes at the start of a parenthesized declarator,
- * before the rest of the declarator. Both wrap the type the declarator
- * receives.
+ * A pointer or a block pointer before the rest of the declarator, the
+ * calling conventions before a pointer or the GCC attributes at the start
+ * of a parenthesized declarator. Each wraps the type the declarator receives: in
+ * "(__stdcall *f)(int)" the calling convention applies to the function f
+ * points to, in "int (__attribute__((x)) a[3])" the attribute applies to
+ * the int.
  */
 PointerDeclarator -> {
     /**
@@ -51,27 +55,105 @@ PointerDeclarator -> {
   ;
 
 /**
- * The attributes at the start of a parenthesized declarator apply to the
- * type it receives, as GCC has them: in "(__stdcall *f)(int)" they apply to
- * the function. Elsewhere the attributes before a declarator are taken by
- * the specifiers or by the declaration first, and the ones after "*" by the
- * pointer.
+ * MSVC: the calling conventions before a name or a parenthesized declarator
+ * apply to the type the rest declares: "int __stdcall f(void)",
+ * "void * __stdcall g(void)" and "int __stdcall (f)(void)" are functions
+ * with the calling convention.
  */
-DeclaratorAttributes -> {
-    /** @var list<Attribute\AttributeInterface> $children */
-    if ($children === []) {
-        return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $type;
+AttributedNameDeclarator -> {
+    /**
+     * @var list{
+     *     \Closure(Type\TypeInterface|null): Type\TypeInterface,
+     *     Node\Identifier,
+     *     \Closure(Type\TypeInterface|null): (Type\TypeInterface|null),
+     *     ...<Attribute\AttributeInterface>
+     * } $children
+     */
+    $result = [
+        $children[1],
+        static fn(?Type\TypeInterface $type): Type\TypeInterface => $children[0]($children[2]($type)),
+    ];
+
+    for ($i = 3, $count = \count($children); $i < $count; ++$i) {
+        $result[] = $children[$i];
     }
 
-    $attributes = new Attribute\AttributeList($children, $children[0]->offset);
-
-    return static fn(?Type\TypeInterface $type): Type\TypeInterface => new Type\AttributedType(
-        $attributes,
-        $type,
-        $offset,
-    );
+    return $result;
 }
-  : (AttributeSpecifier() | CallingConventionAttributeSpecifier())+
+  : &<T_CALLING_CONVENTION> DeclaratorAttributes() (NameDeclarator() | NestedDeclarator())
+  ;
+
+/**
+ * The attributes a declarator starts with: the calling conventions of MSVC
+ * or the GCC attributes at the start of a parenthesized declarator. They
+ * belong to the nearest function type, through the pointers, the block
+ * pointers, the qualifiers and the attributed types, among its own attributes in the
+ * order written. A type without a function with them is an AttributedType.
+ */
+DeclaratorAttributes -> {
+    /** @var non-empty-list<Attribute\AttributeInterface> $children */
+    $merge = static function (?Attribute\AttributeList $list) use ($children): Attribute\AttributeList {
+        $attributes = $children;
+
+        foreach ($list ?? [] as $attribute) {
+            $attributes[] = $attribute;
+        }
+
+        \usort(
+            $attributes,
+            static fn(Attribute\AttributeInterface $a, Attribute\AttributeInterface $b): int => $a->offset <=> $b->offset,
+        );
+
+        return new Attribute\AttributeList($attributes, $attributes[0]->offset);
+    };
+
+    return static function (?Type\TypeInterface $type) use ($offset, $merge): Type\TypeInterface {
+        $wrappers = [];
+        $inner = $type;
+
+        while ($inner instanceof Type\PointerType
+            || $inner instanceof Type\BlockPointerType
+            || $inner instanceof Type\QualifiedType
+            || $inner instanceof Type\AttributedType) {
+            $wrappers[] = $inner;
+            $inner = $inner->type;
+        }
+
+        if ($type instanceof Type\AttributedType && !$inner instanceof Type\FunctionType) {
+            return new Type\AttributedType($merge($type->attributes), $type->type, \min($offset, $type->offset));
+        }
+
+        if (!$inner instanceof Type\FunctionType) {
+            return new Type\AttributedType($merge(null), $type, $offset);
+        }
+
+        $result = new Type\FunctionType(
+            $inner->returnType,
+            $inner->parameters,
+            $inner->isVariadic,
+            $merge($inner->attributes),
+            $inner->offset,
+        );
+
+        for ($i = \count($wrappers) - 1; $i >= 0; --$i) {
+            $wrapper = $wrappers[$i];
+
+            $result = match (true) {
+                $wrapper instanceof Type\PointerType
+                    => new Type\PointerType($result, $wrapper->attributes, $wrapper->offset),
+                $wrapper instanceof Type\BlockPointerType
+                    => new Type\BlockPointerType($result, $wrapper->attributes, $wrapper->offset),
+                $wrapper instanceof Type\QualifiedType
+                    => new Type\QualifiedType($wrapper->qualifiers, $result, $wrapper->offset),
+                default => new Type\AttributedType($wrapper->attributes, $result, $wrapper->offset),
+            };
+        }
+
+        return $result;
+    };
+}
+  : GnuAttributeSpecifier()+
+  | CallingConvention()+
   ;
 
 /**
@@ -107,7 +189,7 @@ NameDeclarator -> {
         return $type;
     }, ...$attributes];
 }
-  : <T_IDENTIFIER> AttributeSpecifier()* DeclaratorSuffix()*
+  : (<T_IDENTIFIER> | <T_BUILTIN_CALL> | KeywordIdentifier()) AttributeSpecifier()* DeclaratorSuffix()*
   ;
 
 /**
@@ -156,8 +238,10 @@ AbstractDeclarator
   ;
 
 /**
- * A pointer, or the attributes at the start of a parenthesized declarator,
- * as in a declarator with a name. The attributes alone are no declarator.
+ * A pointer or the attributes of the declarator, as in a declarator with a
+ * name. The calling conventions alone end an unnamed parameter,
+ * "void f(int * __cdecl)". The GCC attributes alone are no declarator,
+ * "(__attribute__((x)))" is a parameter list.
  */
 AbstractPointerDeclarator -> {
     /**
@@ -172,7 +256,7 @@ AbstractPointerDeclarator -> {
 
     return static fn(?Type\TypeInterface $type): ?Type\TypeInterface => $children[1]($children[0]($type));
 }
-  : (Pointer() | BlockPointer()) AbstractDeclarator()?
+  : (Pointer() | BlockPointer() | &<T_CALLING_CONVENTION> DeclaratorAttributes()) AbstractDeclarator()?
   | DeclaratorAttributes() AbstractDeclarator()
   ;
 
@@ -191,8 +275,20 @@ DirectAbstractDeclarator -> {
         return $type;
     };
 }
-  : ::T_LPAREN:: AbstractDeclarator() ::T_RPAREN:: DeclaratorSuffix()*
-  | DeclaratorSuffix()+
+  : ::T_LPAREN:: AbstractDeclarator() ::T_RPAREN:: AbstractDeclaratorSuffix()*
+  | AbstractDeclaratorSuffix()+
+  ;
+
+/**
+ * An array or a function of an abstract declarator, whose array of
+ * unspecified size has no qualifiers: "[*]", not "[const *]" (6.7.8)
+ */
+AbstractDeclaratorSuffix
+  : !QualifiedUnspecifiedSize() DeclaratorSuffix()
+  ;
+
+QualifiedUnspecifiedSize
+  : <T_LBRACKET> TypeQualifier()+ <T_ASTERISK> <T_RBRACKET>
   ;
 
 /**
@@ -213,9 +309,8 @@ Pointer -> {
   ;
 
 /**
- * Clang: a block pointer, written by the "^" of a declarator:
- * "void (^callback)(int)". Its qualifiers and attributes are the ones of a
- * pointer.
+ * Clang: a block pointer, "void (^callback)(int)", with the qualifiers and
+ * the attributes of a pointer. Requires the BlockPointers feature.
  */
 BlockPointer -> {
     /**
@@ -225,6 +320,8 @@ BlockPointer -> {
      *     \Closure(Type\TypeInterface): Type\TypeInterface
      * } $children
      */
+    $this->assertFeature(Feature::BlockPointers, $source, $children[0]->offset, $children[0]->size);
+
     return static fn(?Type\TypeInterface $type): Type\TypeInterface
         => $children[2](new Type\BlockPointerType($type, $children[1], $offset));
 }
@@ -232,9 +329,11 @@ BlockPointer -> {
   ;
 
 /**
- * The qualifiers and the attributes after "*" or "^", the attributes
- * written before the qualifiers in C23 and anywhere among them in GCC. The
- * attributes belong to the pointer, and the qualifiers wrap it. Passed to
+ * The attributes and the qualifiers after "*" or "^": the attributes before
+ * the qualifiers, and the GCC and MSVC attributes, the MSVC modifiers of a
+ * pointer and the Clang nullability and signing of a pointer anywhere among
+ * them. The attributes belong to the pointer, and the qualifiers wrap it.
+ * Passed to
  * the parent as two children: the attributes, null in case of none is
  * written, and the function from the pointer to the qualified one.
  */
@@ -263,48 +362,36 @@ PointerQualifiers -> {
         $pointer->offset,
     )];
 }
-  : PointerQualifier()*
+  : StandardAttributeSpecifier()*
+    (
+        TypeQualifier() | GnuAttributeSpecifier() | DeclSpecAttributeSpecifier() | PointerModifier()
+      | BasedPointerModifier() | Nullability() | PointerAuth()
+    )*
   ;
 
 /**
- * A qualifier or an attribute after "*" or "^"
- */
-PointerQualifier
-  : TypeQualifier()
-  | AttributeSpecifier()
-  | PointerModifierAttributeSpecifier()
-  | PointerModifierWithArgumentsAttributeSpecifier()
-  | NullabilityAttributeSpecifier()
-  | CallingConventionAttributeSpecifier()
-  ;
-
-/**
- * An array or a function and the C23 attributes after it, which apply to it
- * (6.7.7.3, 6.7.7.4). The attributes of GCC and MSVC after the whole
- * declarator belong to the declaration, as in
- * "void exit(int) __attribute__((noreturn));".
+ * An array or a function and the attributes after it, which apply to it
+ * (6.7.7.3, 6.7.7.4). The GCC attributes after the whole declarator belong
+ * to the declaration, as in "void exit(int) __attribute__((noreturn));".
  */
 DeclaratorSuffix -> {
     /**
      * @var list{
      *     \Closure(Type\TypeInterface|null, Attribute\AttributeList|null=): Type\TypeInterface,
-     *     ...<TokenInterface|Attribute\AttributeInterface>
+     *     ...<Attribute\AttributeInterface>
      * } $children
      */
-    $attributes = [];
-
-    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
-        // The first bracket of each specifier is kept for the offsets
-        if ($children[$i] instanceof Attribute\AttributeInterface) {
-            $attributes[] = $children[$i];
-        }
-    }
-
-    if ($attributes === []) {
+    if (!isset($children[1])) {
         return $children[0];
     }
 
-    $attributeList = new Attribute\AttributeList($attributes, $attributes[0]->offset);
+    $attributes = [];
+
+    for ($i = 1, $count = \count($children); $i < $count; ++$i) {
+        $attributes[] = $children[$i];
+    }
+
+    $attributeList = new Attribute\AttributeList($attributes, $children[1]->offset);
 
     return static fn(?Type\TypeInterface $type): Type\TypeInterface => $children[0]($type, $attributeList);
 }
@@ -317,8 +404,18 @@ DeclaratorSuffix -> {
  * -----------------------------------------------------------------------------
  *
  *  "[*p]" has a size, "[*]" has an unspecified one. The bracket marks the
- *  start of the array.
+ *  start of the array. The attributes after the brackets are given to the
+ *  function of the array, after the GCC attributes in the brackets.
  */
+
+/**
+ * A qualifier in the brackets of an array, or a GCC attribute among them:
+ * "int a[__attribute__((x)) 3]"
+ */
+ArrayQualifier
+  : TypeQualifier()
+  | GnuAttributeSpecifier()
+  ;
 
 ArrayDeclarator
   : SizedArrayDeclarator()
@@ -379,13 +476,12 @@ SizedArrayDeclarator -> {
 }
   : <T_LBRACKET>
         (<T_STATIC> ArrayQualifier()* | ArrayQualifier()* <T_STATIC>?)
-        ConditionalExpression()
+        AssignmentExpression()
     ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the array declarator, \"]\" expected")
   ;
 
 /**
- * [*] and [const *], with the qualifiers accepted in a type name as well,
- * as GCC does (C allows them only in a declarator with a name)
+ * [*] and [const *]
  */
 UnspecifiedSizeArrayDeclarator -> {
     /** @var list{TokenInterface, ...<Type\QualifiedType\TypeQualifier|Attribute\AttributeInterface>} $children */
@@ -457,15 +553,6 @@ IncompleteArrayDeclarator -> {
   ;
 
 /**
- * A qualifier in the brackets of an array, or an attribute among them, as
- * GCC has: "int a[__attribute__((x)) 3]"
- */
-ArrayQualifier
-  : TypeQualifier()
-  | AttributeSpecifier()
-  ;
-
-/**
  * -----------------------------------------------------------------------------
  *  6.7.7.4 Function declarators
  * -----------------------------------------------------------------------------
@@ -505,8 +592,8 @@ ParameterTypeList
   ;
 
 /**
- * A parameter with a name, an abstract declarator or none, and the
- * attributes after the name and after the whole declarator
+ * A parameter with a name, an abstract declarator or none, the attributes
+ * after the name and the GCC attributes after the declarator
  */
 Parameter -> {
     /**
@@ -542,16 +629,28 @@ Parameter -> {
         $offset,
     );
 }
-  : DeclarationSpecifiers() (!ParenthesizedName() Declarator() | AbstractDeclarator())? AttributeSpecifier()*
+  : DeclarationSpecifiers() (!ParenthesizedName() Declarator() | AbstractDeclarator())? GnuAttributeSpecifier()*
   ;
 
 /**
  * 6.7.7.4 Function declarators, a declarator whose name is parenthesized
  * alone: "(T)", "*(T)", "((T))". In a parameter such a name is read as the
- * parameter of a function, "int (T)" is a function of T returning int.
+ * parameter of a function, "int (T)" is a function of T returning int. So
+ * is a parenthesized keyword that starts the declaration specifiers and
+ * that PHP FFI reads as a name: "int (bool)" is a function of bool.
  */
 ParenthesizedName
-  : (Pointer() | BlockPointer() | DeclaratorAttributes())* <T_LPAREN> (ParenthesizedName() | <T_IDENTIFIER> <T_RPAREN>)
+  : (Pointer() | BlockPointer())* <T_LPAREN> (ParenthesizedName() | <T_IDENTIFIER> <T_RPAREN> | SpecifierKeyword())
+  ;
+
+/**
+ * A keyword of the declaration specifiers among the ones a keyword name can
+ * be (KeywordIdentifier)
+ */
+SpecifierKeyword
+  : <T_BOOL> | <T_ALIGNAS> | <T_TYPEOF> | <T_TYPEOF_UNQUAL> | <T_BITINT> | <T_DECIMAL_NX> | <T_DECIMAL_N>
+  | <T_FLOAT_NX> | <T_FLOAT_N> | <T_CONSTEXPR> | <T_THREAD_LOCAL> | <T_IMAGINARY> | <T_FORCE_INLINE>
+  | <T_POINTER_MODIFIER> | <T_BASED> | <T_NULLABILITY> | <T_PTRAUTH>
   ;
 
 /**
@@ -575,8 +674,9 @@ TypeName -> {
 
 /**
  * The first tokens of a type name that reads as an expression as well,
- * other than a lone identifier: an array with a size "a[3]", a function
- * without parameters "f()", and a function or a function returning a
+ * other than a lone identifier: the name of a built-in function before
+ * its parenthesis "__builtin_expect(", an array with a size "a[3]", a
+ * function without parameters "f()", and a function or a function returning a
  * pointer whose first parameter starts with a typedef name and reads as an
  * expression too, "f(x)", "f(x, y)", "a * (b)", "a * ((b), c)",
  * "a * (b[2])" or "a * (b * c)". Where an expression is allowed too (a
@@ -589,9 +689,10 @@ TypeName -> {
  * ("T[]", "T[static 3]", "T(U *)", "T *(U *)") stay type names.
  */
 ExpressionLikeTypeName
-  : <T_IDENTIFIER> <T_LBRACKET> !ArrayDeclaratorStart()
+  : <T_BUILTIN_CALL>
+  | <T_IDENTIFIER> <T_LBRACKET> !ArrayDeclaratorStart()
   | <T_IDENTIFIER> <T_LPAREN> <T_RPAREN>
-  | <T_IDENTIFIER> <T_ASTERISK>* <T_LPAREN>+ <T_IDENTIFIER> ExpressionLikeParameterEnd()
+  | <T_IDENTIFIER> (<T_ASTERISK> | <T_CARET>)* <T_LPAREN>+ <T_IDENTIFIER> ExpressionLikeParameterEnd()
   ;
 
 /**
@@ -600,9 +701,8 @@ ExpressionLikeTypeName
  */
 ArrayDeclaratorStart
   : <T_RBRACKET>
-  | <T_ATTRIBUTE>
-  | <T_DECLSPEC>
   | <T_STATIC>
+  | <T_GNU_ATTRIBUTE>
   | <T_CONST>
   | <T_VOLATILE>
   | <T_RESTRICT>
@@ -618,5 +718,5 @@ ExpressionLikeParameterEnd
   : <T_RPAREN>
   | <T_COMMA>
   | <T_LBRACKET>
-  | <T_ASTERISK>+ (<T_IDENTIFIER> | <T_LPAREN>)
+  | (<T_ASTERISK> | <T_CARET>)+ (<T_IDENTIFIER> | <T_LPAREN>)
   ;

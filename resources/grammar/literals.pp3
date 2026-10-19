@@ -8,16 +8,35 @@
  * 6.4.4 Constants
  */
 Constant
-  : DecIntLiteral()
-  | HexIntLiteral()
-  | OctIntLiteral()
-  | BinIntLiteral()
-  | DecFloatLiteral()
-  | HexFloatLiteral()
+  : IntLiteral()
+  | FloatLiteral()
   | CharLiteral()
   | TrueLiteral()
   | FalseLiteral()
   | NullptrLiteral()
+  ;
+
+/**
+ * An integer constant of any base. MSVC: the suffix of a sized integer type,
+ * 1i64, requires the MsIntegerSuffixes feature. GCC: the imaginary suffix,
+ * 3i, requires the ImaginaryConstants feature.
+ */
+IntLiteral -> {
+    /** @var Literal\IntLiteral $children */
+    if ($children->suffix?->isSized() === true) {
+        $this->assertFeature(Feature::MsIntegerSuffixes, $source, $offset, $length);
+    }
+
+    if ($children->isImaginary) {
+        $this->assertFeature(Feature::ImaginaryConstants, $source, $offset, $length);
+    }
+
+    return $children;
+}
+  : DecIntLiteral()
+  | HexIntLiteral()
+  | OctIntLiteral()
+  | BinIntLiteral()
   ;
 
 DecIntLiteral -> {
@@ -52,6 +71,32 @@ BinIntLiteral -> {
   : <T_BIN_INT_LITERAL>
   ;
 
+/**
+ * A floating constant of either base. GCC: the imaginary suffix, 2.0i,
+ * requires the ImaginaryConstants feature, the suffix "q" of __float128 the
+ * Float128Suffix feature and the suffix "w" of __float80 the Float80Suffix
+ * feature.
+ */
+FloatLiteral -> {
+    /** @var Literal\FloatLiteral $children */
+    if ($children->isImaginary) {
+        $this->assertFeature(Feature::ImaginaryConstants, $source, $offset, $length);
+    }
+
+    if ($children->suffix === Literal\FloatLiteral\FloatTypeSuffix::GnuFloat128) {
+        $this->assertFeature(Feature::Float128Suffix, $source, $offset, $length);
+    }
+
+    if ($children->suffix === Literal\FloatLiteral\FloatTypeSuffix::GnuFloat80) {
+        $this->assertFeature(Feature::Float80Suffix, $source, $offset, $length);
+    }
+
+    return $children;
+}
+  : DecFloatLiteral()
+  | HexFloatLiteral()
+  ;
+
 DecFloatLiteral -> {
     /** @var TokenInterface $children */
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
@@ -68,8 +113,17 @@ HexFloatLiteral -> {
   : <T_HEX_FLOAT_LITERAL>
   ;
 
+/**
+ * A character constant. GCC: the escape sequence "\e" requires the EscapeE
+ * feature.
+ */
 CharLiteral -> {
     /** @var TokenInterface $children */
+    // An escape sequence "\e" or "\E" after the escaped characters before it
+    if (\preg_match('/^(?:[^\\\\]++|\\\\[^eE])*+\\\\[eE]/', $children->value) === 1) {
+        $this->assertFeature(Feature::EscapeE, $source, $offset, $length);
+    }
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return Literal\CharLiteral::parse($children->value, $offset);
 }
@@ -115,8 +169,17 @@ ConcatenatedStringExpression -> {
   : StringLiteral()+
   ;
 
+/**
+ * A string literal. GCC: the escape sequence "\e" requires the EscapeE
+ * feature.
+ */
 StringLiteral -> {
     /** @var TokenInterface $children */
+    // An escape sequence "\e" or "\E" after the escaped characters before it
+    if (\preg_match('/^(?:[^\\\\]++|\\\\[^eE])*+\\\\[eE]/', $children->value) === 1) {
+        $this->assertFeature(Feature::EscapeE, $source, $offset, $length);
+    }
+
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return Literal\StringLiteral::parse($children->value, $offset);
 }

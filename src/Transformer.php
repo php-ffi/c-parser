@@ -14,12 +14,12 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule\SizeOfExpressionOperandRul
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\ExpressionOperandRule\TypeOfUnqualExpressionOperandRule;
 use FFI\Parser\Transformer\Rule\FunctionCallRule;
+use FFI\Parser\Transformer\Rule\ModifiedTypedefNameParameterRule;
 use FFI\Parser\Transformer\Rule\OperatorPrecedenceRule;
 use FFI\Parser\Transformer\Rule\ParameterNameRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignAsTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\BuiltinCallTypeNameOperandRule;
-use FFI\Parser\Transformer\Rule\TypeNameOperandRule\GenericSelectionTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\SizeOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfUnqualTypeNameOperandRule;
@@ -42,11 +42,19 @@ final class Transformer
     private readonly array $transformers;
 
     /**
-     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
+     * @var array<non-empty-string, true>
      */
-    public function __construct(iterable $rules = [])
+    private readonly array $typedefNames;
+
+    /**
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
+     * @param iterable<mixed, non-empty-string> $typedefNames names declared as
+     *        typedef names in the file scope before the declarations
+     */
+    public function __construct(iterable $rules = [], iterable $typedefNames = [])
     {
         $this->transformers = self::formatTransformerRules($rules);
+        $this->typedefNames = self::formatTypedefNames($typedefNames);
     }
 
     /**
@@ -65,6 +73,21 @@ final class Transformer
     }
 
     /**
+     * @param iterable<mixed, non-empty-string> $names
+     * @return array<non-empty-string, true>
+     */
+    private static function formatTypedefNames(iterable $names): array
+    {
+        $result = [];
+
+        foreach ($names as $name) {
+            $result[$name] = true;
+        }
+
+        return $result;
+    }
+
+    /**
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $append
      * @return array<array-key, TransformerRuleInterface<covariant NodeInterface>>
      */
@@ -75,17 +98,17 @@ final class Transformer
             new FunctionCallRule(),
             new OperatorPrecedenceRule(),
             new ParameterNameRule(),
+            new ModifiedTypedefNameParameterRule(),
             new SizeOfExpressionOperandRule(),
-            new AlignOfExpressionOperandRule(),
             new TypeOfExpressionOperandRule(),
             new TypeOfUnqualExpressionOperandRule(),
             new AlignAsExpressionOperandRule(),
+            new AlignOfExpressionOperandRule(),
             new SizeOfTypeNameOperandRule(),
-            new AlignOfTypeNameOperandRule(),
             new TypeOfTypeNameOperandRule(),
             new TypeOfUnqualTypeNameOperandRule(),
             new AlignAsTypeNameOperandRule(),
-            new GenericSelectionTypeNameOperandRule(),
+            new AlignOfTypeNameOperandRule(),
             new BuiltinCallTypeNameOperandRule(),
             ...$append,
         ];
@@ -95,10 +118,13 @@ final class Transformer
      * Creates the transformer with the rules that rebuild the constructs
      * the grammar parses one way, whichever names are declared before them,
      * by the typedef names and the other names declared in the tree.
+     *
+     * @param iterable<mixed, non-empty-string> $typedefNames names declared as
+     *        typedef names in the file scope before the declarations
      */
-    public static function createDefault(): self
+    public static function createDefault(iterable $typedefNames = []): self
     {
-        return new self(self::getDefaultTransformers());
+        return new self(self::getDefaultTransformers(), $typedefNames);
     }
 
     /**
@@ -118,7 +144,7 @@ final class Transformer
         }
 
         return Traverser::execute($declarations, [
-            new TransformerVisitor($this->transformers),
+            new TransformerVisitor($this->transformers, $this->typedefNames),
         ]);
     }
 }

@@ -9,9 +9,11 @@ use FFI\Parser\Node\Identifier;
 
 /**
  * Call of a built-in function of a compiler, a name that starts with
- * `__builtin_`: `__builtin_offsetof(struct S, a.b[2])`, what the `offsetof`
- * macro of `<stddef.h>` expands to, or `__builtin_types_compatible_p(int, T)`.
- * The meaning of the function and of its arguments is up to the consumer.
+ * `__builtin_`, with a type name among its arguments:
+ * `__builtin_offsetof(struct S, a.b[2])`, what the `offsetof` macro of
+ * `<stddef.h>` expands to, or `__builtin_va_arg(ap, int)`. A call of such a
+ * function with expressions only is a {@see CallExpression}. The meaning of
+ * the function and of its arguments is up to the consumer.
  *
  * @link https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html GCC, Other Built-in Functions
  */

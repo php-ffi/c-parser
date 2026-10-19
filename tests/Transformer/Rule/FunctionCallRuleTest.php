@@ -30,6 +30,7 @@ final class FunctionCallRuleTest extends RuleTestCase
         ];
         yield 'subscript of result' => ['int r = (f)(x)[0];', '(variable int r = ([] (call (paren f) x) 0))'];
         yield 'member of result' => ['int r = (f)(x).m;', '(variable int r = (. (call (paren f) x) m))'];
+        yield 'postfix increment of result' => ['int r = (f)(x)++;', '(variable int r = (++p (call (paren f) x)))'];
         yield 'call of result' => ['int r = (f)(x)(y);', '(variable int r = (call (call (paren f) x) y))'];
         yield 'call of result with unknown argument' => [
             'int r = (f)(W)(y);',

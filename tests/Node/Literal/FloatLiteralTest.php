@@ -94,46 +94,59 @@ final class FloatLiteralTest extends TestCase
     }
 
     /**
-     * @return iterable<non-empty-string, array{class-string<FloatLiteral>, non-empty-string, FloatTypeSuffix|null}>
+     * @return iterable<non-empty-string, array{
+     *     class-string<FloatLiteral>,
+     *     non-empty-string,
+     *     FloatTypeSuffix|null,
+     *     int<1, max>|null,
+     * }>
      */
     public static function suffixesDataProvider(): iterable
     {
-        yield 'none' => [DecFloatLiteral::class, '1.5', null];
-        yield 'f' => [DecFloatLiteral::class, '1.5f', FloatTypeSuffix::Float];
-        yield 'F' => [DecFloatLiteral::class, '1.5F', FloatTypeSuffix::Float];
-        yield 'l' => [DecFloatLiteral::class, '1.5l', FloatTypeSuffix::LongDouble];
-        yield 'L' => [DecFloatLiteral::class, '1.5L', FloatTypeSuffix::LongDouble];
-        yield 'f16' => [DecFloatLiteral::class, '1.5f16', FloatTypeSuffix::Float16];
-        yield 'F32' => [DecFloatLiteral::class, '1.5F32', FloatTypeSuffix::Float32];
-        yield 'f64' => [DecFloatLiteral::class, '1.5f64', FloatTypeSuffix::Float64];
-        yield 'f128' => [DecFloatLiteral::class, '1.5f128', FloatTypeSuffix::Float128];
-        yield 'f32x' => [DecFloatLiteral::class, '1.5f32x', FloatTypeSuffix::Float32x];
-        yield 'f64x' => [DecFloatLiteral::class, '1.5f64x', FloatTypeSuffix::Float64x];
-        yield 'f128x' => [DecFloatLiteral::class, '1.5f128x', FloatTypeSuffix::Float128x];
-        yield 'df' => [DecFloatLiteral::class, '1.5df', FloatTypeSuffix::Decimal32];
-        yield 'D32' => [DecFloatLiteral::class, '1.5D32', FloatTypeSuffix::Decimal32];
-        yield 'dd' => [DecFloatLiteral::class, '1.5dd', FloatTypeSuffix::Decimal64];
-        yield 'd64' => [DecFloatLiteral::class, '1.5d64', FloatTypeSuffix::Decimal64];
-        yield 'DL' => [DecFloatLiteral::class, '1.5DL', FloatTypeSuffix::Decimal128];
-        yield 'd128' => [DecFloatLiteral::class, '1.5d128', FloatTypeSuffix::Decimal128];
-        yield 'd64x' => [DecFloatLiteral::class, '1.5d64x', FloatTypeSuffix::Decimal64x];
-        yield 'D128x' => [DecFloatLiteral::class, '1.5D128x', FloatTypeSuffix::Decimal128x];
-        yield 'q' => [DecFloatLiteral::class, '1.5q', FloatTypeSuffix::GnuFloat128];
-        yield 'Q' => [DecFloatLiteral::class, '1.5Q', FloatTypeSuffix::GnuFloat128];
-        yield 'w' => [DecFloatLiteral::class, '1.5w', FloatTypeSuffix::GnuFloat80];
-        yield 'W' => [DecFloatLiteral::class, '1.5W', FloatTypeSuffix::GnuFloat80];
-        yield 'hexadecimal with f' => [HexFloatLiteral::class, '0x1p3f', FloatTypeSuffix::Float];
-        yield 'hexadecimal with q' => [HexFloatLiteral::class, '0x1p3q', FloatTypeSuffix::GnuFloat128];
-        yield 'hexadecimal digit f is not a suffix' => [HexFloatLiteral::class, '0x1.fp3', null];
+        yield 'none' => [DecFloatLiteral::class, '1.5', null, null];
+        yield 'f' => [DecFloatLiteral::class, '1.5f', FloatTypeSuffix::Float, null];
+        yield 'F' => [DecFloatLiteral::class, '1.5F', FloatTypeSuffix::Float, null];
+        yield 'l' => [DecFloatLiteral::class, '1.5l', FloatTypeSuffix::LongDouble, null];
+        yield 'L' => [DecFloatLiteral::class, '1.5L', FloatTypeSuffix::LongDouble, null];
+        yield 'f16' => [DecFloatLiteral::class, '1.5f16', FloatTypeSuffix::FloatN, 16];
+        yield 'F32' => [DecFloatLiteral::class, '1.5F32', FloatTypeSuffix::FloatN, 32];
+        yield 'f64' => [DecFloatLiteral::class, '1.5f64', FloatTypeSuffix::FloatN, 64];
+        yield 'f128' => [DecFloatLiteral::class, '1.5f128', FloatTypeSuffix::FloatN, 128];
+        yield 'f256' => [DecFloatLiteral::class, '1.5f256', FloatTypeSuffix::FloatN, 256];
+        yield 'f32x' => [DecFloatLiteral::class, '1.5f32x', FloatTypeSuffix::FloatNx, 32];
+        yield 'F64x' => [DecFloatLiteral::class, '1.5F64x', FloatTypeSuffix::FloatNx, 64];
+        yield 'f128x' => [DecFloatLiteral::class, '1.5f128x', FloatTypeSuffix::FloatNx, 128];
+        yield 'df' => [DecFloatLiteral::class, '1.5df', FloatTypeSuffix::Decimal32, null];
+        yield 'D32' => [DecFloatLiteral::class, '1.5D32', FloatTypeSuffix::Decimal32, null];
+        yield 'dd' => [DecFloatLiteral::class, '1.5dd', FloatTypeSuffix::Decimal64, null];
+        yield 'd64' => [DecFloatLiteral::class, '1.5d64', FloatTypeSuffix::Decimal64, null];
+        yield 'DL' => [DecFloatLiteral::class, '1.5DL', FloatTypeSuffix::Decimal128, null];
+        yield 'd128' => [DecFloatLiteral::class, '1.5d128', FloatTypeSuffix::Decimal128, null];
+        yield 'd96' => [DecFloatLiteral::class, '1.5d96', FloatTypeSuffix::DecimalN, 96];
+        yield 'D160' => [DecFloatLiteral::class, '1.5D160', FloatTypeSuffix::DecimalN, 160];
+        yield 'd64x' => [DecFloatLiteral::class, '1.5d64x', FloatTypeSuffix::DecimalNx, 64];
+        yield 'D128x' => [DecFloatLiteral::class, '1.5D128x', FloatTypeSuffix::DecimalNx, 128];
+        yield 'q' => [DecFloatLiteral::class, '1.5q', FloatTypeSuffix::GnuFloat128, null];
+        yield 'Q' => [DecFloatLiteral::class, '1.5Q', FloatTypeSuffix::GnuFloat128, null];
+        yield 'w' => [DecFloatLiteral::class, '1.5w', FloatTypeSuffix::GnuFloat80, null];
+        yield 'W' => [DecFloatLiteral::class, '1.5W', FloatTypeSuffix::GnuFloat80, null];
+        yield 'imaginary f16' => [DecFloatLiteral::class, '1.5f16i', FloatTypeSuffix::FloatN, 16];
+        yield 'hexadecimal with f' => [HexFloatLiteral::class, '0x1p3f', FloatTypeSuffix::Float, null];
+        yield 'hexadecimal with f16' => [HexFloatLiteral::class, '0x1p3f16', FloatTypeSuffix::FloatN, 16];
+        yield 'hexadecimal digit f is not a suffix' => [HexFloatLiteral::class, '0x1.fp3', null, null];
+        yield 'hexadecimal with q' => [HexFloatLiteral::class, '0x1p3q', FloatTypeSuffix::GnuFloat128, null];
     }
 
     /**
      * @param class-string<FloatLiteral> $class
+     * @param int<1, max>|null $width
      */
     #[DataProvider('suffixesDataProvider')]
-    public function testSuffixIsParsed(string $class, string $raw, ?FloatTypeSuffix $suffix): void
+    public function testSuffixIsParsed(string $class, string $raw, ?FloatTypeSuffix $suffix, ?int $width): void
     {
-        self::assertSame($suffix, $class::parse($raw)->suffix);
+        $literal = $class::parse($raw);
+
+        self::assertSame([$suffix, $width], [$literal->suffix, $literal->suffixWidth]);
     }
 
     /**
@@ -245,6 +258,10 @@ final class FloatLiteralTest extends TestCase
         yield 'hexadecimal PHP_FLOAT_MAX' => [new HexFloatLiteral(\PHP_FLOAT_MAX), '0x1fffffffffffffp971'];
         yield 'hexadecimal smallest subnormal' => [new HexFloatLiteral(2 ** -1074), '0x1p-1074'];
         yield 'hexadecimal with a suffix' => [new HexFloatLiteral(0.25, suffix: FloatTypeSuffix::Float), '0x1p-2f'];
+        yield 'suffix with a width' => [
+            new DecFloatLiteral(1.5, suffix: FloatTypeSuffix::FloatNx, suffixWidth: 64),
+            '1.5f64x',
+        ];
         yield 'imaginary' => [new DecFloatLiteral(2.5, suffix: FloatTypeSuffix::Float, isImaginary: true), '2.5fi'];
     }
 

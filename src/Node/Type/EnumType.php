@@ -37,10 +37,9 @@ final class EnumType extends Type implements DeclarationInterface
          */
         public ?EnumeratorList $enumerators = null,
         /**
-         * The attributes after `enum` and, as GCC allows, after the body,
-         * `enum [[a]] E { A } __attribute__((b))`. The ones after a tag
-         * without a body, `enum E [[a]];`, are among the specifiers.
-         * {@see null} in case of none is written
+         * The attributes after `enum`, `enum [[a]] E { A }`. The ones
+         * after a tag without a body, `enum E [[a]];`, are among the
+         * specifiers. {@see null} in case of none is written
          */
         public ?AttributeList $attributes = null,
         int $offset = 0,

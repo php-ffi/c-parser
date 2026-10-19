@@ -20,7 +20,16 @@ final class Scope
     /**
      * @var non-empty-list<array<string, bool>>
      */
-    private array $scopes = [[]];
+    private array $scopes;
+
+    /**
+     * @param array<string, true> $typedefNames names declared as typedef
+     *        names in the file scope before the declarations
+     */
+    public function __construct(array $typedefNames = [])
+    {
+        $this->scopes = [$typedefNames];
+    }
 
     /**
      * Opens a function prototype scope.

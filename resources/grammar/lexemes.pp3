@@ -20,16 +20,23 @@
 %fragment UCN               \\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}
 %fragment ID_START          [A-Za-z_\x80-\xFF]|(?&UCN)
 %fragment ID_CONTINUE       [A-Za-z0-9_\x80-\xFF]|(?&UCN)
+
 /**
  * What may not directly follow a keyword, the rest of an identifier
  */
 %fragment KEYWORD_END       (?![A-Za-z0-9_\x80-\xFF]|\\[uU])
+
 /**
  * What may not directly follow a number: the rest of a number of the
  * preprocessor (6.4.8), a quote, a dot and a sign after "e" or "p". "1.2.3"
  * is not two constants and "0xE+1" is not a sum.
  */
 %fragment NUMBER_END        (?![A-Za-z0-9_\x80-\xFF'.]|\\[uU]|(?<=[eEpP])[+-])
+
+/**
+ * Whitespace and comments between two tokens read as one (6.4.9)
+ */
+%fragment TOKEN_GAP         (?:[\x20\t\r\n\f\x0B]++|/\*(?:[^*]++|\*(?!/))*+\*/|//[^\n]*+)*+
 
 /**
  * Digit sequences with optional digit separators, 6.4.4.2
@@ -39,7 +46,7 @@
 
 /**
  * Escape sequences, 6.4.4.5, and the escape character of GCC, "\e" and
- * "\E" (U+001B)
+ * "\E" (U+001B), which requires the EscapeE feature
  */
 %fragment SIMPLE_ESCAPE     ['"?\\abefnrtvE]
 %fragment NUMERIC_ESCAPE    [0-7]{1,3}|x[0-9A-Fa-f]++
@@ -54,13 +61,15 @@
 %fragment DEC_INT           [1-9](?:'?[0-9])*+
 %fragment INT_SIZE          ll|LL|[lL]|wb|WB
 %fragment INT_TYPE_SUFFIX   [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
+
 /**
  * GCC: the suffix of an imaginary constant, 2.0i or 3j, before or after the
  * suffix of the type
  */
 %fragment IMAGINARY_SUFFIX  [iIjJ]
+
 /**
- * MSVC: the suffixes of the sized integer types, 1i64 and 1ui64, alone
+ * MSVC: the suffix of a sized integer type, i64 or ui64, alone
  */
 %fragment MSVC_INT_SUFFIX   [uU]?[iI](?:8|16|32|64)
 %fragment INT_SUFFIX        (?&MSVC_INT_SUFFIX)|(?&INT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&INT_TYPE_SUFFIX)?
@@ -74,12 +83,18 @@
 %fragment BIN_EXPONENT      [pP][+-]?(?&DEC_DIGITS)
 %fragment DEC_FLOAT         (?&DEC_FRACTION)(?&DEC_EXPONENT)?|(?&DEC_DIGITS)(?&DEC_EXPONENT)
 %fragment HEX_FLOAT         0[xX](?&HEX_SIGNIFICAND)(?&BIN_EXPONENT)
-%fragment DECIMAL_SUFFIX    [dD](?:128x?|64x?|32)|df|DF|dd|DD|dl|DL
+
+/**
+ * Annex H.5.2: fN, fNx, dN and dNx of any width N, the widths an
+ * implementation provides are implementation-defined
+ */
+%fragment DECIMAL_SUFFIX    [dD][1-9][0-9]*+x?|df|DF|dd|DD|dl|DL
+
 /**
  * GCC: "q" gives __float128 and "w" gives __float80 (__ibm128 on PowerPC)
  */
 %fragment GNU_FLOAT_SUFFIX  [qQwW]
-%fragment FLOAT_TYPE_SUFFIX [fF](?:128x?|64x?|32x?|16)|(?&DECIMAL_SUFFIX)|[fFlL]|(?&GNU_FLOAT_SUFFIX)
+%fragment FLOAT_TYPE_SUFFIX [fF][1-9][0-9]*+x?|(?&DECIMAL_SUFFIX)|[fFlL]|(?&GNU_FLOAT_SUFFIX)
 %fragment FLOAT_SUFFIX      (?&FLOAT_TYPE_SUFFIX)(?&IMAGINARY_SUFFIX)?|(?&IMAGINARY_SUFFIX)(?&FLOAT_TYPE_SUFFIX)?
 
 /**
@@ -88,40 +103,35 @@
 %fragment STATEMENT_KEYWORD break|case|continue|do|else|for|goto|if|return|switch|while
 
 /**
- * Keywords of the compiler extensions that are attributes by themselves
- */
-%fragment CALLING_CONVENTION __cdecl|__clrcall|__stdcall|__fastcall|__thiscall|__vectorcall|__regcall|__pascal|_cdecl|_stdcall|_fastcall
-%fragment POINTER_MODIFIER   __ptr32|__ptr64|__sptr|__uptr|__unaligned|__w64|__far|__near|__huge
-%fragment NULLABILITY        _Nonnull|_Nullable_result|_Nullable|_Null_unspecified
-
-/**
  * -----------------------------------------------------------------------------
  *  Preprocessing leftovers
  * -----------------------------------------------------------------------------
  */
 
 /**
- * A line starting with "#" or its digraph "%:": line markers of "gcc -E"
- * (# 1 "file.h" 3), #pragma, #define of "gcc -dD", with the indentation of
- * the line and without its newline. A backslash continues the directive
- * onto the next line, whether the line ends with LF or CRLF, the CR of a
- * CRLF ending is not a part of the directive. The first line may also
- * start after the byte order mark. Must be declared before the whitespace.
+ * A preprocessing directive (6.10), a line starting with "#" or its digraph
+ * "%:": #pragma, #define, a line marker (# 1 "file.h"), with the
+ * indentation of the line and without its newline. A backslash continues
+ * the directive onto the next line, whether the line ends with LF or CRLF,
+ * the CR of a CRLF ending is not a part of the directive. The first line
+ * may also start after the byte order mark. Must be declared before the
+ * whitespace.
  */
 %fragment LINE_START       ^|(?<=\A\xEF\xBB\xBF)
 %fragment DIRECTIVE_BODY   (?:[^\\\r\n]++|\\(?:\r\n|.)|\r(?!\n))*+
-%token T_DIRECTIVE          (?&LINE_START)[\x20\t\f\x0B]*+(?:\x23|%:)(?&DIRECTIVE_BODY) -> channel(Directive)
+
+%skip T_DIRECTIVE           (?&LINE_START)[\x20\t\f\x0B]*+(?:\x23|%:)(?&DIRECTIVE_BODY)
 
 /**
- * The pragma operator, _Pragma("pack(1)") of C (6.10.11) and
- * __pragma(pack(1)) of MSVC, a directive written inside a line: the
- * keyword and its operand in balanced parentheses, nested at most three
- * levels deep
+ * The pragma operator, _Pragma("pack(1)") (6.10.11), and its MSVC spelling
+ * __pragma(pack(1)), a directive written inside a line: the keyword and its
+ * operand in balanced parentheses, nested at most three levels deep
  */
 %fragment PRAGMA_ATOM      [^()"']++|"(?:[^"\\\n]|\\.)*+"|'(?:[^'\\\n]|\\.)*+'
 %fragment PRAGMA_GROUP     \((?:(?&PRAGMA_ATOM)|\((?:(?&PRAGMA_ATOM))*+\))*+\)
 %fragment PRAGMA_OPERAND   \((?:(?&PRAGMA_ATOM)|(?&PRAGMA_GROUP))*+\)
-%token T_PRAGMA_OPERATOR    (?:_Pragma|__pragma)[\x20\t\r\n\f\x0B]*+(?&PRAGMA_OPERAND) -> channel(Directive)
+
+%skip T_PRAGMA_OPERATOR     (?:_Pragma|__pragma)[\x20\t\r\n\f\x0B]*+(?&PRAGMA_OPERAND)
 
 /**
  * -----------------------------------------------------------------------------
@@ -133,6 +143,7 @@
  * The byte order mark an editor may put at the beginning of the file
  */
 %skip T_BYTE_ORDER_MARK     \A\xEF\xBB\xBF
+
 /**
  * Comments, 6.4.9
  */
@@ -142,6 +153,12 @@
 %skip T_WHITESPACE          [\x20\t\r\f\x0B]++
 
 /**
+ * A backslash ending a line, which splices the line with the next one
+ * (5.1.1.2, translation phase 2), between two tokens
+ */
+%skip T_LINE_SPLICE         \\\r?+\n
+
+/**
  * -----------------------------------------------------------------------------
  *  Punctuators, 6.4.6
  * -----------------------------------------------------------------------------
@@ -149,10 +166,10 @@
  *  The order of declaration is the order of the expected tokens in a syntax
  *  error: the ones that end or separate something (";", ",", ")") go first.
  *  A longer punctuator goes before the ones it starts with, the dot before a
- *  digit is a floating constant (.5). Digraphs (<: :> <% %>) are spellings
- *  of the brackets and braces and share their tokens. The "#" and "##"
- *  punctuators and their digraphs (%: %:%:) are not tokens, "#" and "%:"
- *  only start a directive (T_DIRECTIVE).
+ *  digit is a floating constant (.5). Digraphs (<: :> <% %> %: %:%:) are
+ *  spellings of the brackets, the braces, "#" and "##" and share their
+ *  tokens. "#" and "%:" at the start of a line start a directive
+ *  (T_DIRECTIVE).
  */
 
 %token T_SEMICOLON          ;
@@ -163,10 +180,10 @@
 %token T_LPAREN             \(
 %token T_LBRACE             \{|<%
 /**
- * The start of an attribute specifier (6.7.13.2): two brackets with any
- * whitespace between them
+ * Two consecutive "[", which start an attribute specifier only
+ * (6.7.13.2p2)
  */
-%token T_ATTRIBUTE_START    (?:\[|<:)[\x20\t\r\n\f\x0B]*+(?:\[|<:)
+%token T_ATTRIBUTE_START    (?:\[|<:)(?&TOKEN_GAP)(?:\[|<:)
 %token T_LBRACKET           \[|<:
 %token T_ELLIPSIS           \.\.\.
 %token T_DOT                \.(?![0-9])
@@ -192,6 +209,12 @@
 %token T_XOR_ASSIGN         \^=
 %token T_OR_ASSIGN          \|=
 %token T_DOUBLE_COLON       ::
+/**
+ * "#" and "##" outside a directive, valid in a balanced token sequence
+ * only (6.7.13.2)
+ */
+%token T_HASH_HASH          \x23\x23|%:%:
+%token T_HASH               \x23|%:
 %token T_AMPERSAND          &
 %token T_ASTERISK           \*
 %token T_PLUS               \+
@@ -228,17 +251,8 @@
 %token T_STRING_LITERAL     (?:u8|[uUL])?"(?:[^"\\\n]|(?&ESCAPE))*+"
 
 /**
- * A character constant or a string literal that is not closed on its line
- * or holds an unknown escape sequence, "text or "\q": a single invalid
- * token up to the closing quote or the end of the line
- */
-%token T_INVALID_CHAR_LITERAL (?:u8|[uUL])?'(?:[^'\\\n]|\\[^\n]?)*+'?
-%token T_INVALID_STRING_LITERAL (?:u8|[uUL])?"(?:[^"\\\n]|\\[^\n]?)*+"?
-
-/**
  * A number of the preprocessor (6.4.8) that is no constant, such as "08",
- * "1.2.3" or "0x1p", as a single token. It is only valid in the arguments
- * of an attribute: availability(macos, introduced=10.13.4).
+ * "1.2.3" or "0x1p": a single invalid token
  */
 %token T_PP_NUMBER          \.?[0-9](?:[eEpP][+-]|'[A-Za-z0-9_\x80-\xFF]|[A-Za-z0-9_.\x80-\xFF]|(?&UCN))*+
 
@@ -248,17 +262,17 @@
  * -----------------------------------------------------------------------------
  *
  *  Alternative spellings of the same keyword (bool and _Bool) share a
- *  token, the exact spelling is kept by the value of the token. The
- *  spellings of GCC (__const__, __inline, __typeof__, __thread...) are
- *  alternative spellings as well.
+ *  token, the exact spelling is kept by the value of the token. So do the
+ *  GCC spellings with two leading underscores (__const__, __thread), which
+ *  require the GnuKeywordSpellings feature.
  */
 
 %token T_ALIGNAS            (?:alignas|_Alignas)(?&KEYWORD_END)
-%token T_ALIGNOF            (?:alignof|_Alignof|__alignof__|__alignof)(?&KEYWORD_END)
+%token T_ALIGNOF            (?:alignof|_Alignof|__alignof(?:__)?)(?&KEYWORD_END)
 %token T_AUTO               auto(?&KEYWORD_END)
 %token T_BOOL               (?:bool|_Bool)(?&KEYWORD_END)
 %token T_CHAR               char(?&KEYWORD_END)
-%token T_CONST              (?:const|__const__|__const)(?&KEYWORD_END)
+%token T_CONST              (?:const|__const(?:__)?)(?&KEYWORD_END)
 %token T_CONSTEXPR          constexpr(?&KEYWORD_END)
 %token T_DEFAULT            default(?&KEYWORD_END)
 %token T_DOUBLE             double(?&KEYWORD_END)
@@ -266,14 +280,14 @@
 %token T_EXTERN             extern(?&KEYWORD_END)
 %token T_FALSE              false(?&KEYWORD_END)
 %token T_FLOAT              float(?&KEYWORD_END)
-%token T_INLINE             (?:inline|__inline__|__inline)(?&KEYWORD_END)
+%token T_INLINE             (?:inline|__inline(?:__)?)(?&KEYWORD_END)
 %token T_INT                int(?&KEYWORD_END)
 %token T_LONG               long(?&KEYWORD_END)
 %token T_NULLPTR            nullptr(?&KEYWORD_END)
 %token T_REGISTER           register(?&KEYWORD_END)
-%token T_RESTRICT           (?:restrict|__restrict__|__restrict)(?&KEYWORD_END)
+%token T_RESTRICT           (?:restrict|__restrict(?:__)?)(?&KEYWORD_END)
 %token T_SHORT              short(?&KEYWORD_END)
-%token T_SIGNED             (?:signed|__signed__|__signed)(?&KEYWORD_END)
+%token T_SIGNED             (?:signed|__signed(?:__)?)(?&KEYWORD_END)
 %token T_SIZEOF             sizeof(?&KEYWORD_END)
 %token T_STATIC_ASSERT      (?:static_assert|_Static_assert)(?&KEYWORD_END)
 %token T_STATIC             static(?&KEYWORD_END)
@@ -281,63 +295,108 @@
 %token T_THREAD_LOCAL       (?:thread_local|_Thread_local|__thread)(?&KEYWORD_END)
 %token T_TRUE               true(?&KEYWORD_END)
 %token T_TYPEDEF            typedef(?&KEYWORD_END)
-%token T_TYPEOF_UNQUAL      (?:typeof_unqual|__typeof_unqual__|__typeof_unqual)(?&KEYWORD_END)
-%token T_TYPEOF             (?:typeof|__typeof__|__typeof)(?&KEYWORD_END)
+%token T_TYPEOF_UNQUAL      (?:typeof_unqual|__typeof_unqual(?:__)?)(?&KEYWORD_END)
+%token T_TYPEOF             (?:typeof|__typeof(?:__)?)(?&KEYWORD_END)
 %token T_UNION              union(?&KEYWORD_END)
 %token T_UNSIGNED           unsigned(?&KEYWORD_END)
 %token T_VOID               void(?&KEYWORD_END)
-%token T_VOLATILE           (?:volatile|__volatile__|__volatile)(?&KEYWORD_END)
+%token T_VOLATILE           (?:volatile|__volatile(?:__)?)(?&KEYWORD_END)
+
 /**
  * 6.7.3.5p4: _Atomic followed by a parenthesis is the atomic type
  * specifier, _Atomic(T), any other _Atomic is the qualifier
  */
-%token T_ATOMIC_SPECIFIER   _Atomic(?=[\x20\t\r\n\f\x0B]*+\()
+%token T_ATOMIC_SPECIFIER   _Atomic(?=(?&TOKEN_GAP)\()
 %token T_ATOMIC             _Atomic(?&KEYWORD_END)
 %token T_BITINT             _BitInt(?&KEYWORD_END)
-%token T_COMPLEX            (?:_Complex|__complex__|__complex)(?&KEYWORD_END)
-%token T_DECIMAL128         _Decimal128(?&KEYWORD_END)
-%token T_DECIMAL32          _Decimal32(?&KEYWORD_END)
-%token T_DECIMAL64          _Decimal64(?&KEYWORD_END)
+%token T_COMPLEX            (?:_Complex|__complex(?:__)?)(?&KEYWORD_END)
+
+/**
+ * Annex H.5.1: the interchange and extended floating types of any width N,
+ * _Float16, _Float32x, _Decimal64, _Decimal64x. The keywords _Decimal32,
+ * _Decimal64 and _Decimal128 of 6.4.1 are _DecimalN with N equal to 32, 64
+ * and 128 (H.2.2). The widths an implementation provides are
+ * implementation-defined.
+ */
+%token T_DECIMAL_NX         _Decimal[1-9][0-9]*+x(?&KEYWORD_END)
+%token T_DECIMAL_N          _Decimal[1-9][0-9]*+(?&KEYWORD_END)
+%token T_FLOAT_NX           _Float[1-9][0-9]*+x(?&KEYWORD_END)
+%token T_FLOAT_N            _Float[1-9][0-9]*+(?&KEYWORD_END)
 %token T_GENERIC            _Generic(?&KEYWORD_END)
 %token T_IMAGINARY          _Imaginary(?&KEYWORD_END)
 %token T_NORETURN           _Noreturn(?&KEYWORD_END)
 
 /**
- * Keywords of the compiler extensions: GCC attributes, assembler labels,
- * MSVC attributes
+ * -----------------------------------------------------------------------------
+ *  Keywords of the extensions
+ * -----------------------------------------------------------------------------
+ *
+ *  Reserved identifiers of C23 (7.1.3) the compilers read as keywords, each
+ *  requires the feature of its construct.
  */
-%token T_ATTRIBUTE          (?:__attribute__|__attribute)(?&KEYWORD_END)
-%token T_ASM                (?:__asm__|__asm|asm)(?&KEYWORD_END)
+
+/**
+ * GCC: __attribute__((...)), also spelled __attribute
+ */
+%token T_GNU_ATTRIBUTE      __attribute(?:__)?(?&KEYWORD_END)
+
+/**
+ * GCC: __asm__("name"), also spelled __asm
+ */
+%token T_ASM                __asm(?:__)?(?&KEYWORD_END)
+
+/**
+ * GCC: __extension__ before a declaration, a member or an expression
+ */
+%token T_EXTENSION          __extension__(?&KEYWORD_END)
+
+/**
+ * GCC: the real and the imaginary parts of a complex number, __real__ z and
+ * __imag__ z, also spelled __real and __imag
+ */
+%token T_REAL               __real(?:__)?(?&KEYWORD_END)
+%token T_IMAG               __imag(?:__)?(?&KEYWORD_END)
+
+/**
+ * MSVC: __declspec(dllimport)
+ */
 %token T_DECLSPEC           __declspec(?&KEYWORD_END)
 
 /**
- * The name of a built-in function of a compiler followed by its parenthesis,
- * __builtin_offsetof(...). Without the parenthesis it is an identifier, as
- * the __builtin_va_list type is.
+ * GCC and Clang: the name of a built-in function before its parenthesis,
+ * __builtin_offsetof(
  */
-%token T_BUILTIN_CALL       __builtin_[A-Za-z0-9_\x80-\xFF]++(?=[\x20\t\r\n\f\x0B]*+\()
+%token T_BUILTIN_CALL       __builtin_(?&ID_CONTINUE)++(?=[\x20\t\r\n\f\x0B]*+\()
 
 /**
- * Attributes spelled by a keyword alone, whatever compiler they come from:
- * calling conventions, modifiers of pointers, the nullability of Clang
- * and __forceinline
+ * MSVC: the calling conventions, __cdecl, __stdcall
  */
-%token T_CALLING_CONVENTION (?:(?&CALLING_CONVENTION))(?&KEYWORD_END)
-%token T_POINTER_MODIFIER   (?:(?&POINTER_MODIFIER))(?&KEYWORD_END)
+%token T_CALLING_CONVENTION __(?:cdecl|stdcall|fastcall|vectorcall|thiscall|clrcall|preserve_none)(?&KEYWORD_END)
+
 /**
- * Modifiers of a pointer with arguments: the based pointers of MSVC,
- * __based(base), and the pointer authentication of Clang,
- * __ptrauth(key, address, discriminator)
+ * MSVC: the modifiers of a pointer, __ptr64, __unaligned
  */
-%token T_POINTER_MODIFIER_WITH_ARGUMENTS (?:__based|__ptrauth)(?&KEYWORD_END)
-%token T_NULLABILITY        (?:(?&NULLABILITY))(?&KEYWORD_END)
+%token T_POINTER_MODIFIER   __(?:ptr32|ptr64|sptr|uptr|unaligned|w64)(?&KEYWORD_END)
+
+/**
+ * MSVC: the base of a pointer, __based(p)
+ */
+%token T_BASED              __based(?&KEYWORD_END)
+
+/**
+ * Clang: the nullability of a pointer, _Nonnull, _Nullable
+ */
+%token T_NULLABILITY        (?:_Nonnull|_Nullable_result|_Nullable|_Null_unspecified)(?&KEYWORD_END)
+
+/**
+ * Clang: the signing of a pointer, __ptrauth(1, 0, 42)
+ */
+%token T_PTRAUTH            __ptrauth(?&KEYWORD_END)
+
+/**
+ * MSVC: the __forceinline function specifier
+ */
 %token T_FORCE_INLINE       __forceinline(?&KEYWORD_END)
-
-/**
- * The marker of GCC that silences the warnings about the extensions in what
- * follows. It has no meaning of its own and is skipped wherever it is.
- */
-%skip T_EXTENSION           __extension__(?&KEYWORD_END)
 
 /**
  * Keywords of statements: reserved, not identifiers

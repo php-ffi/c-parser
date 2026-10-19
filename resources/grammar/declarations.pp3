@@ -5,23 +5,82 @@
  */
 
 /**
- * A static assertion, a declaration, or a lone ";", which GCC and Clang
- * accept at file scope and which gives nothing
+ * A static assertion, an attribute declaration, an assembler statement, a
+ * declaration or an extra semicolon, after __extension__ or not
  */
 ExternalDeclaration
-  : StaticAssertDeclaration()
-  | Declaration()
-  | ::T_SEMICOLON::
+  : ExtensionKeyword()* (
+        StaticAssertDeclaration() | AttributeDeclaration() | AsmDeclaration() | Declaration() | ExtraSemicolon()
+    )
+  ;
+
+/**
+ * GCC: a basic assembler statement at the file scope, __asm__("nop"), also
+ * spelled __asm. Requires the AsmDeclarations feature.
+ */
+AsmDeclaration -> {
+    /** @var array{TokenInterface, Literal\StringLiteral|Expression\ConcatenatedStringExpression} $children */
+    $this->assertFeature(Feature::AsmDeclarations, $source, $children[0]->offset, $children[0]->size);
+
+    return new Declaration\AsmDeclaration($children[1], $offset);
+}
+  : <T_ASM>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the assembler statement, \"(\" expected")
+    ConcatenatedStringExpression() @error("Syntax error, unexpected {token} in the assembler statement, a string literal expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the assembler statement, \")\" expected")
+    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} after the assembler statement, \";\" expected")
+  ;
+
+/**
+ * GCC: a semicolon alone, at the file scope or among the members. Gives
+ * nothing. Requires the ExtraSemicolons feature.
+ */
+ExtraSemicolon -> {
+    /** @var TokenInterface $children */
+    $this->assertFeature(Feature::ExtraSemicolons, $source, $children->offset, $children->size);
+
+    return [];
+}
+  : <T_SEMICOLON>
+  ;
+
+/**
+ * GCC: __extension__, which turns off the warnings of the extensions in the
+ * declaration or the expression after it and has no meaning of its own.
+ * Gives nothing. Requires the ExtensionKeyword feature.
+ */
+ExtensionKeyword -> {
+    /** @var TokenInterface $children */
+    $this->assertFeature(Feature::ExtensionKeyword, $source, $children->offset, $children->size);
+
+    return [];
+}
+  : <T_EXTENSION>
+  ;
+
+/**
+ * 6.7.1 Declarations, attributes alone: "[[deprecated]];". The first
+ * attribute marks the start of the list.
+ */
+AttributeDeclaration -> {
+    /** @var list<Attribute\AttributeInterface> $children */
+    return new Declaration\AttributeDeclaration(
+        new Attribute\AttributeList($children, $children[0]->offset ?? $offset),
+        $offset,
+    );
+}
+  : AttributeSpecifier()+ ::T_SEMICOLON::
   ;
 
 /**
  * 6.7.1 Declarations. A declaration gives a node for each of its
  * declarators. Without declarators a bare structure, union or enumeration
- * is the declaration of its tag (6.7.3.4p11), attributes alone are an
- * attribute declaration, "[[deprecated]];", anything else is a declaration
- * of the specifiers alone: "int;", "const struct S;". A body after the
- * first declarator without an initializer makes the declaration a function
- * definition (6.9.1), whose statements are kept as text.
+ * is the declaration of its tag (6.7.3.4p11), anything else is a
+ * declaration of the specifiers alone: "int;", "const struct S;". The
+ * attributes before the specifiers require a declarator: "[[a]] int;" is
+ * not a declaration. A body after the first declarator without an
+ * initializer makes the declaration a function definition (6.9.1), whose
+ * statements are kept as text.
  */
 Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
     /**
@@ -45,28 +104,6 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
         // The specifiers alone, without declarators
         if ($children[0] instanceof Type\RecordType || $children[0] instanceof Type\EnumType) {
             return new SpecifiedDeclaration\TagDeclaration($children[0], $children[1], $offset);
-        }
-
-        if ($children[0] === null) {
-            // Empty attribute specifiers alone: "[[]];", "__attribute__(());"
-            if ($children[1] === null) {
-                return new Declaration\AttributeDeclaration(new Attribute\AttributeList([], $offset), $offset);
-            }
-
-            $attributes = [];
-
-            foreach ($children[1] as $specifier) {
-                if ($specifier instanceof Attribute\AttributeInterface) {
-                    $attributes[] = $specifier;
-                }
-            }
-
-            if (\count($attributes) === \count($children[1])) {
-                return new Declaration\AttributeDeclaration(
-                    new Attribute\AttributeList($attributes, $children[1]->offset),
-                    $offset,
-                );
-            }
         }
 
         return new SpecifiedDeclaration\TypeDeclaration($children[0], $children[1], $offset);
@@ -98,13 +135,19 @@ Declaration @error("Syntax error, unexpected {token} in the declaration") -> {
 
     return $declarations;
 }
-  : DeclarationSpecifiers() (
-        DeclarationDeclarator() (
-            FunctionBody()
-          | (::T_ASSIGN:: Initializer())? (::T_COMMA:: InitDeclarator())* ::T_SEMICOLON::
-        ) @error("Syntax error, unexpected {token} in the declaration, \";\" expected")
-      | ::T_SEMICOLON::
-    )
+  : &AttributeSpecifierStart() DeclarationSpecifiers() DeclarationDeclarators()
+  | !AttributeSpecifierStart() DeclarationSpecifiers() (DeclarationDeclarators() | ::T_SEMICOLON::)
+  ;
+
+/**
+ * The declarators of a declaration with their initializers, or the only
+ * declarator of a function definition with its body
+ */
+DeclarationDeclarators
+  : DeclarationDeclarator() (
+        FunctionBody()
+      | (::T_ASSIGN:: Initializer())? (::T_COMMA:: InitDeclarator())* ::T_SEMICOLON::
+    ) @error("Syntax error, unexpected {token} in the declaration, \";\" expected")
   ;
 
 /**
@@ -146,34 +189,38 @@ InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
  * initializer to the declared one. A body gives a function definition,
  * "typedef" among the specifiers a typedef name, a function type a
  * function, anything else an object, and each keeps the initializer, even
- * where C allows none. The attributes of GCC before the declarator (other
- * than the first one of the declaration, whose attributes go to the
- * specifiers) and after it, around the assembler label, belong to the
- * declared one.
+ * where C allows none. The attributes after the name, the GCC attributes
+ * before the declarator and after it, the MSVC ones after it and the
+ * assembler label belong to the declared one, the calling conventions after
+ * the declarator apply to its type as the ones before the name do.
  */
 DeclarationDeclarator -> {
     /**
      * @var list<
-     *     Attribute\AttributeInterface
-     *     |Node\Identifier
+     *     Node\Identifier
      *     |\Closure(Type\TypeInterface|null): (Type\TypeInterface|null)
+     *     |Attribute\AttributeInterface
      *     |SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel
      * > $children
      */
     $name = null;
     $declarator = null;
+    $conventions = [];
     $asmLabel = null;
     $attributes = [];
 
     for ($i = 0, $count = \count($children); $i < $count; ++$i) {
         if ($children[$i] instanceof Node\Identifier) {
             $name = $children[$i];
-        } elseif ($children[$i] instanceof \Closure) {
+        } elseif ($children[$i] instanceof \Closure && $declarator === null) {
             $declarator = $children[$i];
-        } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
-            $attributes[] = $children[$i];
-        } else {
+        } elseif ($children[$i] instanceof \Closure) {
+            // The calling conventions after the declarator
+            $conventions[] = $children[$i];
+        } elseif ($children[$i] instanceof SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel) {
             $asmLabel = $children[$i];
+        } else {
+            $attributes[] = $children[$i];
         }
     }
 
@@ -188,10 +235,14 @@ DeclarationDeclarator -> {
         int $start,
         ?SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition\FunctionBody $body = null,
         ?Initializer\InitializerInterface $initializer = null,
-    ) use ($name, $declarator, $asmLabel, $attributeList): SpecifiedDeclaration\DeclaratorDeclaration {
+    ) use ($name, $declarator, $conventions, $attributeList, $asmLabel): SpecifiedDeclaration\DeclaratorDeclaration {
         \assert($start >= 0);
 
         $type = $declarator($type);
+
+        foreach ($conventions as $convention) {
+            $type = $convention($type);
+        }
 
         if ($body !== null) {
             return new SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition(
@@ -243,7 +294,38 @@ DeclarationDeclarator -> {
         );
     };
 }
-  : AttributeSpecifier()* Declarator() AttributeSpecifier()* (AsmLabel() AttributeSpecifier()*)?
+  : GnuAttributeSpecifier()* Declarator() AsmLabel()?
+    (GnuAttributeSpecifier() | DeclSpecAttributeSpecifier() | TrailingCallingConventions())*
+  ;
+
+/**
+ * PHP FFI: the calling conventions after a declarator, "int f(void)
+ * __cdecl;". They apply to the declared type as the ones before the name
+ * do. Requires the TrailingCallingConventions feature.
+ */
+TrailingCallingConventions -> {
+    /** @var array{\Closure(Type\TypeInterface|null): Type\TypeInterface} $children */
+    $this->assertFeature(Feature::TrailingCallingConventions, $source, $offset, $length);
+
+    return $children[0];
+}
+  : &<T_CALLING_CONVENTION> DeclaratorAttributes()
+  ;
+
+/**
+ * GCC: the name of the symbol in the object file, __asm__("_f"), also
+ * spelled __asm. Requires the AsmLabels feature.
+ */
+AsmLabel -> {
+    /** @var array{TokenInterface, Literal\StringLiteral|Expression\ConcatenatedStringExpression} $children */
+    $this->assertFeature(Feature::AsmLabels, $source, $children[0]->offset, $children[0]->size);
+
+    return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
+}
+  : <T_ASM>
+    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \"(\" expected")
+    ConcatenatedStringExpression() @error("Syntax error, unexpected {token} in the assembler label, a string literal expected")
+    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \")\" expected")
   ;
 
 /**
@@ -272,31 +354,17 @@ CompoundStatement -> {
   ;
 
 /**
- * GCC: the name of the symbol in the object file, __asm__("_f"), also
- * spelled __asm
- */
-AsmLabel -> {
-    /** @var array{TokenInterface, Literal\StringLiteral|Expression\ConcatenatedStringExpression} $children */
-    return new SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel($children[1], $offset);
-}
-  : <T_ASM>
-    ::T_LPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \"(\" expected")
-    ConcatenatedStringExpression() @error("Syntax error, unexpected {token} in the assembler label, a string literal expected")
-    ::T_RPAREN:: @error("Syntax error, unexpected {token} in the assembler label, \")\" expected")
-  ;
-
-/**
  * -----------------------------------------------------------------------------
  *  6.7.11 Initialization
  * -----------------------------------------------------------------------------
  */
 
 /**
- * A constant expression (6.7.11p4) or a list in braces
+ * An assignment expression or a list in braces
  */
 Initializer @error("Syntax error, unexpected {token} in the initializer")
   : InitializerList()
-  | ConditionalExpression()
+  | AssignmentExpression()
   ;
 
 /**
@@ -380,13 +448,16 @@ IndexDesignator -> {
   ;
 
 /**
- * GCC: a range of elements, [0 ... 3]
+ * GCC: a range of elements, [0 ... 3], both bounds included. Requires the
+ * RangeDesignators feature.
  */
 RangeDesignator -> {
-    /** @var array{TokenInterface, Expression\ExpressionInterface, Expression\ExpressionInterface} $children */
-    return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[2], $offset);
+    /** @var array{TokenInterface, Expression\ExpressionInterface, TokenInterface, Expression\ExpressionInterface} $children */
+    $this->assertFeature(Feature::RangeDesignators, $source, $children[2]->offset, $children[2]->size);
+
+    return new DesignatedInitializer\Designator\RangeDesignator($children[1], $children[3], $offset);
 }
-  : <T_LBRACKET> ConditionalExpression() ::T_ELLIPSIS:: ConditionalExpression()
+  : <T_LBRACKET> ConditionalExpression() <T_ELLIPSIS> ConditionalExpression()
     ::T_RBRACKET:: @error("Syntax error, unexpected {token} in the designator, \"]\" expected")
   ;
 

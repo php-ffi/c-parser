@@ -28,6 +28,8 @@ final class BinaryOperatorRuleTest extends RuleTestCase
         yield 'ampersand' => ['int r = (x)&y;', '(variable int r = (& (paren x) y))'];
         yield 'unary operator after operator' => ['int r = (x)- -y;', '(variable int r = (- (paren x) (-u y)))'];
         yield 'operators in a row' => ['int r = (x)-(y)-z;', '(variable int r = (- (paren x) (- (paren y) z)))'];
+        yield 'postfix increment before plus' => ['int r = (x)++ + y;', '(variable int r = (+ (++p (paren x)) y))'];
+        yield 'postfix decrement before minus' => ['int r = (x)-- - y;', '(variable int r = (- (--p (paren x)) y))'];
     }
 
     #[DataProvider('rewrittenDeclarationsDataProvider')]
@@ -44,6 +46,7 @@ final class BinaryOperatorRuleTest extends RuleTestCase
         yield 'typedef name' => ['int r = (T)-x;'];
         yield 'unknown name' => ['int r = (W)-x;'];
         yield 'other unary operator' => ['int r = (x)~y;'];
+        yield 'prefix increment of a typedef name' => ['int r = (T)++x;'];
     }
 
     #[DataProvider('keptDeclarationsDataProvider')]

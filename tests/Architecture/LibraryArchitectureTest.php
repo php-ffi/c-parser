@@ -50,7 +50,7 @@ final class LibraryArchitectureTest
             ->because('the generated parser is an implementation detail of the public parser');
     }
 
-    public function testPresetsDependOnThePresetsOnly(): Rule
+    public function testPresetsDependOnTheNodesTheTransformersAndTheValidatorsOnly(): Rule
     {
         return PHPat::rule()
             ->classes(
@@ -62,6 +62,11 @@ final class LibraryArchitectureTest
             ->classes(
                 Selector::classname(Preset::class),
                 Selector::inNamespace('FFI\Parser\Preset'),
+                Selector::inNamespace('FFI\Parser\Node'),
+                Selector::classname(Transformer::class),
+                Selector::inNamespace('FFI\Parser\Transformer'),
+                Selector::classname(Validator::class),
+                Selector::inNamespace('FFI\Parser\Validator'),
             )
             ->because('a preset lists what a compiler knows before the header and can be used without the parser');
     }

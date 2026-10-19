@@ -40,8 +40,6 @@ final class DeclaratorsTest extends TestCase
         yield 'array of arrays' => ['int a[2][3];', '(array (array int 3) 2) a'];
         yield 'array of pointers' => ['int *a[3];', '(array (ptr int) 3) a'];
         yield 'pointer to an array' => ['int (*a)[3];', '(ptr (array int 3)) a'];
-        yield 'block pointer' => ['void (^cb)(int);', '(block (fn void (int))) cb'];
-        yield 'qualified block pointer' => ['int (^const b)(void);', '[const (block (fn int (void)))] b'];
         yield 'flexible array member' => ['int a[];', '(array int) a'];
         yield 'array of unspecified size' => ['int a[*];', '(array int *) a'];
         yield 'size that starts with an asterisk' => ['int a[*p];', '(array int (*u p)) a'];
@@ -106,7 +104,7 @@ final class DeclaratorsTest extends TestCase
         yield 'function returning a function' => ['int f()(int);', '(fn (fn int (int)) ()) f'];
         yield 'array of functions' => ['int a[3](int);', '(array (fn int (int)) 3) a'];
         yield 'void among other parameters' => ['int f(void, int);', '(fn int (void, int)) f'];
-        yield 'pointer without a type' => ['static *p;', 'static (ptr _) p'];
+        yield 'pointer without a type' => ['const *p;', '(ptr [const _]) p'];
         yield 'parameter without a type' => ['int f(register);', '(fn int (register _)) f'];
         yield 'any specifier of a parameter' => [
             'int f(static int a, inline int b, typedef int c);',
@@ -127,7 +125,7 @@ final class DeclaratorsTest extends TestCase
 
     public function testDeclaratorsOfOneMemberDeclarationShareTheSpecifiers(): void
     {
-        $declaration = self::parseSingle('struct S { static int a, *b; };', TagDeclaration::class);
+        $declaration = self::parseSingle('struct S { alignas(8) int a, *b; };', TagDeclaration::class);
 
         self::assertInstanceOf(RecordType::class, $declaration->type);
         self::assertNotNull($declaration->type->members);
@@ -161,7 +159,6 @@ final class DeclaratorsTest extends TestCase
         yield 'function with void' => ['int (void)', '(fn int (void))'];
         yield 'variadic function without parameters' => ['int (...)', '(fn int (...))'];
         yield 'pointer to a function' => ['void (*)(int, ...)', '(ptr (fn void (int, ...)))'];
-        yield 'block pointer' => ['void (^)(int)', '(block (fn void (int)))'];
         yield 'parenthesized pointer' => ['int ((*))', '(ptr int)'];
         yield 'parenthesized function' => ['int ((int))', '(fn int (int))'];
         yield 'typedef name and a pointer' => ['T *', '(ptr T)'];
@@ -227,7 +224,6 @@ final class DeclaratorsTest extends TestCase
         yield 'sizeof of an array of a typedef name' => ['sizeof(T[3])', '(sizeof (paren ([] T 3)))'];
         yield 'sizeof of a product' => ['sizeof(a * (b))', '(sizeof (paren (* a (paren b))))'];
         yield 'sizeof of a product of a dereference' => ['sizeof(a ** (b))', '(sizeof (paren (* a (*u (paren b)))))'];
-        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof (paren ([] T 3)))'];
     }
 
     #[DataProvider('typeNamesReadAsExpressionsDataProvider')]
@@ -258,6 +254,7 @@ final class DeclaratorsTest extends TestCase
         ];
         yield 'sizeof of a function with a named parameter' => ['sizeof(T *(U x))', '(sizeof (fn (ptr T) (U x)))'];
         yield 'atomic array of a typedef name' => ['sizeof(_Atomic(T[3]))', '(sizeof _Atomic((array T 3)))'];
+        yield 'alignof of an array of a typedef name' => ['alignof(T[3])', '(alignof (array T 3))'];
     }
 
     #[DataProvider('typeNamesReadAsTypesDataProvider')]
@@ -324,6 +321,9 @@ final class DeclaratorsTest extends TestCase
      */
     public static function invalidDeclaratorsDataProvider(): iterable
     {
+        yield 'storage class of a member' => ['struct S { static int a; };', 11, 'static'];
+        yield 'storage class of a member after the type' => ['struct S { int static a; };', 15, 'static'];
+        yield 'function specifier of a member' => ['struct S { inline int f(void); };', 11, 'inline'];
         yield 'ellipsis before a parameter' => ['struct S { int f(..., int); };', 20, ','];
         yield 'trailing comma in parameters' => ['struct S { int f(int,); };', 21, ')'];
         yield 'two ellipses' => ['struct S { int f(int, ..., ...); };', 25, ','];
@@ -337,6 +337,12 @@ final class DeclaratorsTest extends TestCase
             'restrict',
         ];
         yield 'atomic type specifier after a pointer' => ['struct S { int *_Atomic(p); };', 16, '_Atomic'];
+        yield 'atomic type specifier after a pointer and a comment' => [
+            'struct S { int *_Atomic /* c */ (p); };',
+            16,
+            '_Atomic',
+        ];
+        yield 'qualified unspecified size of an abstract parameter' => ['void f(int [const *]);', 11, '['];
         yield 'abstract pointer to a function member' => ['struct S { int (*)(void); };', 17, ')'];
         yield 'unclosed parameters' => ['struct S { int f(int; };', 20, ';'];
         yield 'unclosed parenthesized declarator' => ['struct S { int (*p; };', 18, ';'];

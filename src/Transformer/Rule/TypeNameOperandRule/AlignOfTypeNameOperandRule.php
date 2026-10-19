@@ -13,8 +13,9 @@ use FFI\Parser\Transformer\TransformationContext;
 
 /**
  * Turns `alignof` of a parenthesized expression into `alignof` of a type
- * name, when the expression starts with a typedef name: `alignof(T[3])` is
- * the alignment of an array.
+ * name, when the expression starts with a name other than an object, a
+ * function, an enumeration constant or a parameter: `alignof(T[3])` is the
+ * alignment of an array.
  *
  * @template-extends TypeNameOperandRule<AlignOfExpression>
  */
@@ -38,5 +39,17 @@ final class AlignOfTypeNameOperandRule extends TypeNameOperandRule
         }
 
         return new AlignOfTypeExpression($type, $node->offset);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Any name but one declared as an object, a function, an enumeration
+     * constant or a parameter: `T` in `alignof(T[3])` with `T` declared in
+     * another header.
+     */
+    protected function isTypeName(string $name, TransformationContext $context): bool
+    {
+        return !$context->isNonTypeName($name);
     }
 }

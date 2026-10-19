@@ -4,75 +4,162 @@ declare(strict_types=1);
 
 namespace FFI\Parser\Tests;
 
-use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\TypeDefDeclaration;
+use FFI\Parser\Exception\ParserException;
+use FFI\Parser\Parser;
 use FFI\Parser\Preset;
-use FFI\Parser\Preset\ClangPreset;
-use FFI\Parser\Preset\ClangPreset\ClangPresetArch;
-use FFI\Parser\Preset\CompoundPreset;
-use FFI\Parser\Preset\GccPreset;
-use FFI\Parser\Preset\MsvcPreset;
-use FFI\Parser\Preset\PhpPreset;
-use FFI\Parser\Preset\PresetInterface;
+use FFI\Parser\Preset\ClangTarget;
+use FFI\Parser\Preset\Feature;
+use FFI\Parser\Validator;
+use FFI\Parser\Validator\Rule\Extension\ComplexIntegerTypeRule;
+use FFI\Parser\Validator\Rule\TypeSpecifierRule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(Preset::class)]
-#[CoversClass(ClangPreset::class)]
-#[CoversClass(ClangPresetArch::class)]
-#[CoversClass(CompoundPreset::class)]
-#[CoversClass(GccPreset::class)]
-#[CoversClass(MsvcPreset::class)]
-#[CoversClass(PhpPreset::class)]
 final class PresetTest extends TestCase
 {
-    public function testDefaultPresetListsTheNamesOfEveryCompiler(): void
+    public function testC23PresetRemovesNoRules(): void
     {
-        $expected = new CompoundPreset([
-            new ClangPreset(),
-            new MsvcPreset(),
-            new GccPreset(),
-            new PhpPreset(),
-        ]);
+        $preset = Preset::c23();
 
-        self::assertSame($expected->getTypedefNames(), Preset::createDefault()->getTypedefNames());
+        foreach (Validator::getDefaultRules() as $rule) {
+            self::assertFalse($preset->isRuleRemoved($rule));
+        }
+    }
+
+    public function testDefaultPresetAcceptsEveryFeature(): void
+    {
+        self::assertSame(Feature::cases(), Preset::default()->features);
+    }
+
+    public function testDefaultPresetKnowsTheTypedefNamesOfEveryCompilerOnce(): void
+    {
+        $names = Preset::default()->typedefNames;
+        $compilers = [
+            ...Preset::gcc()->typedefNames,
+            ...Preset::clang()->typedefNames,
+            ...Preset::msvc()->typedefNames,
+            ...Preset::php()->typedefNames,
+        ];
+
+        self::assertSame(\array_values(\array_unique($names)), $names);
+        self::assertSame([], \array_diff($compilers, $names));
+    }
+
+    public function testFeatureRemovesItsRulesOnly(): void
+    {
+        $preset = new Preset([Feature::ComplexIntegers]);
+
+        self::assertSame(
+            [true, false],
+            [$preset->isRuleRemoved(new ComplexIntegerTypeRule()), $preset->isRuleRemoved(new TypeSpecifierRule())],
+        );
     }
 
     /**
-     * @return iterable<non-empty-string, array{PresetInterface}>
+     * @return iterable<non-empty-string, array{Preset}>
      */
-    public static function presetDataProvider(): iterable
+    public static function presetsDataProvider(): iterable
     {
-        yield 'Clang' => [new ClangPreset()];
-        yield 'MSVC' => [new MsvcPreset()];
-        yield 'GCC' => [new GccPreset()];
-        yield 'PHP' => [new PhpPreset()];
+        yield 'GCC' => [Preset::gcc()];
+        yield 'Clang' => [Preset::clang()];
+        yield 'Clang with the Microsoft extensions' => [Preset::clang(isMsExtensionsEnabled: true)];
+        yield 'MSVC' => [Preset::msvc()];
+        yield 'PHP FFI' => [Preset::php()];
     }
 
-    #[DataProvider('presetDataProvider')]
-    public function testEveryTypedefNameIsReadAsAnIdentifier(PresetInterface $preset): void
+    #[DataProvider('presetsDataProvider')]
+    public function testPresetListsEveryFeatureOnce(Preset $preset): void
     {
-        $code = '';
+        $names = \array_map(static fn(Feature $feature): string => $feature->name, $preset->features);
 
-        foreach ($preset->getTypedefNames() as $name) {
-            $code .= "typedef int {$name};\n";
-        }
-
-        $names = [];
-
-        foreach (self::parse($code) as $declaration) {
-            self::assertInstanceOf(TypeDefDeclaration::class, $declaration);
-
-            $names[] = $declaration->name->value;
-        }
-
-        self::assertSame($preset->getTypedefNames(), $names);
+        self::assertSame(\array_values(\array_unique($names)), $names);
     }
 
-    #[DataProvider('presetDataProvider')]
-    public function testEveryTypedefNameIsListedOnce(PresetInterface $preset): void
+    #[DataProvider('presetsDataProvider')]
+    public function testPresetWithTrailingCallingConventionsHasTheConventions(Preset $preset): void
     {
-        $names = $preset->getTypedefNames();
+        self::assertTrue(
+            !\in_array(Feature::TrailingCallingConventions, $preset->features, true)
+            || \in_array(Feature::CallingConventions, $preset->features, true),
+        );
+    }
 
-        self::assertSame($names, \array_values(\array_unique($names)));
+    /**
+     * @return iterable<non-empty-string, array{Preset, non-empty-string}>
+     */
+    public static function acceptedCodeDataProvider(): iterable
+    {
+        yield 'GCC' => [
+            Preset::gcc(),
+            '__extension__ typedef unsigned __int128 u128; int f(void) __asm__("_f") __attribute__((pure));',
+        ];
+        yield 'GCC with the second wave' => [
+            Preset::gcc(),
+            '__asm__("nop"); int a[] = {[0 ... 1] = 2}; long double x = 1.0w; int y = a ?: 1;',
+        ];
+        yield 'Clang' => [Preset::clang(), 'void __stdcall f(__builtin_va_list ap, __fp16 h);'];
+        yield 'Clang with blocks and nullability' => [
+            Preset::clang(),
+            'void g(void (^ _Nonnull b)(int)); _Complex double z = 2.0i;',
+        ];
+        yield 'Clang with the Microsoft extensions' => [
+            Preset::clang(isMsExtensionsEnabled: true),
+            '__declspec(dllimport) unsigned __int64 * __ptr64 f(void); enum E {};',
+        ];
+        yield 'MSVC' => [
+            Preset::msvc(),
+            '__declspec(dllimport) unsigned __int64 __stdcall f(int * __ptr64 p); __int64 x = 1i64;'
+                . ' char __based(p) *q;',
+        ];
+        yield 'PHP FFI' => [
+            Preset::php(),
+            'struct S { int64_t a }; size_t f(void) __cdecl; enum { false, true };',
+        ];
+    }
+
+    /**
+     * @param non-empty-string $code
+     */
+    #[DataProvider('acceptedCodeDataProvider')]
+    public function testPresetAcceptsTheExtensionsOfItsCompiler(Preset $preset, string $code): void
+    {
+        self::assertNotSame([], (new Parser(preset: $preset))->parse($code));
+    }
+
+    /**
+     * @return iterable<non-empty-string, array{Preset, non-empty-string}>
+     */
+    public static function rejectedCodeDataProvider(): iterable
+    {
+        yield 'GCC with a declspec' => [Preset::gcc(), '__declspec(dllimport) int x;'];
+        yield 'GCC with a calling convention' => [Preset::gcc(), 'void __stdcall f(void);'];
+        yield 'Clang with a declspec' => [Preset::clang(), '__declspec(dllimport) int x;'];
+        yield 'Clang with a suffix of MSVC' => [Preset::clang(), 'int x = 1i64;'];
+        yield 'Clang with the suffix of __float80' => [Preset::clang(), 'long double x = 1.0w;'];
+        yield 'GCC with a block pointer' => [Preset::gcc(), 'void (^b)(int);'];
+        yield 'MSVC with an empty enumeration' => [Preset::msvc(), 'enum E {};'];
+        yield 'MSVC with a GNU attribute' => [Preset::msvc(), 'int x __attribute__((aligned(8)));'];
+        yield 'PHP FFI with a statement expression' => [Preset::php(), 'int x = ({ 1; });'];
+    }
+
+    /**
+     * @param non-empty-string $code
+     */
+    #[DataProvider('rejectedCodeDataProvider')]
+    public function testPresetRejectsTheExtensionsOfOtherCompilers(Preset $preset, string $code): void
+    {
+        $this->expectException(ParserException::class);
+
+        (new Parser(preset: $preset))->parse($code);
+    }
+
+    public function testClangPresetKnowsTheTypedefNamesOfItsTargetOnly(): void
+    {
+        $names = Preset::clang(ClangTarget::WebAssembly)->typedefNames;
+
+        self::assertContains('__builtin_va_list', $names);
+        self::assertContains('__externref_t', $names);
+        self::assertNotContains('__vector_quad', $names);
     }
 }

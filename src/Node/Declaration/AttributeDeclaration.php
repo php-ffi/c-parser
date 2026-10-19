@@ -7,9 +7,8 @@ namespace FFI\Parser\Node\Declaration;
 use FFI\Parser\Node\Attribute\AttributeList;
 
 /**
- * Declaration of attributes alone, `[[deprecated]];` or
- * `__attribute__((x));`, the attributes of any syntax and of any number of
- * specifiers, none included (`[[]];`).
+ * Declaration of attributes alone, `[[deprecated]];`, the attributes of
+ * any number of specifiers, none included (`[[]];`).
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */

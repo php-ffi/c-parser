@@ -46,7 +46,7 @@ final class TransformerTest extends TestCase
     {
         $transformer = self::createRecordingTransformer();
 
-        (new Transformer([$transformer]))->transform(self::parse('struct S {} x, *y;'));
+        (new Transformer([$transformer]))->transform(self::parse('struct S { int a; } x, *y;'));
 
         self::assertSame(['  StructType@0'], \array_values(\array_filter(
             $transformer->visits,
@@ -62,7 +62,7 @@ final class TransformerTest extends TestCase
                     ? new NamedType(new Identifier('S', 7), 0)
                     : null,
             ),
-        ]))->transform(self::parse('struct S {} x, *y;'));
+        ]))->transform(self::parse('struct S { int a; } x, *y;'));
 
         self::assertSame(
             ['(variable S x)', '(variable (ptr S) y)'],
@@ -183,6 +183,17 @@ final class TransformerTest extends TestCase
         ));
 
         self::assertSame(['T non-type', 'T typedef'], $transformer->names);
+    }
+
+    public function testGivenTypedefNamesAreDeclaredBeforeTheDeclarations(): void
+    {
+        $transformer = self::createNameRecordingTransformer();
+
+        (new Transformer([$transformer], ['T']))->transform((new Parser(transformers: []))->parse(
+            'int a = T; void f(int T, int b[sizeof(T)]); int T; int c = T;',
+        ));
+
+        self::assertSame(['T typedef', 'T non-type', 'T non-type'], $transformer->names);
     }
 
     public function testTypedefNameIsNotDeclaredInsideItsOwnDeclaration(): void

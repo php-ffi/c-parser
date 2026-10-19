@@ -10,6 +10,7 @@ use FFI\Parser\Node\Attribute\DeclSpecAttribute;
 use FFI\Parser\Node\Attribute\GnuAttribute;
 use FFI\Parser\Node\Attribute\KeywordAttribute;
 use FFI\Parser\Node\Attribute\StandardAttribute;
+use FFI\Parser\Node\Declaration\AsmDeclaration;
 use FFI\Parser\Node\Declaration\AttributeDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration;
 use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\AsmLabel;
@@ -17,8 +18,10 @@ use FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration\Funct
 use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\Expression\AlignOfExpression;
 use FFI\Parser\Node\Expression\AlignOfTypeExpression;
-use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\BuiltinCallExpression;
+use FFI\Parser\Node\Expression\StatementExpression;
+use FFI\Parser\Node\Expression\AssignmentExpression;
+use FFI\Parser\Node\Expression\BinaryExpression;
 use FFI\Parser\Node\Expression\CallExpression;
 use FFI\Parser\Node\Expression\CastExpression;
 use FFI\Parser\Node\Expression\CompoundLiteralExpression;
@@ -30,9 +33,9 @@ use FFI\Parser\Node\Expression\IdentifierExpression;
 use FFI\Parser\Node\Expression\MemberExpression;
 use FFI\Parser\Node\Expression\MemberExpression\PointerMemberExpression;
 use FFI\Parser\Node\Expression\ParenExpression;
+use FFI\Parser\Node\Expression\PostfixExpression;
 use FFI\Parser\Node\Expression\SizeOfExpression;
 use FFI\Parser\Node\Expression\SizeOfTypeExpression;
-use FFI\Parser\Node\Expression\StatementExpression;
 use FFI\Parser\Node\Expression\SubscriptExpression;
 use FFI\Parser\Node\Expression\UnaryExpression;
 use FFI\Parser\Node\Identifier;
@@ -97,15 +100,36 @@ final class NodePrinter
     ];
 
     /**
+     * @var array<class-string<AssignmentExpression>, non-empty-string>
+     */
+    public const ASSIGNMENT_OPERATORS = [
+        AssignmentExpression\AssignExpression::class => '=',
+        AssignmentExpression\MulAssignExpression::class => '*=',
+        AssignmentExpression\DivAssignExpression::class => '/=',
+        AssignmentExpression\RemAssignExpression::class => '%=',
+        AssignmentExpression\AddAssignExpression::class => '+=',
+        AssignmentExpression\SubAssignExpression::class => '-=',
+        AssignmentExpression\ShiftLeftAssignExpression::class => '<<=',
+        AssignmentExpression\ShiftRightAssignExpression::class => '>>=',
+        AssignmentExpression\BitwiseAndAssignExpression::class => '&=',
+        AssignmentExpression\BitwiseXorAssignExpression::class => '^=',
+        AssignmentExpression\BitwiseOrAssignExpression::class => '|=',
+    ];
+
+    /**
      * @var array<class-string<UnaryExpression>, non-empty-string>
      */
     public const UNARY_OPERATORS = [
+        UnaryExpression\PreIncrementExpression::class => '++',
+        UnaryExpression\PreDecrementExpression::class => '--',
         UnaryExpression\PlusExpression::class => '+',
         UnaryExpression\MinusExpression::class => '-',
         UnaryExpression\LogicalNotExpression::class => '!',
         UnaryExpression\BitwiseNotExpression::class => '~',
         UnaryExpression\DereferenceExpression::class => '*',
         UnaryExpression\AddressOfExpression::class => '&',
+        UnaryExpression\RealPartExpression::class => '__real__',
+        UnaryExpression\ImagPartExpression::class => '__imag__',
     ];
 
     /**
@@ -118,9 +142,6 @@ final class NodePrinter
         BuiltinType\FloatType::class => 'float',
         BuiltinType\DoubleType::class => 'double',
         BuiltinType\BoolType::class => 'bool',
-        BuiltinType\Decimal32Type::class => '_Decimal32',
-        BuiltinType\Decimal64Type::class => '_Decimal64',
-        BuiltinType\Decimal128Type::class => '_Decimal128',
         StorageClassSpecifier\TypeDefSpecifier::class => 'typedef',
         StorageClassSpecifier\ExternSpecifier::class => 'extern',
         StorageClassSpecifier\StaticSpecifier::class => 'static',
@@ -130,6 +151,7 @@ final class NodePrinter
         StorageClassSpecifier\ConstExprSpecifier::class => 'constexpr',
         FunctionSpecifier\InlineSpecifier::class => 'inline',
         FunctionSpecifier\NoReturnSpecifier::class => '_Noreturn',
+        FunctionSpecifier\ForceInlineSpecifier::class => '__forceinline',
     ];
 
     public static function print(?Node $node): string
@@ -167,9 +189,20 @@ final class NodePrinter
                 $this->format($node->left),
                 $this->format($node->right),
             ),
+            $node instanceof AssignmentExpression => \sprintf(
+                '(%s %s %s)',
+                self::ASSIGNMENT_OPERATORS[$node::class],
+                $this->format($node->left),
+                $this->format($node->right),
+            ),
             $node instanceof UnaryExpression => \sprintf(
                 '(%su %s)',
                 self::UNARY_OPERATORS[$node::class],
+                $this->format($node->operand),
+            ),
+            $node instanceof PostfixExpression => \sprintf(
+                '(%sp %s)',
+                $node instanceof PostfixExpression\PostIncrementExpression ? '++' : '--',
                 $this->format($node->operand),
             ),
             $node instanceof ConditionalExpression => \sprintf(
@@ -186,13 +219,15 @@ final class NodePrinter
             ),
             $node instanceof SizeOfExpression => '(sizeof ' . $this->format($node->operand) . ')',
             $node instanceof CompoundLiteralExpression => \sprintf(
-                '(compound %s %s)',
+                '(compound %s%s %s)',
+                $node->specifiers === null ? '' : $this->format($node->specifiers) . ' ',
                 $this->format($node->type),
                 $this->format($node->initializer),
             ),
             $node instanceof SizeOfTypeExpression => '(sizeof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfTypeExpression => '(alignof ' . $this->format($node->type) . ')',
             $node instanceof AlignOfExpression => '(alignof ' . $this->format($node->operand) . ')',
+            $node instanceof StatementExpression => '(' . $node->body . ')',
             $node instanceof BuiltinCallExpression => $node->arguments->items === []
                 ? '(' . $node->name->value . ')'
                 : '(' . $node->name->value . ' ' . $this->format($node->arguments) . ')',
@@ -214,7 +249,6 @@ final class NodePrinter
                 $node->type === null ? 'default' : $this->format($node->type),
                 $this->format($node->expression),
             ),
-            $node instanceof StatementExpression => '(' . $node->body . ')',
             $node instanceof MemberExpression => \sprintf(
                 '(%s %s %s)',
                 $node instanceof PointerMemberExpression ? '->' : '.',
@@ -226,6 +260,10 @@ final class NodePrinter
                 \implode(' ', \array_map($this->format(...), $node->parts)),
             ),
             $node instanceof BuiltinType\BitIntType => '_BitInt(' . $this->format($node->width) . ')',
+            $node instanceof BuiltinType\FloatNType => '_Float' . $node->width,
+            $node instanceof BuiltinType\FloatNxType => '_Float' . $node->width . 'x',
+            $node instanceof BuiltinType\DecimalNType => '_Decimal' . $node->width,
+            $node instanceof BuiltinType\DecimalNxType => '_Decimal' . $node->width . 'x',
             $node instanceof AtomicType => '_Atomic(' . $this->format($node->type) . ')',
             $node instanceof TypeOfType => 'typeof(' . $this->format($node->operand) . ')',
             $node instanceof TypeOfTypeType => 'typeof(' . $this->format($node->type) . ')',
@@ -248,20 +286,15 @@ final class NodePrinter
             ),
             $node instanceof AlignAsSpecifier => 'alignas(' . $this->format($node->operand) . ')',
             $node instanceof AlignAsTypeSpecifier => 'alignas(' . $this->format($node->type) . ')',
-            $node instanceof BlockPointerType => \sprintf(
-                '(block %s%s)',
-                $this->format($node->type),
-                $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
-            ),
             $node instanceof PointerType => \sprintf(
                 '(ptr %s%s)',
                 $this->format($node->type),
                 $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
             ),
-            $node instanceof AttributedType => \sprintf(
-                '(attr %s %s)',
-                $this->format($node->attributes),
+            $node instanceof BlockPointerType => \sprintf(
+                '(block %s%s)',
                 $this->format($node->type),
+                $node->attributes === null ? '' : ' ' . $this->format($node->attributes),
             ),
             $node instanceof StandardAttribute => \sprintf(
                 '[[%s%s%s]]',
@@ -281,6 +314,11 @@ final class NodePrinter
             ),
             $node instanceof KeywordAttribute => $this->format($node->name) . $this->formatArguments($node),
             $node instanceof BalancedTokenSequence => '(tokens ' . $node->raw . ')',
+            $node instanceof AttributedType => \sprintf(
+                '(attr %s %s)',
+                $this->format($node->attributes),
+                $this->format($node->type),
+            ),
             $node instanceof ArrayType => \sprintf(
                 '(array %s)',
                 \implode(' ', [
@@ -339,6 +377,7 @@ final class NodePrinter
             $node instanceof Enumerator => $node->name->value
                 . ($node->attributes === null ? '' : ' ' . $this->format($node->attributes))
                 . ($node->value === null ? '' : '=' . $this->format($node->value)),
+            $node instanceof AsmDeclaration => '(asm ' . $this->format($node->instructions) . ')',
             $node instanceof StaticAssertDeclaration => \sprintf(
                 '(static_assert %s%s)',
                 $this->format($node->condition),
@@ -365,8 +404,8 @@ final class NodePrinter
                     $node->specifiers === null ? '' : $this->format($node->specifiers),
                     $this->format($node->type ?? null),
                     $this->format($node->name),
-                    $node->attributes === null ? '' : $this->format($node->attributes),
                     $node->asmLabel === null ? '' : $this->format($node->asmLabel),
+                    $node->attributes === null ? '' : $this->format($node->attributes),
                     $node->initializer === null ? '' : '= ' . $this->format($node->initializer),
                     $node instanceof SpecifiedDeclaration\DeclaratorDeclaration\FunctionDefinition
                         ? $this->format($node->body)
@@ -374,7 +413,7 @@ final class NodePrinter
                 ])),
             ),
             $node instanceof FunctionBody => $node->raw,
-            $node instanceof AsmLabel => 'asm(' . $this->format($node->name) . ')',
+            $node instanceof AsmLabel => '__asm__(' . $this->format($node->name) . ')',
             $node instanceof AttributeDeclaration => '(attributes ' . $this->format($node->attributes) . ')',
             $node instanceof InitializerList => '{' . \implode(', ', \array_map(
                 $this->format(...),
@@ -386,11 +425,8 @@ final class NodePrinter
             )) . '=' . $this->format($node->initializer),
             $node instanceof MemberDesignator => '.' . $this->format($node->member),
             $node instanceof IndexDesignator => '[' . $this->format($node->index) . ']',
-            $node instanceof RangeDesignator => \sprintf(
-                '[%s ... %s]',
-                $this->format($node->first),
-                $this->format($node->last),
-            ),
+            $node instanceof RangeDesignator => '[' . $this->format($node->first) . ' ... '
+                . $this->format($node->last) . ']',
             default => throw new \LogicException(\sprintf('%s cannot be printed', $node::class)),
         };
 

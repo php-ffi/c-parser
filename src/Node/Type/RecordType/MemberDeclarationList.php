@@ -8,9 +8,8 @@ use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Members of a structure or a union, the body between the braces. C23
- * requires at least one member, but GCC allows an empty body, and so does
- * the parser. An empty list starts where the brace does.
+ * Members of a structure or a union, the body between the braces, at
+ * least one.
  *
  * @template-extends NodeList<MemberDeclaration|StaticAssertDeclaration>
  *

@@ -35,13 +35,18 @@ final class TransformerVisitor implements VisitorInterface
      */
     private array $transformersByClass = [];
 
+    /**
+     * @param array<non-empty-string, true> $typedefNames names declared as
+     *        typedef names in the file scope before the declarations
+     */
     public function __construct(
         /**
          * @var non-empty-list<TransformerRuleInterface<covariant NodeInterface>>
          */
         private readonly array $transformers,
+        array $typedefNames = [],
     ) {
-        $this->scope = new Scope();
+        $this->scope = new Scope($typedefNames);
     }
 
     public function enter(NodeInterface $node, Context $context): ?Action

@@ -19,6 +19,14 @@ final class LexemesTest extends TestCase
 {
     private const GRAMMAR = __DIR__ . '/../../resources/grammar.pp3';
 
+    private const IGNORED_TOKENS = [
+        'T_BYTE_ORDER_MARK',
+        'T_COMMENT_LINE',
+        'T_COMMENT_BLOCK',
+        'T_NEWLINE',
+        'T_WHITESPACE',
+    ];
+
     private static LexerInterface $lexer;
 
     /**
@@ -28,11 +36,11 @@ final class LexemesTest extends TestCase
     {
         $keywords = [
             'T_ALIGNAS' => ['alignas', '_Alignas'],
-            'T_ALIGNOF' => ['alignof', '_Alignof', '__alignof__', '__alignof'],
+            'T_ALIGNOF' => ['alignof', '_Alignof', '__alignof', '__alignof__'],
             'T_AUTO' => ['auto'],
             'T_BOOL' => ['bool', '_Bool'],
             'T_CHAR' => ['char'],
-            'T_CONST' => ['const', '__const__', '__const'],
+            'T_CONST' => ['const', '__const', '__const__'],
             'T_CONSTEXPR' => ['constexpr'],
             'T_DEFAULT' => ['default'],
             'T_DOUBLE' => ['double'],
@@ -40,14 +48,14 @@ final class LexemesTest extends TestCase
             'T_EXTERN' => ['extern'],
             'T_FALSE' => ['false'],
             'T_FLOAT' => ['float'],
-            'T_INLINE' => ['inline', '__inline__', '__inline'],
+            'T_INLINE' => ['inline', '__inline', '__inline__'],
             'T_INT' => ['int'],
             'T_LONG' => ['long'],
             'T_NULLPTR' => ['nullptr'],
             'T_REGISTER' => ['register'],
-            'T_RESTRICT' => ['restrict', '__restrict__', '__restrict'],
+            'T_RESTRICT' => ['restrict', '__restrict', '__restrict__'],
             'T_SHORT' => ['short'],
-            'T_SIGNED' => ['signed', '__signed__', '__signed'],
+            'T_SIGNED' => ['signed', '__signed', '__signed__'],
             'T_SIZEOF' => ['sizeof'],
             'T_STATIC_ASSERT' => ['static_assert', '_Static_assert'],
             'T_STATIC' => ['static'],
@@ -55,36 +63,38 @@ final class LexemesTest extends TestCase
             'T_THREAD_LOCAL' => ['thread_local', '_Thread_local', '__thread'],
             'T_TRUE' => ['true'],
             'T_TYPEDEF' => ['typedef'],
-            'T_TYPEOF_UNQUAL' => ['typeof_unqual', '__typeof_unqual__', '__typeof_unqual'],
-            'T_TYPEOF' => ['typeof', '__typeof__', '__typeof'],
+            'T_TYPEOF_UNQUAL' => ['typeof_unqual', '__typeof_unqual', '__typeof_unqual__'],
+            'T_TYPEOF' => ['typeof', '__typeof', '__typeof__'],
             'T_UNION' => ['union'],
             'T_UNSIGNED' => ['unsigned'],
             'T_VOID' => ['void'],
-            'T_VOLATILE' => ['volatile', '__volatile__', '__volatile'],
+            'T_VOLATILE' => ['volatile', '__volatile', '__volatile__'],
             'T_ATOMIC' => ['_Atomic'],
             'T_BITINT' => ['_BitInt'],
-            'T_COMPLEX' => ['_Complex', '__complex__', '__complex'],
-            'T_DECIMAL128' => ['_Decimal128'],
-            'T_DECIMAL32' => ['_Decimal32'],
-            'T_DECIMAL64' => ['_Decimal64'],
+            'T_COMPLEX' => ['_Complex', '__complex', '__complex__'],
+            'T_DECIMAL_NX' => ['_Decimal64x', '_Decimal128x'],
+            'T_DECIMAL_N' => ['_Decimal32', '_Decimal64', '_Decimal96', '_Decimal128', '_Decimal160'],
+            'T_FLOAT_NX' => ['_Float32x', '_Float64x', '_Float128x'],
+            'T_FLOAT_N' => ['_Float16', '_Float32', '_Float64', '_Float128', '_Float256'],
             'T_GENERIC' => ['_Generic'],
             'T_IMAGINARY' => ['_Imaginary'],
             'T_NORETURN' => ['_Noreturn'],
-            'T_ATTRIBUTE' => ['__attribute__', '__attribute'],
-            'T_ASM' => ['__asm__', '__asm', 'asm'],
-            'T_DECLSPEC' => ['__declspec'],
-            'T_CALLING_CONVENTION' => [
-                '__cdecl', '__clrcall', '__stdcall', '__fastcall', '__thiscall', '__vectorcall', '__regcall',
-                '__pascal', '_cdecl', '_stdcall', '_fastcall',
-            ],
-            'T_POINTER_MODIFIER' => [
-                '__ptr32', '__ptr64', '__sptr', '__uptr', '__unaligned', '__w64', '__far', '__near', '__huge',
-            ],
-            'T_POINTER_MODIFIER_WITH_ARGUMENTS' => ['__based', '__ptrauth'],
-            'T_NULLABILITY' => ['_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified'],
-            'T_FORCE_INLINE' => ['__forceinline'],
             'T_RESERVED_KEYWORD' => [
                 'break', 'case', 'continue', 'do', 'else', 'for', 'goto', 'if', 'return', 'switch', 'while',
+            ],
+            'T_GNU_ATTRIBUTE' => ['__attribute__', '__attribute'],
+            'T_ASM' => ['__asm__', '__asm'],
+            'T_EXTENSION' => ['__extension__'],
+            'T_REAL' => ['__real__', '__real'],
+            'T_IMAG' => ['__imag__', '__imag'],
+            'T_DECLSPEC' => ['__declspec'],
+            'T_FORCE_INLINE' => ['__forceinline'],
+            'T_POINTER_MODIFIER' => ['__ptr32', '__ptr64', '__sptr', '__uptr', '__unaligned', '__w64'],
+            'T_BASED' => ['__based'],
+            'T_NULLABILITY' => ['_Nonnull', '_Nullable_result', '_Nullable', '_Null_unspecified'],
+            'T_PTRAUTH' => ['__ptrauth'],
+            'T_CALLING_CONVENTION' => [
+                '__cdecl', '__stdcall', '__fastcall', '__vectorcall', '__thiscall', '__clrcall', '__preserve_none',
             ],
         ];
 
@@ -118,35 +128,46 @@ final class LexemesTest extends TestCase
         yield 'identifier with digits' => ['x86_64', [['T_IDENTIFIER', 'x86_64']]];
         yield 'integer type of a compiler' => ['__int64', [['T_IDENTIFIER', '__int64']]];
         yield 'typedef name after an integer type of a compiler' => ['__int128_t', [['T_IDENTIFIER', '__int128_t']]];
-        yield 'built-in function' => ['__builtin_expect (', [
-            ['T_BUILTIN_CALL', '__builtin_expect'], ['T_LPAREN', '('],
-        ]];
-        yield 'built-in name without a parenthesis' => ['__builtin_va_list', [['T_IDENTIFIER', '__builtin_va_list']]];
         yield 'atomic type specifier' => ["_Atomic \n(", [['T_ATOMIC_SPECIFIER', '_Atomic'], ['T_LPAREN', '(']]];
+        yield 'atomic type specifier with a comment' => ['_Atomic /* a */ // b' . "\n(", [
+            ['T_ATOMIC_SPECIFIER', '_Atomic'], ['T_LPAREN', '('],
+        ]];
         yield 'atomic qualifier' => ['_Atomic int', [['T_ATOMIC', '_Atomic'], ['T_INT', 'int']]];
         yield 'identifier in UTF-8' => ["caf\xC3\xA9", [['T_IDENTIFIER', "caf\xC3\xA9"]]];
         yield 'identifier of universal character names' => ['\\u00E9t\\U0001F600', [
             ['T_IDENTIFIER', '\\u00E9t\\U0001F600'],
         ]];
-        yield 'longer spelling of a keyword' => ['__int128_t __constant __attribute__x', [
-            ['T_IDENTIFIER', '__int128_t'], ['T_IDENTIFIER', '__constant'], ['T_IDENTIFIER', '__attribute__x'],
+        yield 'floating type without a width' => ['_Float _Decimal', [
+            ['T_IDENTIFIER', '_Float'], ['T_IDENTIFIER', '_Decimal'],
         ]];
-        yield 'marker of the extensions is skipped' => ['__extension__ x __extension__', [['T_IDENTIFIER', 'x']]];
-        yield 'name that starts like the marker of the extensions' => ['__extension__x', [
-            ['T_IDENTIFIER', '__extension__x'],
+        yield 'floating type with a leading zero' => ['_Float032 _Decimal064x', [
+            ['T_IDENTIFIER', '_Float032'], ['T_IDENTIFIER', '_Decimal064x'],
         ]];
+        yield 'typedef name after a floating type' => ['_Float16_t _Float32xy', [
+            ['T_IDENTIFIER', '_Float16_t'], ['T_IDENTIFIER', '_Float32xy'],
+        ]];
+
+        foreach ([
+            'asm', '__asm_', '__asm___', '__attribute_', '__attribute___', '_declspec', '__declspec__', '__extension', '_const',
+            '__const_', '__inline___', '_restrict', '__typeof_', '__alignof_', '__thread__', '_thread', '__cdecl_',
+            '_cdecl', '_stdcall', 'cdecl', '__pascal', '_ptr64', '__ptr64_', '_forceinline', '__forceinline__',
+            '_Nonnull_', '__based_', '__ptrauth__', '__real___', '__imag_', '__builtin_offsetof',
+            '__pragma', '__int64',
+        ] as $name) {
+            yield 'identifier ' . $name => [$name, [['T_IDENTIFIER', $name]]];
+        }
 
         $constants = [
             'T_DEC_INT_LITERAL' => [
                 '42', "1'000'000", '1u', '1U', '1l', '1L', '1ll', '1LL', '1ul', '1lu', '1ULL', '1llu', '1wb', '1WB',
-                '1uwb', '1wbU', '1Ull', '1i', '1J', '1uli', '1iul', '1i8', '1I16', '1i32', '1i64', '1ui64', '1UI64',
+                '1uwb', '1wbU', '1Ull', '1i', '1J', '1ui', '1uli', '1iul', '1i8', '1I16', '1i32', '1i64', '1ui64', '1UI64',
             ],
             'T_OCT_INT_LITERAL' => ['0', '00', '017', "0'7"],
             'T_HEX_INT_LITERAL' => ['0x1', '0x1F', "0x1F'FF", '0XabCD', '0xFFFFFFFFFFFFFFFFFFFFFFFF', '0x1uwb'],
             'T_BIN_INT_LITERAL' => ['0b1010', "0B1'0"],
             'T_DEC_FLOAT_LITERAL' => [
                 '1.5', '.5', '1.', '1e10', '1E+10', '1.5e-3', "1'000.000'1", '1.5f', '1.5F', '1.5l', '1.5L',
-                '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x',
+                '1.5df', '1.5DD', '1.5dl', '1.0f16', '1.0F32', '1.0f64', '1.0f128', '1.0f32x', '1.0f64x', '1.0f128x', '1.0f256', '1.0d96', '1.0D160x',
                 '1.0d32', '1.0D64', '1.0d128', '1.0d64x', '1.0d128x', '1e999', "1e1'0", '08.5', '09e1',
                 '0.5', '0e1', '2.0i', '2.0fi', '2.0if', '1e3J', '1.0q', '1.0Q', '1.0w', '1.0W', '1.0qi',
             ],
@@ -201,6 +222,10 @@ final class LexemesTest extends TestCase
         yield 'digraph :>' => [':>', [['T_RBRACKET', ':>']]];
         yield 'digraph <%' => ['<%', [['T_LBRACE', '<%']]];
         yield 'digraph %>' => ['%>', [['T_RBRACE', '%>']]];
+        yield 'digraph %: not at the beginning of a line' => ['x %:', [['T_IDENTIFIER', 'x'], ['T_HASH', '%:']]];
+        yield 'digraph %:%: not at the beginning of a line' => ['x %:%:', [
+            ['T_IDENTIFIER', 'x'], ['T_HASH_HASH', '%:%:'],
+        ]];
         yield 'longest punctuator wins' => ['a->b--c', [
             ['T_IDENTIFIER', 'a'], ['T_ARROW', '->'], ['T_IDENTIFIER', 'b'],
             ['T_DECREMENT', '--'], ['T_IDENTIFIER', 'c'],
@@ -228,11 +253,15 @@ final class LexemesTest extends TestCase
         yield 'pragma operator' => ['x _Pragma("once") y', [
             ['T_IDENTIFIER', 'x'], ['T_PRAGMA_OPERATOR', '_Pragma("once")'], ['T_IDENTIFIER', 'y'],
         ]];
-        yield 'pragma operator of MSVC' => ['__pragma (pack(push, 1))', [
-            ['T_PRAGMA_OPERATOR', '__pragma (pack(push, 1))'],
-        ]];
         yield 'parenthesis in a string of a pragma operator' => ['_Pragma("message(\")\")")', [
             ['T_PRAGMA_OPERATOR', '_Pragma("message(\")\")")'],
+        ]];
+        yield 'pragma operator of MSVC' => ['x __pragma(pack(push, 8)) y', [
+            ['T_IDENTIFIER', 'x'], ['T_PRAGMA_OPERATOR', '__pragma(pack(push, 8))'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'line splice' => ["x \\\ny \\\r\nz", [
+            ['T_IDENTIFIER', 'x'], ['T_LINE_SPLICE', "\\\n"], ['T_IDENTIFIER', 'y'], ['T_LINE_SPLICE', "\\\r\n"],
+            ['T_IDENTIFIER', 'z'],
         ]];
         yield 'indented directive' => ["x\n \t#pragma once\ny", [
             ['T_IDENTIFIER', 'x'], ['T_DIRECTIVE', " \t#pragma once"], ['T_IDENTIFIER', 'y'],
@@ -273,35 +302,40 @@ final class LexemesTest extends TestCase
         yield 'long block comment' => ['/*' . \str_repeat('x', 2_000_000) . '*/x', [['T_IDENTIFIER', 'x']]];
         yield 'block comment of stars' => ['/***/x', [['T_IDENTIFIER', 'x']]];
         yield 'hash not at the beginning of a line' => ['x # y', [
-            ['T_IDENTIFIER', 'x'], ['Unknown', '#'], ['T_IDENTIFIER', 'y'],
+            ['T_IDENTIFIER', 'x'], ['T_HASH', '#'], ['T_IDENTIFIER', 'y'],
+        ]];
+        yield 'double hash not at the beginning of a line' => ['x ## y', [
+            ['T_IDENTIFIER', 'x'], ['T_HASH_HASH', '##'], ['T_IDENTIFIER', 'y'],
         ]];
 
         yield 'string broken by a newline' => [
             "\"a\nb\"",
-            [['T_INVALID_STRING_LITERAL', '"a'], ['T_IDENTIFIER', 'b'], ['T_INVALID_STRING_LITERAL', '"']],
+            [['Unknown', '"a'], ['T_IDENTIFIER', 'b'], ['Unknown', '"']],
         ];
         yield 'lone hash at the beginning of a line is a directive' => ['#', [['T_DIRECTIVE', '#']]];
 
         foreach ([
             '08', '09', '0b2', '0b', '0x', '1lul', '1lL', '1Ll', '1uu', '1lll', '1w', '1b', '1.5ff', '1.5fl', '1.5dF',
-            '0x1.8', '1e', '1e+', '1.5f8', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8', '0xE+1', '10.13.4', '.5.5',
-            "1'a", '1q', '1i128', '1i64i', '1i64l', '1.0i64',
+            '0x1.8', '1e', '1e+', '1.5f08', '1.5d0', '1.2.3', '1..2', '0x1.', '0x1p3.5', '1u8', '0xE+1', '10.13.4', '.5.5',
+            "1'a", '1q', '1i128', '1i64i', '1i64l', '1.0i64', '1i4', '1iu64', '1ii', '2.0ij', '1.0qw',
         ] as $number) {
             yield 'number of the preprocessor ' . $number => [$number, [['T_PP_NUMBER', $number]]];
         }
 
-        yield 'doubled digit separator' => ["1''0", [
-            ['T_PP_NUMBER', '1'], ['T_INVALID_CHAR_LITERAL', "''"], ['T_OCT_INT_LITERAL', '0'],
-        ]];
-        yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['T_INVALID_CHAR_LITERAL', "'"]]];
+        yield 'doubled digit separator' => ["1''0", [['T_PP_NUMBER', '1'], ['Unknown', "''0"]]];
+        yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['Unknown', "'"]]];
 
-        foreach (["'1", "''", "'a", "'\\q'", "'ab\\", "u8'x"] as $fragment) {
-            yield 'invalid character ' . $fragment => [$fragment, [['T_INVALID_CHAR_LITERAL', $fragment]]];
+        foreach (["'1", "''", "'a", "'\\q'", "'ab\\"] as $fragment) {
+            yield 'invalid character ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
 
-        foreach (['"text', '"\\q"', '"\\x"', '"\\u12"', '"a; int b;', 'L"x'] as $fragment) {
-            yield 'invalid string ' . $fragment => [$fragment, [['T_INVALID_STRING_LITERAL', $fragment]]];
+        yield 'invalid character u8\'x' => ["u8'x", [['T_IDENTIFIER', 'u8'], ['Unknown', "'x"]]];
+
+        foreach (['"text', '"\\q"', '"\\x"', '"\\u12"'] as $fragment) {
+            yield 'invalid string ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
+
+        yield 'invalid string L"x' => ['L"x', [['T_IDENTIFIER', 'L'], ['Unknown', '"x']]];
 
         foreach (['@', '$', '`'] as $fragment) {
             yield 'not a lexeme ' . $fragment => [$fragment, [['Unknown', $fragment]]];
@@ -310,6 +344,9 @@ final class LexemesTest extends TestCase
         yield 'start of an attribute' => ['[[', [['T_ATTRIBUTE_START', '[[']]];
         yield 'start of an attribute in digraphs' => ['<:<:', [['T_ATTRIBUTE_START', '<:<:']]];
         yield 'start of an attribute with whitespace' => ["[ \n[", [['T_ATTRIBUTE_START', "[ \n["]]];
+        yield 'start of an attribute with comments' => ["[ /* a */ // b\n[", [
+            ['T_ATTRIBUTE_START', "[ /* a */ // b\n["],
+        ]];
         yield 'end of an attribute is two brackets' => [']]', [['T_RBRACKET', ']'], ['T_RBRACKET', ']']]];
         yield 'dot before a digit is not a punctuator' => ['.5 .', [['T_DEC_FLOAT_LITERAL', '.5'], ['T_DOT', '.']]];
     }
@@ -328,7 +365,7 @@ final class LexemesTest extends TestCase
      */
     private static function lex(string $code): array
     {
-        self::$lexer ??= (new RuntimeLexerTransformer())->transform(
+        self::$lexer ??= (new RuntimeLexerTransformer(skip: []))->transform(
             (new Compiler())
                 ->load(FileSource::createFromPathname(self::GRAMMAR))
                 ->build()
@@ -340,6 +377,10 @@ final class LexemesTest extends TestCase
         foreach (self::$lexer->lex(new StringSource($code)) as $token) {
             if ($token->channel === Channel::EndOfInput) {
                 break;
+            }
+
+            if (\in_array($token->name, self::IGNORED_TOKENS, true)) {
+                continue;
             }
 
             $result[] = [$token->name ?? $token->channel->name, $token->value];

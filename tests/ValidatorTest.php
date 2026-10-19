@@ -101,6 +101,26 @@ final class ValidatorTest extends TestCase
         self::assertSame([], (new Validator())->validate(self::parse('int a;')));
     }
 
+    public function testGivenRulesFollowTheDefaultOnes(): void
+    {
+        $validator = self::createRejectingValidator(IntType::class);
+        $rules = Validator::getDefaultRules([$validator]);
+
+        self::assertNotSame([$validator], $rules);
+        self::assertSame($validator, \array_last($rules));
+    }
+
+    public function testDefaultRulesReportTheConstraintsOfC23(): void
+    {
+        self::assertSame(
+            ['Invalid combination of type specifiers `long float`'],
+            \array_map(
+                static fn(Violation $violation): string => $violation->message,
+                Validator::createDefault()->validate(self::parse('long float x;')),
+            ),
+        );
+    }
+
     /**
      * @return ValidatorRuleInterface&object{
      *     visits: list<non-empty-string>,
@@ -125,6 +145,11 @@ final class ValidatorTest extends TestCase
              * @var list<ValidationContext>
              */
             public array $contexts = [];
+
+            public function getNodeClasses(): iterable
+            {
+                return [NodeInterface::class];
+            }
 
             public function validate(NodeInterface $node, ValidationContext $context): iterable
             {
@@ -151,13 +176,15 @@ final class ValidatorTest extends TestCase
                 private readonly string $class,
             ) {}
 
+            public function getNodeClasses(): iterable
+            {
+                return [$this->class];
+            }
+
             public function validate(NodeInterface $node, ValidationContext $context): iterable
             {
-                if ($node instanceof $this->class) {
-                    yield new Violation((new \ReflectionClass($node))->getShortName(), $node->offset);
-                }
+                yield new Violation((new \ReflectionClass($node))->getShortName(), $node->offset);
             }
         };
     }
-
 }

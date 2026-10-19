@@ -1,2 +1,1 @@
-/* A header of empty declarations */
-;
+/* An empty header */
