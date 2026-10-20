@@ -27,6 +27,14 @@ use Phplrt\Parser\Exception\ParserSourceException;
  */
 final class ParserExecutor extends CompiledParserExecutor
 {
+    /**
+     * The spellings with two leading underscores MSVC knows, the ones the
+     * MsKeywordSpellings feature accepts.
+     *
+     * @var list<non-empty-string>
+     */
+    private const MS_KEYWORD_SPELLINGS = ['__inline', '__restrict', '__alignof', '__typeof__', '__typeof_unqual__'];
+
     public function __construct(
         /**
          * Extensions of C23 the reducers accept
@@ -56,15 +64,23 @@ final class ParserExecutor extends CompiledParserExecutor
     /**
      * Rejects the GCC spelling of a keyword of C23, the one with two leading
      * underscores (`__const__`, `__thread`), unless the GnuKeywordSpellings
-     * feature is accepted.
+     * feature is accepted, or the MsKeywordSpellings feature for the
+     * spellings MSVC knows (`__inline`, `__restrict`).
      *
      * @throws SyntaxErrorException in case of the spelling is not accepted
      */
     protected function assertKeywordSpelling(ReadableInterface $source, TokenInterface $keyword): void
     {
-        if (\str_starts_with($keyword->value, '__')) {
-            $this->assertFeature(Feature::GnuKeywordSpellings, $source, $keyword->offset, $keyword->size);
+        if (!\str_starts_with($keyword->value, '__')) {
+            return;
         }
+
+        if (\in_array($keyword->value, self::MS_KEYWORD_SPELLINGS, true)
+            && \in_array(Feature::MsKeywordSpellings, $this->features, true)) {
+            return;
+        }
+
+        $this->assertFeature(Feature::GnuKeywordSpellings, $source, $keyword->offset, $keyword->size);
     }
 
     /**

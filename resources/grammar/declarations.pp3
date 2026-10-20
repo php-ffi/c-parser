@@ -190,8 +190,8 @@ InitDeclarator @error("Syntax error, unexpected {token} in the declarator") -> {
  * "typedef" among the specifiers a typedef name, a function type a
  * function, anything else an object, and each keeps the initializer, even
  * where C allows none. The attributes after the name, the GCC attributes
- * before the declarator and after it, the MSVC ones after it and the
- * assembler label belong to the declared one, the calling conventions after
+ * before the declarator and after it, the MSVC ones of PHP FFI after it
+ * and the assembler label belong to the declared one, the calling conventions after
  * the declarator apply to its type as the ones before the name do.
  */
 DeclarationDeclarator -> {
@@ -295,7 +295,21 @@ DeclarationDeclarator -> {
     };
 }
   : GnuAttributeSpecifier()* Declarator() AsmLabel()?
-    (GnuAttributeSpecifier() | DeclSpecAttributeSpecifier() | TrailingCallingConventions())*
+    (GnuAttributeSpecifier() | TrailingDeclSpec() | TrailingCallingConventions())*
+  ;
+
+/**
+ * PHP FFI: the MSVC attributes after a declarator, "int f(void)
+ * __declspec(dllimport);", and after "*", "int * __declspec(x) p;". Requires
+ * the TrailingDeclSpec feature.
+ */
+TrailingDeclSpec -> {
+    /** @var list<Attribute\AttributeInterface> $children */
+    $this->assertFeature(Feature::TrailingDeclSpec, $source, $offset, $length);
+
+    return $children;
+}
+  : DeclSpecAttributeSpecifier()
   ;
 
 /**

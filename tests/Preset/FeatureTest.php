@@ -139,6 +139,23 @@ final class FeatureTest extends TestCase
             'void *base; void __based(base) *p;',
             SyntaxErrorException::class,
         ];
+        yield 'MSVC keyword spellings' => [
+            Feature::MsKeywordSpellings,
+            'static __inline int f(void) { return 0; }',
+            SyntaxErrorException::class,
+        ];
+        yield 'trailing declspec' => [
+            Feature::TrailingDeclSpec,
+            'int f(void) __declspec(dllimport);',
+            SyntaxErrorException::class,
+            [Feature::DeclSpec],
+        ];
+        yield 'leading calling conventions' => [
+            Feature::LeadingCallingConventions,
+            '__cdecl int f(void);',
+            SyntaxErrorException::class,
+            [Feature::CallingConventions],
+        ];
     }
 
     /**

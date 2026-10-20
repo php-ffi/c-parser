@@ -38,6 +38,8 @@ final class Preset
         Feature::OmittedConditionalOperand,
         Feature::ComplexParts,
         Feature::AsmDeclarations,
+        Feature::OptionalLastMemberSemicolon,
+        Feature::TaggedAnonymousMembers,
     ];
 
     /**
@@ -48,25 +50,27 @@ final class Preset
         Feature::BlockPointers,
         Feature::Nullability,
         Feature::PointerAuth,
+        Feature::LeadingCallingConventions,
     ];
 
     /**
      * @var list<Feature>
      */
     private const CLANG_MS_FEATURES = [
-        Feature::TaggedAnonymousMembers,
         Feature::DeclSpec,
         Feature::PointerModifiers,
         Feature::ForceInline,
         Feature::MsIntegerSuffixes,
-        Feature::EmptyEnums,
     ];
 
     /**
      * @var list<Feature>
      */
     private const MSVC_FEATURES = [
-        Feature::GnuKeywordSpellings,
+        Feature::MsKeywordSpellings,
+        Feature::ExtensionKeyword,
+        Feature::KeywordIdentifiers,
+        Feature::EmptyEnums,
         Feature::ExtraSemicolons,
         Feature::ModifiedTypedefNames,
         Feature::GnuFlexibleArrayMembers,
@@ -95,6 +99,10 @@ final class Preset
         Feature::TrailingCallingConventions,
         Feature::KeywordIdentifiers,
         Feature::EscapeE,
+        Feature::TaggedAnonymousMembers,
+        Feature::GnuFlexibleArrayMembers,
+        Feature::TrailingDeclSpec,
+        Feature::LeadingCallingConventions,
     ];
 
     /**

@@ -203,6 +203,27 @@ enum Feature
     case BasedPointers;
 
     /**
+     * MSVC spellings of the keywords of C23 with two leading underscores,
+     * `__inline`, `__restrict`, `__alignof`, `__typeof__`,
+     * `__typeof_unqual__`, a part of {@see Feature::GnuKeywordSpellings}
+     */
+    case MsKeywordSpellings;
+
+    /**
+     * PHP FFI MSVC attributes after a declarator and after `*`,
+     * `int f(void) __declspec(dllimport);`. The attributes themselves
+     * require {@see Feature::DeclSpec}
+     */
+    case TrailingDeclSpec;
+
+    /**
+     * Clang and PHP FFI calling conventions before the type specifiers,
+     * `__cdecl int f(void);`. The conventions themselves require
+     * {@see Feature::CallingConventions}
+     */
+    case LeadingCallingConventions;
+
+    /**
      * Lists the rules that reject the extension, the ones the feature
      * removes. Empty in case of the extension is a syntax error without the
      * feature.
@@ -245,7 +266,10 @@ enum Feature
             self::BlockPointers,
             self::Nullability,
             self::PointerAuth,
-            self::BasedPointers => [],
+            self::BasedPointers,
+            self::MsKeywordSpellings,
+            self::TrailingDeclSpec,
+            self::LeadingCallingConventions => [],
         };
     }
 }

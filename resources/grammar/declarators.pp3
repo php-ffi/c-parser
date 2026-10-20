@@ -364,7 +364,7 @@ PointerQualifiers -> {
 }
   : StandardAttributeSpecifier()*
     (
-        TypeQualifier() | GnuAttributeSpecifier() | DeclSpecAttributeSpecifier() | PointerModifier()
+        TypeQualifier() | GnuAttributeSpecifier() | TrailingDeclSpec() | PointerModifier()
       | BasedPointerModifier() | Nullability() | PointerAuth()
     )*
   ;

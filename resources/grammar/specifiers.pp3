@@ -62,8 +62,40 @@ DeclarationSpecifiers -> {
 
     return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
 }
-  : StandardAttributeSpecifier()* (NonTypeSpecifier()+ TypeSpecifiers()? | TypeSpecifiers())
+  : StandardAttributeSpecifier()* (
+        (NonTypeSpecifier() | LeadingCallingConventions())+ TypeSpecifiers()?
+      | TypeSpecifiers()
+    )
     StandardAttributeSpecifier()*
+  ;
+
+/**
+ * Clang and PHP FFI: the calling conventions before the type specifiers,
+ * "__cdecl int f(void);", given to the declaration among its specifiers.
+ * A keyword of a type specifier follows them, possibly after other
+ * specifiers: before a name they are the start of the declarator. Requires
+ * the LeadingCallingConventions feature.
+ */
+LeadingCallingConventions -> {
+    /** @var non-empty-list<Attribute\AttributeInterface> $children */
+    $this->assertFeature(Feature::LeadingCallingConventions, $source, $offset, $length);
+
+    return $children;
+}
+  : CallingConvention()+ &LeadingCallingConventionsEnd()
+  ;
+
+LeadingCallingConventionsEnd
+  : NonTypeSpecifier()* TypeSpecifierKeyword()
+  ;
+
+/**
+ * The first token of a type specifier other than a typedef name
+ */
+TypeSpecifierKeyword
+  : <T_VOID> | <T_CHAR> | <T_SHORT> | <T_INT> | <T_LONG> | <T_FLOAT> | <T_DOUBLE> | <T_SIGNED> | <T_UNSIGNED>
+  | <T_BOOL> | <T_COMPLEX> | <T_IMAGINARY> | <T_BITINT> | <T_DECIMAL_NX> | <T_DECIMAL_N> | <T_FLOAT_NX>
+  | <T_FLOAT_N> | <T_ATOMIC_SPECIFIER> | <T_STRUCT> | <T_UNION> | <T_ENUM> | <T_TYPEOF> | <T_TYPEOF_UNQUAL>
   ;
 
 /**
@@ -726,9 +758,9 @@ UnnamedBitFieldDeclarator -> {
 /**
  * An enumeration with a tag (a reference to it, its declaration with the
  * underlying type only, "enum E : int;", or its definition) or an anonymous
- * one, with the attributes after the keyword of a definition. The GCC
- * attributes and the calling conventions of PHP FFI go after the keyword of
- * a reference as well: "enum __attribute__((packed)) E;".
+ * one, with the attributes after the keyword of a definition. The GCC and
+ * MSVC attributes and the calling conventions of PHP FFI go after the
+ * keyword of a reference as well: "enum __attribute__((packed)) E;".
  */
 EnumType -> {
     /**
@@ -764,8 +796,10 @@ EnumType -> {
 }
   : <T_ENUM> (
         DeclaredIdentifier() EnumUnderlyingType()? EnumBody()?
-      | (AttributeSpecifier() | TagCallingConventions())+ DeclaredIdentifier()? EnumUnderlyingType()? EnumBody()
-      | (GnuAttributeSpecifier() | TagCallingConventions())+ DeclaredIdentifier() EnumUnderlyingType()?
+      | (AttributeSpecifier() | DeclSpecAttributeSpecifier() | TagCallingConventions())+
+            DeclaredIdentifier()? EnumUnderlyingType()? EnumBody()
+      | (GnuAttributeSpecifier() | DeclSpecAttributeSpecifier() | TagCallingConventions())+
+            DeclaredIdentifier() EnumUnderlyingType()?
       | EnumUnderlyingType()? EnumBody()
     ) @error("Syntax error, unexpected {token} in the enumeration specifier, a tag, \":\" or \"{{\" expected")
   ;

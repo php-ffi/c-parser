@@ -96,7 +96,8 @@ final class PresetTest extends TestCase
         ];
         yield 'GCC with the second wave' => [
             Preset::gcc(),
-            '__asm__("nop"); int a[] = {[0 ... 1] = 2}; long double x = 1.0w; int y = a ?: 1;',
+            '__asm__("nop"); int a[] = {[0 ... 1] = 2}; long double x = 1.0w; int y = a ?: 1;'
+                . ' struct T { int x; }; struct S { struct T; int b };',
         ];
         yield 'Clang' => [Preset::clang(), 'void __stdcall f(__builtin_va_list ap, __fp16 h);'];
         yield 'Clang with blocks and nullability' => [
@@ -105,16 +106,17 @@ final class PresetTest extends TestCase
         ];
         yield 'Clang with the Microsoft extensions' => [
             Preset::clang(isMsExtensionsEnabled: true),
-            '__declspec(dllimport) unsigned __int64 * __ptr64 f(void); enum E {};',
+            '__declspec(dllimport) unsigned __int64 * __ptr64 f(void); struct S { int a };',
         ];
         yield 'MSVC' => [
             Preset::msvc(),
             '__declspec(dllimport) unsigned __int64 __stdcall f(int * __ptr64 p); __int64 x = 1i64;'
-                . ' char __based(p) *q;',
+                . ' char __based(p) *q; enum E {}; __extension__ int y; int bool; __inline int g(void);',
         ];
         yield 'PHP FFI' => [
             Preset::php(),
-            'struct S { int64_t a }; size_t f(void) __cdecl; enum { false, true };',
+            'struct S { int64_t a }; size_t f(void) __cdecl; enum { false, true }; __cdecl int g(void);'
+                . ' int h(void) __declspec(dllimport); struct T { int a[]; };',
         ];
     }
 
@@ -138,7 +140,13 @@ final class PresetTest extends TestCase
         yield 'Clang with a suffix of MSVC' => [Preset::clang(), 'int x = 1i64;'];
         yield 'Clang with the suffix of __float80' => [Preset::clang(), 'long double x = 1.0w;'];
         yield 'GCC with a block pointer' => [Preset::gcc(), 'void (^b)(int);'];
-        yield 'MSVC with an empty enumeration' => [Preset::msvc(), 'enum E {};'];
+        yield 'Clang with the Microsoft extensions with an empty enumeration' => [
+            Preset::clang(isMsExtensionsEnabled: true),
+            'enum E {};',
+        ];
+        yield 'MSVC with a GNU keyword spelling' => [Preset::msvc(), 'static __inline__ int f(void);'];
+        yield 'MSVC with a declspec after the declarator' => [Preset::msvc(), 'int f(void) __declspec(dllimport);'];
+        yield 'MSVC with a leading calling convention' => [Preset::msvc(), '__cdecl int f(void);'];
         yield 'MSVC with a GNU attribute' => [Preset::msvc(), 'int x __attribute__((aligned(8)));'];
         yield 'PHP FFI with a statement expression' => [Preset::php(), 'int x = ({ 1; });'];
     }

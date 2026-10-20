@@ -105,7 +105,7 @@ final class CallingConventionsTest extends TestCase
      */
     public static function invalidPlacesDataProvider(): iterable
     {
-        yield 'before the type specifier' => ['__cdecl int f(void);', 0, '__cdecl'];
+        yield 'between the name and the parameters' => ['int f __cdecl (void);', 14, '('];
     }
 
     /**
