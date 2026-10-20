@@ -55,9 +55,10 @@ enum Feature
     case CallingConventions;
 
     /**
-     * PHP FFI calling conventions after a declarator and after `struct`,
-     * `union` or `enum`, `int f(void) __cdecl;`. The conventions themselves
-     * require {@see Feature::CallingConventions}
+     * PHP FFI calling conventions after a declarator of a declaration or a
+     * member, in the brackets of an array and after `struct`, `union` or
+     * `enum`, `int f(void) __cdecl;`. The conventions themselves require
+     * {@see Feature::CallingConventions}
      */
     case TrailingCallingConventions;
 
@@ -212,9 +213,10 @@ enum Feature
     case MsKeywordSpellings;
 
     /**
-     * PHP FFI MSVC attributes after a declarator and after `*`,
-     * `int f(void) __declspec(dllimport);`. The attributes themselves
-     * require {@see Feature::DeclSpec}
+     * PHP FFI MSVC attributes after a declarator of a declaration or a
+     * member, after `*`, in the brackets of an array and at the start of a
+     * parenthesized declarator, `int f(void) __declspec(dllimport);`. The
+     * attributes themselves require {@see Feature::DeclSpec}
      */
     case TrailingDeclSpec;
 
