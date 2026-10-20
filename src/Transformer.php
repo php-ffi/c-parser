@@ -20,6 +20,7 @@ use FFI\Parser\Transformer\Rule\ParameterNameRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignAsTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\AlignOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\BuiltinCallTypeNameOperandRule;
+use FFI\Parser\Transformer\Rule\TypeNameOperandRule\GenericSelectionTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\SizeOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfTypeNameOperandRule;
 use FFI\Parser\Transformer\Rule\TypeNameOperandRule\TypeOfUnqualTypeNameOperandRule;
@@ -105,6 +106,7 @@ final class Transformer
             new AlignAsTypeNameOperandRule(),
             new AlignOfTypeNameOperandRule(),
             new BuiltinCallTypeNameOperandRule(),
+            new GenericSelectionTypeNameOperandRule(),
             ...$append,
         ];
     }

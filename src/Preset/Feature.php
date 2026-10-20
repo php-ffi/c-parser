@@ -8,6 +8,7 @@ use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Validator\Rule\Extension\AlignOfExpressionRule;
 use FFI\Parser\Validator\Rule\Extension\BuiltinTypeArgumentRule;
 use FFI\Parser\Validator\Rule\Extension\ComplexIntegerTypeRule;
+use FFI\Parser\Validator\Rule\Extension\GenericTypeOperandRule;
 use FFI\Parser\Validator\Rule\Extension\GnuFlexibleArrayMemberRule;
 use FFI\Parser\Validator\Rule\Extension\ModifiedTypedefNameRule;
 use FFI\Parser\Validator\Rule\Extension\TaggedAnonymousMemberRule;
@@ -37,7 +38,8 @@ enum Feature
     case GnuKeywordSpellings;
 
     /**
-     * GCC `__extension__` before a declaration, a member or an expression
+     * GCC `__extension__` before a declaration, a member, a parameter or an
+     * expression
      */
     case ExtensionKeyword;
 
@@ -47,7 +49,8 @@ enum Feature
     case DeclSpec;
 
     /**
-     * MSVC calling conventions, `int __stdcall f(void);`
+     * MSVC and Clang calling conventions `__cdecl`, `__stdcall`, `__fastcall`
+     * and `__vectorcall`, `int __stdcall f(void);`
      */
     case CallingConventions;
 
@@ -74,7 +77,7 @@ enum Feature
     case MsIntegerSuffixes;
 
     /**
-     * PHP FFI last member declaration without its semicolon,
+     * GCC, Clang and PHP FFI last member declaration without its semicolon,
      * `struct S { int a };`
      */
     case OptionalLastMemberSemicolon;
@@ -177,8 +180,7 @@ enum Feature
     case AsmDeclarations;
 
     /**
-     * Clang with the Microsoft extensions: enumeration without
-     * enumerators, `enum E {};`
+     * MSVC enumeration without enumerators, `enum E {};`
      */
     case EmptyEnums;
 
@@ -217,11 +219,44 @@ enum Feature
     case TrailingDeclSpec;
 
     /**
-     * Clang and PHP FFI calling conventions before the type specifiers,
-     * `__cdecl int f(void);`. The conventions themselves require
-     * {@see Feature::CallingConventions}
+     * Clang and PHP FFI calling conventions among the declaration
+     * specifiers: before the type specifiers, `__cdecl int f(void);`, and
+     * after them without a declarator, `int __cdecl;`. The conventions
+     * themselves require {@see Feature::CallingConventions}
      */
-    case LeadingCallingConventions;
+    case SpecifierCallingConventions;
+
+    /**
+     * Clang and PHP FFI calling convention `__thiscall`
+     */
+    case ThisCallConvention;
+
+    /**
+     * MSVC calling conventions `__clrcall` and `__preserve_none`
+     */
+    case MsCallingConventions;
+
+    /**
+     * Clang calling conventions `__regcall` and `__pascal`
+     */
+    case ClangCallingConventions;
+
+    /**
+     * Escape sequences of no meaning in C23, which GCC, Clang, MSVC and PHP
+     * FFI accept as the character itself, `"\q"`
+     */
+    case UnknownEscapes;
+
+    /**
+     * GCC and Clang octal prefix of C2y, `0o17`
+     */
+    case OctalPrefix;
+
+    /**
+     * GCC and Clang type name as the controlling operand of a generic
+     * selection, `_Generic(int, int: 1)`, as in C2y
+     */
+    case GenericTypeOperand;
 
     /**
      * Lists the validator rules the feature removes. Empty when the extension
@@ -238,6 +273,7 @@ enum Feature
             self::TaggedAnonymousMembers => [TaggedAnonymousMemberRule::class],
             self::AlignOfExpressions => [AlignOfExpressionRule::class],
             self::BuiltinTypeArguments => [BuiltinTypeArgumentRule::class],
+            self::GenericTypeOperand => [GenericTypeOperandRule::class],
             self::GnuAttributes,
             self::AsmLabels,
             self::GnuKeywordSpellings,
@@ -268,7 +304,12 @@ enum Feature
             self::BasedPointers,
             self::MsKeywordSpellings,
             self::TrailingDeclSpec,
-            self::LeadingCallingConventions => [],
+            self::SpecifierCallingConventions,
+            self::ThisCallConvention,
+            self::MsCallingConventions,
+            self::ClangCallingConventions,
+            self::UnknownEscapes,
+            self::OctalPrefix => [],
         };
     }
 }

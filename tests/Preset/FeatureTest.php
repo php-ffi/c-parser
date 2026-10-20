@@ -150,11 +150,29 @@ final class FeatureTest extends TestCase
             SyntaxErrorException::class,
             [Feature::DeclSpec],
         ];
-        yield 'leading calling conventions' => [
-            Feature::LeadingCallingConventions,
+        yield 'calling conventions among the specifiers' => [
+            Feature::SpecifierCallingConventions,
             '__cdecl int f(void);',
             SyntaxErrorException::class,
             [Feature::CallingConventions],
+        ];
+        yield 'thiscall' => [Feature::ThisCallConvention, 'int __thiscall f(void);', SyntaxErrorException::class];
+        yield 'calling conventions of MSVC' => [
+            Feature::MsCallingConventions,
+            'int __preserve_none f(void);',
+            SyntaxErrorException::class,
+        ];
+        yield 'calling conventions of Clang' => [
+            Feature::ClangCallingConventions,
+            'int __regcall f(void);',
+            SyntaxErrorException::class,
+        ];
+        yield 'unknown escape sequences' => [Feature::UnknownEscapes, 'char *s = "\\q";', SyntaxErrorException::class];
+        yield 'octal prefix' => [Feature::OctalPrefix, 'int x = 0o17;', SyntaxErrorException::class];
+        yield 'type name of a generic selection' => [
+            Feature::GenericTypeOperand,
+            'int x = _Generic(int, int: 1);',
+            ValidationException::class,
         ];
     }
 

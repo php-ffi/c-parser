@@ -40,6 +40,8 @@ final class IntLiteralTest extends TestCase
         yield 'decimal' => ['42', 42, '42', DecIntLiteral::class];
         yield 'decimal with separators' => ["1'000'000", 1_000_000, '1000000', DecIntLiteral::class];
         yield 'octal' => ['017', 15, '15', OctIntLiteral::class];
+        yield 'octal with the prefix of C2y' => ['0o17', 15, '15', OctIntLiteral::class];
+        yield 'octal with the capital prefix and a suffix' => ["0O1'7u", 15, '15', OctIntLiteral::class];
         yield 'octal with separators' => ["0'17", 15, '15', OctIntLiteral::class];
         yield 'hexadecimal' => ['0x1F', 31, '31', HexIntLiteral::class];
         yield 'hexadecimal in upper case' => ['0XABCDEF', 0xAB_CDEF, '11259375', HexIntLiteral::class];

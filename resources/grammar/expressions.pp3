@@ -1021,7 +1021,7 @@ GenericSelectionExpression -> {
     /**
      * @var array{
      *     TokenInterface,
-     *     Expression\ExpressionInterface,
+     *     Expression\ExpressionInterface|Type\TypeInterface,
      *     Expression\GenericSelectionExpression\GenericAssociationList
      * } $children
      */
@@ -1035,10 +1035,13 @@ GenericSelectionExpression -> {
   ;
 
 /**
- * The controlling expression and the comma after it
+ * The controlling expression, or a type name where it cannot be one (GCC,
+ * Clang and C2y, the GenericTypeOperand feature), and the comma after it
  */
-GenericControllingOperand @error("Syntax error, unexpected {token} in the generic selection, an expression expected")
+GenericControllingOperand @error("Syntax error, unexpected {token} in the generic selection, an expression or a type name expected")
   : AssignmentExpression()
+    ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
+  | TypeName()
     ::T_COMMA:: @error("Syntax error, unexpected {token} in the generic selection, \",\" expected")
   ;
 

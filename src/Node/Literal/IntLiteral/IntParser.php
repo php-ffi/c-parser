@@ -30,7 +30,7 @@ final class IntParser
         $literal = \str_replace("'", '', $raw);
         $base = self::parseBase($literal);
 
-        if ($base === IntBase::Hexadecimal || $base === IntBase::Binary) {
+        if ($base === IntBase::Hexadecimal || $base === IntBase::Binary || \stripos($literal, '0o') === 0) {
             $literal = \substr($literal, 2);
         }
 

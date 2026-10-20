@@ -30,7 +30,7 @@ parameters:
     # hand-written ParserExecutor, which extends the generated class.
     -
       identifier: method.notFound
-      message: '#::assert(Feature|KeywordSpelling)\(\)#'
+      message: '#::assert(Feature|KeywordSpelling|EscapeSequences)\(\)#'
       path: src/Parser/CompiledParserExecutor.php
 services:
   -

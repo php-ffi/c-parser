@@ -40,6 +40,9 @@ final class Preset
         Feature::AsmDeclarations,
         Feature::OptionalLastMemberSemicolon,
         Feature::TaggedAnonymousMembers,
+        Feature::UnknownEscapes,
+        Feature::OctalPrefix,
+        Feature::GenericTypeOperand,
     ];
 
     /**
@@ -50,7 +53,9 @@ final class Preset
         Feature::BlockPointers,
         Feature::Nullability,
         Feature::PointerAuth,
-        Feature::LeadingCallingConventions,
+        Feature::SpecifierCallingConventions,
+        Feature::ThisCallConvention,
+        Feature::ClangCallingConventions,
     ];
 
     /**
@@ -81,6 +86,8 @@ final class Preset
         Feature::ForceInline,
         Feature::MsIntegerSuffixes,
         Feature::BasedPointers,
+        Feature::MsCallingConventions,
+        Feature::UnknownEscapes,
     ];
 
     /**
@@ -102,7 +109,9 @@ final class Preset
         Feature::TaggedAnonymousMembers,
         Feature::GnuFlexibleArrayMembers,
         Feature::TrailingDeclSpec,
-        Feature::LeadingCallingConventions,
+        Feature::SpecifierCallingConventions,
+        Feature::ThisCallConvention,
+        Feature::UnknownEscapes,
     ];
 
     /**

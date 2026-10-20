@@ -7,7 +7,7 @@ namespace FFI\Parser\Node\Type\EnumType;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Enumerators of an enumeration, the body between the braces. May be empty with the Clang Microsoft extensions.
+ * Enumerators of an enumeration, the body between the braces. May be empty in MSVC.
  *
  * @template-extends NodeList<Enumerator>
  *

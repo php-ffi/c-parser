@@ -20,7 +20,8 @@ enum IntBase: int
     case Binary = 2;
 
     /**
-     * The `0` prefix, including the `0` constant itself.
+     * The `0` prefix, including the `0` constant itself, or the `0o` or `0O`
+     * prefix of C2y.
      */
     case Octal = 8;
 

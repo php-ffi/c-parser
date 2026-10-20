@@ -32,6 +32,7 @@ final class ExtensionKeywordTest extends TestCase
         yield 'enumerator value' => ['enum { A = __extension__ 1 };', 'enum { A = 1 };'];
         yield 'extra semicolon' => ['int a; __extension__ ;', 'int a;'];
         yield 'extra semicolon among the members' => ['struct S { int a; __extension__ ; };', 'struct S { int a; };'];
+        yield 'parameter' => ['void f(__extension__ int a, __extension__ long long b);', 'void f(int a, long long b);'];
         yield 'operand of a cast to a typedef name' => [
             'typedef int T; int x = (T)__extension__ 1;',
             'typedef int T; int x = (T)1;',

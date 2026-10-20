@@ -44,6 +44,10 @@ final class NullabilityTest extends TestCase
             'void (^ _Nonnull b)(void);',
             '(variable (block (fn void (void)) _Nonnull) b)',
         ];
+        yield 'in the brackets of an array' => [
+            'void f(int a[_Nonnull 3]);',
+            '(function (fn void ((array int 3 _Nonnull) a)) f)',
+        ];
     }
 
     #[DataProvider('declarationsDataProvider')]

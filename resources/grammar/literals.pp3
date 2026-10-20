@@ -19,7 +19,8 @@ Constant
 /**
  * An integer constant of any base. MSVC: the suffix of a sized integer type,
  * 1i64, requires the MsIntegerSuffixes feature. GCC: the imaginary suffix,
- * 3i, requires the ImaginaryConstants feature.
+ * 3i, requires the ImaginaryConstants feature. GCC and Clang: the octal
+ * prefix of C2y, 0o17, requires the OctalPrefix feature.
  */
 IntLiteral -> {
     /** @var Literal\IntLiteral $children */
@@ -29,6 +30,10 @@ IntLiteral -> {
 
     if ($children->isImaginary) {
         $this->assertFeature(Feature::ImaginaryConstants, $source, $offset, $length);
+    }
+
+    if (\stripos($children->raw, '0o') === 0) {
+        $this->assertFeature(Feature::OctalPrefix, $source, $offset, $length);
     }
 
     return $children;
@@ -115,14 +120,12 @@ HexFloatLiteral -> {
 
 /**
  * A character constant. GCC: the escape sequence "\e" requires the EscapeE
- * feature.
+ * feature, any other one of no meaning in C23, "\q", the UnknownEscapes
+ * feature, which accepts "\e" as well.
  */
 CharLiteral -> {
     /** @var TokenInterface $children */
-    // An escape sequence "\e" or "\E" after the escaped characters before it
-    if (\preg_match('/^(?:[^\\\\]++|\\\\[^eE])*+\\\\[eE]/', $children->value) === 1) {
-        $this->assertFeature(Feature::EscapeE, $source, $offset, $length);
-    }
+    $this->assertEscapeSequences($source, $children);
 
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return Literal\CharLiteral::parse($children->value, $offset);
@@ -171,14 +174,12 @@ ConcatenatedStringExpression -> {
 
 /**
  * A string literal. GCC: the escape sequence "\e" requires the EscapeE
- * feature.
+ * feature, any other one of no meaning in C23, "\q", the UnknownEscapes
+ * feature, which accepts "\e" as well.
  */
 StringLiteral -> {
     /** @var TokenInterface $children */
-    // An escape sequence "\e" or "\E" after the escaped characters before it
-    if (\preg_match('/^(?:[^\\\\]++|\\\\[^eE])*+\\\\[eE]/', $children->value) === 1) {
-        $this->assertFeature(Feature::EscapeE, $source, $offset, $length);
-    }
+    $this->assertEscapeSequences($source, $children);
 
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return Literal\StringLiteral::parse($children->value, $offset);

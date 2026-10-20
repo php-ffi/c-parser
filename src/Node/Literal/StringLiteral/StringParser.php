@@ -30,12 +30,15 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
 final class StringParser
 {
     /**
-     * Matches a simple, octal, hexadecimal escape sequence or a universal character name.
+     * Matches a simple, octal, hexadecimal escape sequence, a universal character name, a backslash ending a line,
+     * which splices it with the next one, or an unknown escape sequence the compilers accept, `\q`, which stands
+     * for its character.
      *
+     * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 5.1.1.2 Translation phases
      * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
      */
     private const ESCAPE_PATTERN = '/\\\\(?:([\'"?\\\\abefnrtvE])|([0-7]{1,3})|x([0-9A-Fa-f]++)'
-        . '|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8}))/';
+        . '|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8})|(\r?\n)|(.))/';
 
     /**
      * Simple escape sequences by the character after the backslash.
@@ -124,6 +127,14 @@ final class StringParser
 
         if (($matches[3] ?? '') !== '') {
             return self::encodeCodeUnit(self::parseHexadecimal($matches[3]), $prefix);
+        }
+
+        if (($matches[6] ?? '') !== '') {
+            return '';
+        }
+
+        if (($matches[7] ?? '') !== '') {
+            return $matches[7];
         }
 
         $codePoint = ($matches[4] ?? '') !== '' ? $matches[4] : ($matches[5] ?? '');

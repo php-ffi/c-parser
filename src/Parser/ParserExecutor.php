@@ -34,6 +34,11 @@ final class ParserExecutor extends CompiledParserExecutor
      */
     private const MS_KEYWORD_SPELLINGS = ['__inline', '__restrict', '__alignof', '__typeof__', '__typeof_unqual__'];
 
+    /**
+     * The characters after a backslash that start an escape sequence of C23, 6.4.4.5.
+     */
+    private const C23_ESCAPE_CHARACTERS = '\'"?\\abfnrtv01234567xuU';
+
     public function __construct(
         /**
          * @var list<Feature>
@@ -76,6 +81,31 @@ final class ParserExecutor extends CompiledParserExecutor
         }
 
         $this->assertFeature(Feature::GnuKeywordSpellings, $source, $keyword->offset, $keyword->size);
+    }
+
+    /**
+     * Rejects the escape sequences of the extensions in a character constant or a string literal: `\e` unless the
+     * EscapeE or UnknownEscapes feature accepts it, any other one of no meaning in C23 (`\q`) unless the
+     * UnknownEscapes feature accepts it.
+     *
+     * @throws SyntaxErrorException in case of an escape sequence is not accepted
+     */
+    protected function assertEscapeSequences(ReadableInterface $source, TokenInterface $literal): void
+    {
+        // A backslash and the character after it, an escaped backslash is one pair, a line splice has no character
+        \preg_match_all('/\\\\(?:\r?\n|(.))/', $literal->value, $escapes);
+
+        foreach ($escapes[1] as $character) {
+            if ($character === ''
+                || \str_contains(self::C23_ESCAPE_CHARACTERS, $character)
+                || \in_array(Feature::UnknownEscapes, $this->features, true)) {
+                continue;
+            }
+
+            $feature = $character === 'e' || $character === 'E' ? Feature::EscapeE : Feature::UnknownEscapes;
+
+            $this->assertFeature($feature, $source, $literal->offset, $literal->size);
+        }
     }
 
     /**

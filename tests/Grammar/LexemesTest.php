@@ -95,6 +95,7 @@ final class LexemesTest extends TestCase
             'T_PTRAUTH' => ['__ptrauth'],
             'T_CALLING_CONVENTION' => [
                 '__cdecl', '__stdcall', '__fastcall', '__vectorcall', '__thiscall', '__clrcall', '__preserve_none',
+                '__regcall', '__pascal',
             ],
         ];
 
@@ -150,7 +151,7 @@ final class LexemesTest extends TestCase
         foreach ([
             'asm', '__asm_', '__asm___', '__attribute_', '__attribute___', '_declspec', '__declspec__', '__extension', '_const',
             '__const_', '__inline___', '_restrict', '__typeof_', '__alignof_', '__thread__', '_thread', '__cdecl_',
-            '_cdecl', '_stdcall', 'cdecl', '__pascal', '_ptr64', '__ptr64_', '_forceinline', '__forceinline__',
+            '_cdecl', '_stdcall', 'cdecl', '__pascal_', '_ptr64', '__ptr64_', '_forceinline', '__forceinline__',
             '_Nonnull_', '__based_', '__ptrauth__', '__real___', '__imag_', '__builtin_offsetof',
             '__pragma', '__int64',
         ] as $name) {
@@ -185,13 +186,14 @@ final class LexemesTest extends TestCase
 
         foreach ([
             "'a'", "'ab'", "'\\n'", "'\\''", "'\"'", "'\\0'", "'\\x41'", "'\\u00E9'", "'\\e'", "'\\E'",
-            "u8'a'", "u'a'", "U'a'", "L'a'",
+            "'\\q'", "'\\8'", "u8'a'", "u'a'", "U'a'", "L'a'",
         ] as $literal) {
             yield 'character ' . $literal => [$literal, [['T_CHAR_LITERAL', $literal]]];
         }
 
         foreach ([
-            '""', '"text"', '"a\\"b"', "\"'\"", '"\\\\"', '"\\x41\\101\\u00E9\\U0001F600"',
+            '""', '"text"', '"a\\"b"', "\"'\"", '"\\\\"', '"\\x41\\101\\u00E9\\U0001F600"', '"\\q\\%"', "\"a\\\nb\"",
+            "\"a\\\r\nb\"",
             'u8""', 'u""', 'U""', 'L""',
         ] as $literal) {
             yield 'string ' . $literal => [$literal, [['T_STRING_LITERAL', $literal]]];
@@ -325,13 +327,13 @@ final class LexemesTest extends TestCase
         yield 'doubled digit separator' => ["1''0", [['T_PP_NUMBER', '1'], ['Unknown', "''0"]]];
         yield 'trailing digit separator' => ["1'", [['T_PP_NUMBER', '1'], ['Unknown', "'"]]];
 
-        foreach (["'1", "''", "'a", "'\\q'", "'ab\\"] as $fragment) {
+        foreach (["'1", "''", "'a", "'\\x'", "'ab\\"] as $fragment) {
             yield 'invalid character ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
 
         yield 'invalid character u8\'x' => ["u8'x", [['T_IDENTIFIER', 'u8'], ['Unknown', "'x"]]];
 
-        foreach (['"text', '"\\q"', '"\\x"', '"\\u12"'] as $fragment) {
+        foreach (['"text', '"\\x"', '"\\u12"', '"\\U0001F6"'] as $fragment) {
             yield 'invalid string ' . $fragment => [$fragment, [['Unknown', $fragment]]];
         }
 

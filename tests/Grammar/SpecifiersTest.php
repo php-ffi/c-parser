@@ -281,7 +281,6 @@ final class SpecifiersTest extends TestCase
         yield 'atomic type specifier without a type' => ['_Atomic();', 8, ')'];
         yield 'bit-precise integer without a width' => ['_BitInt();', 8, ')'];
         yield 'typeof without an operand' => ['typeof();', 7, ')'];
-        yield 'static assertion member without a semicolon' => ['struct S { static_assert(1) };', 28, '}'];
     }
 
     /**

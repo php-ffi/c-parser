@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Expression;
 
 use FFI\Parser\Node\Expression\GenericSelectionExpression\GenericAssociationList;
+use FFI\Parser\Node\Type\TypeInterface;
 
 /**
  * Choice of an expression by the type of the controlling operand:
@@ -19,9 +20,10 @@ final class GenericSelectionExpression extends Expression
      */
     public function __construct(
         /**
-         * The controlling expression whose type selects the association
+         * The operand whose type selects the association: an expression, or
+         * a type name in GCC, Clang and C2y, `_Generic(int, int: 1)`
          */
-        public ExpressionInterface $operand,
+        public ExpressionInterface|TypeInterface $operand,
         public GenericAssociationList $associations,
         int $offset = 0,
     ) {

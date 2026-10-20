@@ -29,6 +29,10 @@ final class PointerModifiersTest extends TestCase
         yield 'unnamed parameter' => ['void f(int * __ptr64);', '(function (fn void ((ptr int __ptr64))) f)'];
         yield 'pointer to a function' => ['int (* __ptr64 f)(void);', '(variable (ptr (fn int (void)) __ptr64) f)'];
         yield 'member' => ['struct S { void * __ptr64 p; };', '(tag struct S { (ptr void __ptr64) p })'];
+        yield 'in the brackets of an array' => [
+            'void f(int a[__ptr64]);',
+            '(function (fn void ((array int __ptr64) a)) f)',
+        ];
     }
 
     #[DataProvider('modifiersDataProvider')]

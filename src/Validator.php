@@ -12,6 +12,7 @@ use FFI\Parser\Validator\Rule\AtomicTypeRule;
 use FFI\Parser\Validator\Rule\Extension\AlignOfExpressionRule;
 use FFI\Parser\Validator\Rule\Extension\BuiltinTypeArgumentRule;
 use FFI\Parser\Validator\Rule\Extension\ComplexIntegerTypeRule;
+use FFI\Parser\Validator\Rule\Extension\GenericTypeOperandRule;
 use FFI\Parser\Validator\Rule\Extension\GnuFlexibleArrayMemberRule;
 use FFI\Parser\Validator\Rule\Extension\ModifiedTypedefNameRule;
 use FFI\Parser\Validator\Rule\Extension\TaggedAnonymousMemberRule;
@@ -89,6 +90,7 @@ final class Validator
             new InitializerRule(),
             new AlignOfExpressionRule(),
             new BuiltinTypeArgumentRule(),
+            new GenericTypeOperandRule(),
             ...$append,
         ];
     }

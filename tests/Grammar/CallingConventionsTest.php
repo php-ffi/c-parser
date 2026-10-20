@@ -89,6 +89,8 @@ final class CallingConventionsTest extends TestCase
             ['(variable (ptr (attr __attribute__((a)) __stdcall int)) p)'],
         ];
         yield 'object' => ['int __cdecl x;', ['(variable (attr __cdecl int) x)']];
+        yield 'convention of Clang' => ['int __regcall f(void);', ['(function (fn int (void) __regcall) f)']];
+        yield 'convention of Borland in Clang' => ['int __pascal f(void);', ['(function (fn int (void) __pascal) f)']];
     }
 
     /**

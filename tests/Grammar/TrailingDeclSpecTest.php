@@ -26,6 +26,22 @@ final class TrailingDeclSpecTest extends TestCase
             '(function (fn int (void)) f __declspec(dllimport))',
         ];
         yield 'after the pointer' => ['int * __declspec(dllimport) p;', '(variable (ptr int __declspec(dllimport)) p)'];
+        yield 'after a member' => [
+            'struct S { int a __declspec(align(8)); };',
+            '(tag struct S { int a __declspec(align(8)) })',
+        ];
+        yield 'in the brackets of an array' => [
+            'void f(int a[__declspec(x) 3]);',
+            '(function (fn void ((array int 3 __declspec(x)) a)) f)',
+        ];
+        yield 'start of a parenthesized declarator' => [
+            'int (__declspec(dllimport) *f)(void);',
+            '(variable (ptr (fn int (void) __declspec(dllimport))) f)',
+        ];
+        yield 'start of a parenthesized abstract declarator' => [
+            'int s = sizeof(int (__declspec(x) *)(void));',
+            '(variable int s = (sizeof (ptr (fn int (void) __declspec(x)))))',
+        ];
     }
 
     #[DataProvider('declarationsDataProvider')]

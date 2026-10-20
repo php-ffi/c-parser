@@ -85,10 +85,11 @@ AttributedNameDeclarator -> {
 
 /**
  * The attributes a declarator starts with: the calling conventions of MSVC
- * or the GCC attributes at the start of a parenthesized declarator. They
- * belong to the nearest function type, through the pointers, the block
- * pointers, the qualifiers and the attributed types, among its own attributes in the
- * order written. A type without a function with them is an AttributedType.
+ * or the GCC attributes and the MSVC attributes of PHP FFI at the start of
+ * a parenthesized declarator. They belong to the nearest function type,
+ * through the pointers, the block pointers, the qualifiers and the
+ * attributed types, among its own attributes in the order written. A type
+ * without a function with them is an AttributedType.
  */
 DeclaratorAttributes -> {
     /** @var non-empty-list<Attribute\AttributeInterface> $children */
@@ -152,14 +153,15 @@ DeclaratorAttributes -> {
         return $result;
     };
 }
-  : GnuAttributeSpecifier()+
+  : (GnuAttributeSpecifier() | TrailingDeclSpec())+
   | CallingConvention()+
   ;
 
 /**
  * The name, its attributes and the arrays and the functions after it,
  * which apply in reverse order: "a[2][3]" is an array of two arrays of
- * three.
+ * three. The GCC attributes after a declarator belong to the declaration,
+ * the member or the parameter, not to the name.
  */
 NameDeclarator -> {
     /**
@@ -189,7 +191,7 @@ NameDeclarator -> {
         return $type;
     }, ...$attributes];
 }
-  : (<T_IDENTIFIER> | <T_BUILTIN_CALL> | KeywordIdentifier()) AttributeSpecifier()* DeclaratorSuffix()*
+  : (<T_IDENTIFIER> | <T_BUILTIN_CALL> | KeywordIdentifier()) StandardAttributeSpecifier()* DeclaratorSuffix()*
   ;
 
 /**
@@ -409,12 +411,33 @@ DeclaratorSuffix -> {
  */
 
 /**
- * A qualifier in the brackets of an array, or a GCC attribute among them:
- * "int a[__attribute__((x)) 3]"
+ * A qualifier in the brackets of an array, or among them the attributes and
+ * the qualifiers of the extensions a pointer takes after "*": the GCC
+ * attributes, "int a[__attribute__((x)) 3]", the MSVC modifiers of a
+ * pointer, the Clang nullability, and the MSVC attributes and the calling
+ * conventions of PHP FFI
  */
 ArrayQualifier
   : TypeQualifier()
   | GnuAttributeSpecifier()
+  | PointerModifier()
+  | Nullability()
+  | TrailingDeclSpec()
+  | ArrayCallingConvention()
+  ;
+
+/**
+ * PHP FFI: a calling convention in the brackets of an array,
+ * "void f(int a[__cdecl 3])". Requires the TrailingCallingConventions
+ * feature.
+ */
+ArrayCallingConvention -> {
+    /** @var Attribute\AttributeInterface $children */
+    $this->assertFeature(Feature::TrailingCallingConventions, $source, $offset, $length);
+
+    return $children;
+}
+  : CallingConvention()
   ;
 
 ArrayDeclarator
@@ -587,8 +610,15 @@ FunctionDeclarator -> {
   ;
 
 ParameterTypeList
-  : Parameter() (::T_COMMA:: Parameter())* (::T_COMMA:: <T_ELLIPSIS>)?
+  : ParameterDeclaration() (::T_COMMA:: ParameterDeclaration())* (::T_COMMA:: <T_ELLIPSIS>)?
   | <T_ELLIPSIS>
+  ;
+
+/**
+ * A parameter, after __extension__ or not
+ */
+ParameterDeclaration
+  : ExtensionKeyword()* Parameter()
   ;
 
 /**
@@ -703,6 +733,10 @@ ArrayDeclaratorStart
   : <T_RBRACKET>
   | <T_STATIC>
   | <T_GNU_ATTRIBUTE>
+  | <T_POINTER_MODIFIER>
+  | <T_NULLABILITY>
+  | <T_DECLSPEC>
+  | <T_CALLING_CONVENTION>
   | <T_CONST>
   | <T_VOLATILE>
   | <T_RESTRICT>

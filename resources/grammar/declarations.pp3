@@ -476,10 +476,18 @@ RangeDesignator -> {
   ;
 
 /**
- * 6.7.12 Static assertions, static_assert(condition, "message"), the message
- * is optional
+ * 6.7.12 Static assertions, static_assert(condition, "message") and its
+ * semicolon, the message is optional
  */
-StaticAssertDeclaration -> {
+StaticAssertDeclaration
+  : StaticAssertion()
+    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} after the static assertion, \";\" expected")
+  ;
+
+/**
+ * The static assertion without its semicolon
+ */
+StaticAssertion -> {
     /**
      * @var array{
      *     TokenInterface,
@@ -494,7 +502,6 @@ StaticAssertDeclaration -> {
         ConditionalExpression()
         StaticAssertMessage()?
     ::T_RPAREN:: @error("Syntax error, unexpected {token} in the static assertion, \",\" or \")\" expected")
-    ::T_SEMICOLON:: @error("Syntax error, unexpected {token} after the static assertion, \";\" expected")
   ;
 
 /**

@@ -29,6 +29,10 @@ final class OptionalLastMemberSemicolonTest extends TestCase
             'struct S { __extension__ union { int x; } };',
             '(tag struct S { union _ { int x } _ })',
         ];
+        yield 'static assertion' => [
+            'struct S { int a; static_assert(1) };',
+            '(tag struct S { int a; (static_assert 1) })',
+        ];
     }
 
     #[DataProvider('membersDataProvider')]
@@ -43,7 +47,7 @@ final class OptionalLastMemberSemicolonTest extends TestCase
     public static function invalidMembersDataProvider(): iterable
     {
         yield 'declarator without a comma' => ['struct S { int a b; };', 17, 'b'];
-        yield 'static assertion' => ['struct S { int a; static_assert(1) };', 35, '}'];
+        yield 'static assertion before a member' => ['struct S { static_assert(1) int a; };', 28, 'int'];
     }
 
     /**

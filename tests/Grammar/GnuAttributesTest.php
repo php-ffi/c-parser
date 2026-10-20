@@ -163,6 +163,10 @@ final class GnuAttributesTest extends TestCase
             'int f(void) __attribute__((const));',
             '(function (fn int (void)) f __attribute__((const)))',
         ];
+        yield 'version of availability' => [
+            'int f(void) __attribute__((availability(macos, introduced=10.13.4)));',
+            '(function (fn int (void)) f __attribute__((availability(macos, (tokens introduced=10.13.4)))))',
+        ];
         yield 'arguments' => [
             'int f(const char *, ...) __attribute__((format(printf, 1, 2)));',
             '(function (fn int ((ptr [const char]), ...)) f __attribute__((format(printf, 1, 2))))',
@@ -182,6 +186,8 @@ final class GnuAttributesTest extends TestCase
     {
         yield 'single parenthesis' => ['int a __attribute__(x);', 20, 'x'];
         yield 'unclosed list' => ['int a __attribute__((x);', 23, ';'];
+        yield 'between the name and the parameters' => ['int f __attribute__((x)) (void);', 25, '('];
+        yield 'before an assembler label' => ['int x __attribute__((x)) __asm__("a");', 25, '__asm__'];
     }
 
     /**

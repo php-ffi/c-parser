@@ -99,6 +99,15 @@ final class PresetTest extends TestCase
             '__asm__("nop"); int a[] = {[0 ... 1] = 2}; long double x = 1.0w; int y = a ?: 1;'
                 . ' struct T { int x; }; struct S { struct T; int b };',
         ];
+        yield 'GCC with C2y' => [Preset::gcc(), 'int x = 0o17; int y = _Generic(int, int: 1, default: 0);'];
+        yield 'Clang with its calling conventions' => [
+            Preset::clang(),
+            'int __regcall f(void); __cdecl int g(void); int __thiscall h(void); int __cdecl;',
+        ];
+        yield 'MSVC with its calling conventions' => [
+            Preset::msvc(),
+            'int __preserve_none f(void); int __clrcall g(void);',
+        ];
         yield 'Clang' => [Preset::clang(), 'void __stdcall f(__builtin_va_list ap, __fp16 h);'];
         yield 'Clang with blocks and nullability' => [
             Preset::clang(),
@@ -147,6 +156,12 @@ final class PresetTest extends TestCase
         yield 'MSVC with a GNU keyword spelling' => [Preset::msvc(), 'static __inline__ int f(void);'];
         yield 'MSVC with a declspec after the declarator' => [Preset::msvc(), 'int f(void) __declspec(dllimport);'];
         yield 'MSVC with a leading calling convention' => [Preset::msvc(), '__cdecl int f(void);'];
+        yield 'MSVC with thiscall' => [Preset::msvc(), 'int __thiscall f(void);'];
+        yield 'Clang with a calling convention of MSVC' => [
+            Preset::clang(isMsExtensionsEnabled: true),
+            'int __clrcall f(void);',
+        ];
+        yield 'PHP FFI with a calling convention of Clang' => [Preset::php(), 'int __regcall f(void);'];
         yield 'MSVC with a GNU attribute' => [Preset::msvc(), 'int x __attribute__((aligned(8)));'];
         yield 'PHP FFI with a statement expression' => [Preset::php(), 'int x = ({ 1; });'];
     }

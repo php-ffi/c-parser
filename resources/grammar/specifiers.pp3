@@ -66,19 +66,20 @@ DeclarationSpecifiers -> {
         (NonTypeSpecifier() | LeadingCallingConventions())+ TypeSpecifiers()?
       | TypeSpecifiers()
     )
-    StandardAttributeSpecifier()*
+    StandardAttributeSpecifier()* LoneCallingConventions()?
   ;
 
 /**
  * Clang and PHP FFI: the calling conventions before the type specifiers,
  * "__cdecl int f(void);", given to the declaration among its specifiers.
- * A keyword of a type specifier follows them, possibly after other
- * specifiers: before a name they are the start of the declarator. Requires
- * the LeadingCallingConventions feature.
+ * A type specifier follows them, possibly after other specifiers: a keyword
+ * or a typedef name before a declarator. Before a name alone they are the
+ * start of the declarator. Requires the SpecifierCallingConventions
+ * feature.
  */
 LeadingCallingConventions -> {
     /** @var non-empty-list<Attribute\AttributeInterface> $children */
-    $this->assertFeature(Feature::LeadingCallingConventions, $source, $offset, $length);
+    $this->assertFeature(Feature::SpecifierCallingConventions, $source, $offset, $length);
 
     return $children;
 }
@@ -86,7 +87,21 @@ LeadingCallingConventions -> {
   ;
 
 LeadingCallingConventionsEnd
-  : NonTypeSpecifier()* TypeSpecifierKeyword()
+  : NonTypeSpecifier()* (TypeSpecifierKeyword() | <T_IDENTIFIER> ModifiedNamedTypeEnd())
+  ;
+
+/**
+ * Clang and PHP FFI: the calling conventions after the specifiers of a
+ * declaration without declarators, "int __cdecl;", given to it among its
+ * specifiers. Requires the SpecifierCallingConventions feature.
+ */
+LoneCallingConventions -> {
+    /** @var non-empty-list<Attribute\AttributeInterface> $children */
+    $this->assertFeature(Feature::SpecifierCallingConventions, $source, $offset, $length);
+
+    return $children;
+}
+  : CallingConvention()+ &<T_SEMICOLON>
   ;
 
 /**
@@ -132,7 +147,7 @@ ModifiedNamedTypeEnd
  * have: "(*", "(^", "(__stdcall", "(__attribute__"
  */
 NestedDeclaratorStart
-  : <T_LPAREN> (<T_ASTERISK> | <T_CARET> | <T_CALLING_CONVENTION> | <T_GNU_ATTRIBUTE>)
+  : <T_LPAREN> (<T_ASTERISK> | <T_CARET> | <T_CALLING_CONVENTION> | <T_GNU_ATTRIBUTE> | <T_DECLSPEC>)
   ;
 
 /**
@@ -192,8 +207,11 @@ SpecifierQualifierList -> {
 
     return [$type, new Specifier\SpecifierList($specifiers, $specifiers[0]->offset)];
 }
-  : StandardAttributeSpecifier()* (SpecifierQualifier()+ QualifiedTypeSpecifiers()? | QualifiedTypeSpecifiers())
-    StandardAttributeSpecifier()*
+  : StandardAttributeSpecifier()* (
+        (SpecifierQualifier() | LeadingCallingConventions())+ QualifiedTypeSpecifiers()?
+      | QualifiedTypeSpecifiers()
+    )
+    StandardAttributeSpecifier()* LoneCallingConventions()?
   ;
 
 /**
@@ -617,16 +635,18 @@ RecordMember
   ;
 
 /**
- * PHP FFI: the last member declaration without its semicolon,
- * "struct S { int a };". Requires the OptionalLastMemberSemicolon feature.
+ * GCC, Clang and PHP FFI: the last member declaration or static assertion
+ * without its semicolon, "struct S { int a };". Requires the
+ * OptionalLastMemberSemicolon feature.
  */
 LastMemberDeclarations -> {
-    /** @var non-empty-list<Type\RecordType\MemberDeclaration> $children */
+    /** @var non-empty-list<Type\RecordType\MemberDeclaration>|Declaration\StaticAssertDeclaration $children */
     $this->assertFeature(Feature::OptionalLastMemberSemicolon, $source, $offset, $length);
 
     return $children;
 }
   : ExtensionKeyword()* MemberDeclarations()
+  | StaticAssertion()
   ;
 
 /**
@@ -672,7 +692,10 @@ MemberDeclarator
 
 /**
  * A declarator with the attributes after its name and the width of a
- * bit-field, and the GCC attributes before the declarator and after it
+ * bit-field, and the GCC attributes before the declarator and after it. The
+ * MSVC attributes and the calling conventions of PHP FFI go after it as
+ * well, the calling conventions apply to the type of the member as after the
+ * declarator of a declaration.
  */
 NamedMemberDeclarator -> {
     /**
@@ -685,14 +708,18 @@ NamedMemberDeclarator -> {
      */
     $name = null;
     $declarator = null;
+    $conventions = [];
     $width = null;
     $attributes = [];
 
     for ($i = 0, $count = \count($children); $i < $count; ++$i) {
         if ($children[$i] instanceof Node\Identifier) {
             $name = $children[$i];
-        } elseif ($children[$i] instanceof \Closure) {
+        } elseif ($children[$i] instanceof \Closure && $declarator === null) {
             $declarator = $children[$i];
+        } elseif ($children[$i] instanceof \Closure) {
+            // The calling conventions after the declarator
+            $conventions[] = $children[$i];
         } elseif ($children[$i] instanceof Attribute\AttributeInterface) {
             $attributes[] = $children[$i];
         } else {
@@ -707,11 +734,17 @@ NamedMemberDeclarator -> {
         ?Type\TypeInterface $type,
         ?Specifier\SpecifierList $specifiers,
         int $start,
-    ) use ($declarator, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
+    ) use ($declarator, $conventions, $name, $width, $attributes): Type\RecordType\MemberDeclaration {
         \assert($start >= 0);
 
+        $type = $declarator($type);
+
+        foreach ($conventions as $convention) {
+            $type = $convention($type);
+        }
+
         return new Type\RecordType\MemberDeclaration(
-            $declarator($type),
+            $type,
             $name,
             $width,
             $attributes === [] ? null : new Attribute\AttributeList($attributes, $attributes[0]->offset),
@@ -720,7 +753,8 @@ NamedMemberDeclarator -> {
         );
     };
 }
-  : GnuAttributeSpecifier()* Declarator() (::T_COLON:: ConditionalExpression())? GnuAttributeSpecifier()*
+  : GnuAttributeSpecifier()* Declarator() (::T_COLON:: ConditionalExpression())?
+    (GnuAttributeSpecifier() | TrailingDeclSpec() | TrailingCallingConventions())*
   ;
 
 /**

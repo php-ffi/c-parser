@@ -50,14 +50,28 @@
  */
 %fragment SIMPLE_ESCAPE     ['"?\\abefnrtvE]
 %fragment NUMERIC_ESCAPE    [0-7]{1,3}|x[0-9A-Fa-f]++
-%fragment ESCAPE            \\(?:(?&SIMPLE_ESCAPE)|(?&NUMERIC_ESCAPE))|(?&UCN)
 
 /**
- * Integer constants, 6.4.4.2
+ * A backslash before a character that starts no escape sequence, "\q",
+ * which the compilers accept as the character itself. Requires the
+ * UnknownEscapes feature.
+ */
+%fragment UNKNOWN_ESCAPE    [^\r\n'"?\\abefnrtvExuU0-7]
+
+/**
+ * A backslash ending a line inside a literal, which splices the line with
+ * the next one (5.1.1.2, translation phase 2)
+ */
+%fragment LITERAL_SPLICE    \\\r?+\n
+%fragment ESCAPE            \\(?:(?&SIMPLE_ESCAPE)|(?&NUMERIC_ESCAPE)|(?&UNKNOWN_ESCAPE))|(?&UCN)|(?&LITERAL_SPLICE)
+
+/**
+ * Integer constants, 6.4.4.2, and the octal prefix of C2y, 0o17, which
+ * requires the OctalPrefix feature
  */
 %fragment HEX_INT           0[xX](?&HEX_DIGITS)
 %fragment BIN_INT           0[bB][01](?:'?[01])*+
-%fragment OCT_INT           0(?:'?[0-7])*+
+%fragment OCT_INT           0[oO][0-7](?:'?[0-7])*+|0(?:'?[0-7])*+
 %fragment DEC_INT           [1-9](?:'?[0-9])*+
 %fragment INT_SIZE          ll|LL|[lL]|wb|WB
 %fragment INT_TYPE_SUFFIX   [uU](?&INT_SIZE)?|(?&INT_SIZE)[uU]?
@@ -369,9 +383,9 @@
 %token T_BUILTIN_CALL       __builtin_(?&ID_CONTINUE)++(?=[\x20\t\r\n\f\x0B]*+\()
 
 /**
- * MSVC: the calling conventions, __cdecl, __stdcall
+ * MSVC and Clang: the calling conventions, __cdecl, __stdcall, __regcall
  */
-%token T_CALLING_CONVENTION __(?:cdecl|stdcall|fastcall|vectorcall|thiscall|clrcall|preserve_none)(?&KEYWORD_END)
+%token T_CALLING_CONVENTION __(?:cdecl|stdcall|fastcall|vectorcall|thiscall|clrcall|preserve_none|regcall|pascal)(?&KEYWORD_END)
 
 /**
  * MSVC: the modifiers of a pointer, __ptr64, __unaligned

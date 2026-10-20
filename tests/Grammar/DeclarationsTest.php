@@ -329,7 +329,6 @@ final class DeclarationsTest extends TestCase
         yield 'unclosed compound literal' => ['int x = (int){1;', 15, ';'];
         yield 'designator without an initializer' => ['int a = {[1]};', 12, '}'];
         yield 'designator without an equals sign' => ['int a = {.a 1};', 12, '1'];
-        yield 'generic selection of a type name' => ['int x = _Generic(int, int: 1);', 17, 'int'];
         yield 'name without a type specifier before an array' => ['static x[3];', 8, '['];
     }
 

@@ -142,12 +142,22 @@ DeclSpecAttribute -> {
   ;
 
 /**
- * MSVC: a calling convention, __stdcall. Requires the CallingConventions
- * feature.
+ * MSVC and Clang: a calling convention, __stdcall. Requires the feature of
+ * its word: CallingConventions for __cdecl, __stdcall, __fastcall and
+ * __vectorcall, ThisCallConvention for __thiscall, MsCallingConventions for
+ * __clrcall and __preserve_none, ClangCallingConventions for __regcall and
+ * __pascal.
  */
 CallingConvention -> {
     /** @var TokenInterface $children */
-    $this->assertFeature(Feature::CallingConventions, $source, $children->offset, $children->size);
+    $feature = match ($children->value) {
+        '__thiscall' => Feature::ThisCallConvention,
+        '__clrcall', '__preserve_none' => Feature::MsCallingConventions,
+        '__regcall', '__pascal' => Feature::ClangCallingConventions,
+        default => Feature::CallingConventions,
+    };
+
+    $this->assertFeature($feature, $source, $children->offset, $children->size);
 
     // @phpstan-ignore-next-line the lexer never yields an empty token, but the contract types its value as string
     return new Attribute\KeywordAttribute(new Node\Identifier($children->value, $offset), null, $offset);
@@ -325,7 +335,9 @@ ArgumentClauseTokenSequence -> {
 /**
  * A token other than a comma, or a sequence in brackets with any tokens
  * inside. Two consecutive "[" are two brackets, each closed on its own:
- * [[1], [2]]. Also reads the body of a function definition.
+ * [[1], [2]]. A number of the preprocessor that is no constant is one too,
+ * the version of the Clang attribute availability(macos, introduced=10.13.4).
+ * Also reads the body of a function definition.
  */
 BalancedToken
   : <T_LPAREN> (BalancedToken() | <T_COMMA>)* <T_RPAREN>
@@ -334,7 +346,7 @@ BalancedToken
   | <T_LBRACE> (BalancedToken() | <T_COMMA>)* <T_RBRACE>
   | AttributeName()
   | <T_HEX_FLOAT_LITERAL> | <T_DEC_FLOAT_LITERAL> | <T_HEX_INT_LITERAL> | <T_BIN_INT_LITERAL>
-  | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL>
+  | <T_OCT_INT_LITERAL> | <T_DEC_INT_LITERAL> | <T_CHAR_LITERAL> | <T_STRING_LITERAL> | <T_PP_NUMBER>
   | <T_ELLIPSIS> | <T_ARROW> | <T_INCREMENT> | <T_DECREMENT> | <T_SHL_ASSIGN> | <T_SHR_ASSIGN> | <T_SHL>
   | <T_SHR> | <T_LESS_EQUAL> | <T_GREATER_EQUAL> | <T_EQUAL> | <T_NOT_EQUAL> | <T_LOGICAL_AND>
   | <T_LOGICAL_OR> | <T_MUL_ASSIGN> | <T_DIV_ASSIGN> | <T_MOD_ASSIGN> | <T_ADD_ASSIGN> | <T_SUB_ASSIGN>

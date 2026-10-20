@@ -53,6 +53,18 @@ final class TrailingCallingConventionsTest extends TestCase
         yield 'after struct' => ['struct __cdecl S { int a; };', ['(tag struct __cdecl S { int a })']];
         yield 'after enum' => ['enum __cdecl E { A };', ['(tag enum __cdecl E { A })']];
         yield 'after enum without a body' => ['enum __cdecl E x;', ['(variable enum __cdecl E x)']];
+        yield 'after a member' => [
+            'struct S { int (*f)(void) __cdecl; };',
+            ['(tag struct S { (ptr (fn int (void) __cdecl)) f })'],
+        ];
+        yield 'after the width of a bit-field' => [
+            'struct S { int a : 3 __cdecl; };',
+            ['(tag struct S { (attr __cdecl int) a:3 })'],
+        ];
+        yield 'in the brackets of an array' => [
+            'void f(int a[__cdecl 3]);',
+            ['(function (fn void ((array int 3 __cdecl) a)) f)'],
+        ];
     }
 
     /**
