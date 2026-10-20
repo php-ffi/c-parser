@@ -197,6 +197,14 @@ final class Preset
     ) {}
 
     /**
+     * Creates an empty (default) preset.
+     */
+    public static function empty(): self
+    {
+        return new self();
+    }
+
+    /**
      * Creates the preset of C23 itself, which accepts no extensions and
      * knows no typedef names.
      */

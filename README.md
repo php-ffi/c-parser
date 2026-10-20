@@ -57,12 +57,8 @@ $parser = new FFI\Parser\Parser(
 
 ### AST Validators
 
-The parser checks the AST with validators after the transformations. By
-default they reject the code the grammar lets through but whose tree has no
-meaning in C23, such as `long float`, `static extern int x;` or
-`int f(void)[3];`, and `parse()` throws `FFI\Parser\Exception\ValidationException`.
-To skip the checks, pass `rules: []`. To use your own, pass it to the
-constructor:
+The parser checks the AST with validators after the transformations. To use
+your own, pass it to the constructor:
 
 ```php
 // override rules
@@ -80,11 +76,10 @@ $parser = new FFI\Parser\Parser(
 
 ### Compiler Presets
 
-A preset lists the extensions of C23 a compiler accepts and the typedef names
-it knows without any header. By default the parser accepts every extension it
-knows and the typedef names of every compiler (`Preset::default()`),
-`Preset::c23()` is plain C23 without any names. To change it, pass a
-`FFI\Parser\Preset` to the constructor:
+A preset lists the typedef names a compiler knows without any header. 
+
+By default the parser knows the names of Clang, GCC, MSVC and PHP FFI. To use 
+only some of them, pass a preset to the constructor:
 
 ```php
 use FFI\Parser\Preset;
@@ -96,27 +91,48 @@ $parser = new FFI\Parser\Parser(preset: new Preset(
 ));
 ```
 
-The presets of the compilers are `Preset::gcc()`, `Preset::clang()`,
-`Preset::msvc()` and `Preset::php()`:
+The presets of the compilers are:
+- `FFI\Parser\Preset::gcc()` - only GCC features
+- `FFI\Parser\Preset::clang()` - only Clang features
+- `FFI\Parser\Preset::msvc()` - only MSVC features
+- `FFI\Parser\Preset::php()` - only PHP FFI features
+- `FFI\Parser\Preset::c23()` - only C23 features
+- `FFI\Parser\Preset::empty()` - no additional features
+- `FFI\Parser\Preset::default()` - default preset, all features
 
 ```php
 $parser = new FFI\Parser\Parser(preset: Preset::php());
 ```
 
-Without these names it is not possible to obtain an unambiguous tree:
+Without these presets it is not possible to obtain an unambiguous tree:
 
 ```php
-// With `uint8_t` in the preset: the size of an array of 4 elements.
-// Without it: the size of the 4th element of the `uint8_t` array.
-$ast = $parser->parse('int a = sizeof(uint8_t[4]);');
+// Size of an array of 4 uint8_t elements.
+// PHP Analogue: `count([1, 2, 3, 4])`
+$ast = (new FFI\Parser\Parser())
+    ->parse('int a = sizeof(uint8_t[4]);');
+
+// The size of the value of the 4th variable in `uint8_t` array.
+// PHP Analogue: `count($uint8_t[4])`
+$ast = (new FFI\Parser\Parser(preset: FFI\Parser\Preset::empty()))
+    ->parse('int a = sizeof(uint8_t[4]);');
 ```
 
 ## Benchmarks
 
 | Name              | Speed  | AST Nodes | Header Size |
 |-------------------|--------|-----------|-------------|
+| bzip2.h           | 0.007s | 3869      | 24.1 KiB    |
+| cjson.h           | 0.003s | 1556      | 6.7 KiB     |
 | egl.h             | 0.004s | 2694      | 16.4 KiB    |
+| lua.h             | 0.013s | 6916      | 39.3 KiB    |
 | sqlite3.h         | 0.017s | 8944      | 41.6 KiB    |
+| zlib-no-markers.h | 0.011s | 6367      | 33.5 KiB    |
+| zlib.h            | 0.012s | 6367      | 50.4 KiB    |
+| zstd.h            | 0.004s | 2033      | 18.6 KiB    |
+| glfw.h            | 0.185s | 81865     | 344.4 KiB   |
+| vulkan.h          | 0.311s | 117375    | 1.05 MiB    |
+| windows.h         | 0.396s | 140673    | 1.05 MiB    |
 
 The small headers for tests are in `tests/resources/headers`.
 
