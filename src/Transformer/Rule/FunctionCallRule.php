@@ -21,9 +21,8 @@ use FFI\Parser\Transformer\TransformationContext;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
- * Turns a cast to a parenthesized name declared as other than a type into
- * a call of it: `(f)(x)` is the call `f(x)`, `(f)(x, y)[0]` is the call
- * `f(x, y)` with the subscript applied to its result.
+ * Turns a cast to a parenthesized non-type name into a call of it: `(f)(x)`
+ * is the call `f(x)`.
  *
  * @template-implements TransformerRuleInterface<CastExpression>
  */
@@ -50,13 +49,10 @@ final class FunctionCallRule implements TransformerRuleInterface
 
     /**
      * Applies the parenthesized operand that starts the expression to the
-     * function as its arguments, the operators applied to the
-     * operand are applied to the call, a cast to a name the expression
-     * starts with is a call as well.
+     * function as its arguments.
      *
      * @return ExpressionInterface|null the expression with the call,
-     *         {@see null} in case of the expression does not start with a
-     *         parenthesized operand
+     *         {@see null} when it does not start with a parenthesized operand
      */
     private function findCall(ExpressionInterface $function, ExpressionInterface $expression): ?ExpressionInterface
     {
@@ -132,8 +128,7 @@ final class FunctionCallRule implements TransformerRuleInterface
 
     /**
      * @return non-empty-list<ExpressionInterface> the operands of the comma
-     *         operators of the expression, the expression itself in case of
-     *         it is not a comma operator
+     *         operators, the expression itself if it is not one
      */
     private function getArguments(ExpressionInterface $expression): array
     {

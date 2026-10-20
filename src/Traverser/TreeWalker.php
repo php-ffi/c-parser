@@ -24,8 +24,6 @@ use FFI\Parser\Node\NodeInterface;
 final class TreeWalker
 {
     /**
-     * The result of every visited node, held until the end of the walk
-     *
      * @var \SplObjectStorage<NodeInterface, NodeInterface|Action::Remove>
      */
     private \SplObjectStorage $results;
@@ -49,8 +47,7 @@ final class TreeWalker
     }
 
     /**
-     * Walks every declaration with every visitor. The results of the
-     * visited nodes are released when the walk ends.
+     * Walks every declaration with every visitor.
      *
      * @return list<RootDeclarationInterface> the declarations with the
      *         replaced ones in their places and without the removed ones
@@ -195,8 +192,8 @@ final class TreeWalker
     }
 
     /**
-     * Returns the names of the public properties of the node, the ones of
-     * a parent class first, each in the order declared.
+     * Returns the names of the public properties of the node, the ones of a
+     * parent class first.
      *
      * @return list<string>
      */

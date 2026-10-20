@@ -18,9 +18,6 @@ final class MemberDesignator extends Designator
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The name of the member
-         */
         public Identifier $member,
         int $offset = 0,
     ) {

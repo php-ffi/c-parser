@@ -33,9 +33,6 @@ final class BaseConverter
     }
 
     /**
-     * Converts the digits of an integer constant in the given base into the
-     * exact decimal string.
-     *
      * @param non-empty-string $digits
      * @param int<2, 36> $base
      * @return numeric-string
@@ -48,11 +45,9 @@ final class BaseConverter
     }
 
     /**
-     * Returns the first of the given converters that is available, or the
-     * extension-free {@see NativeBaseConverter} if none of them is.
+     * Returns the first available converter or {@see NativeBaseConverter}.
      *
-     * @param list<BaseConverterInterface> $converters in order of
-     *        preference
+     * @param list<BaseConverterInterface> $converters in order of preference
      */
     private static function selectFirstAvailable(array $converters): BaseConverterInterface
     {

@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `typeof_unqual` of a type name into `typeof_unqual` of an
- * expression, when the type is a name declared as other than a type:
- * `typeof_unqual(x)` is the unqualified type of the object `x`.
+ * Turns `typeof_unqual` of a type name into `typeof_unqual` of an expression
+ * when the name is declared as other than a type: `typeof_unqual(x)`.
  *
  * @template-extends ExpressionOperandRule<TypeOfUnqualTypeType>
  */

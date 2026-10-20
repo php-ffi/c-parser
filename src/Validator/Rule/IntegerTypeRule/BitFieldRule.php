@@ -12,8 +12,7 @@ use FFI\Parser\Validator\Violation;
 
 /**
  * Checks that a bit-field has an integer type: `float x : 3;` and
- * `int *p : 3;` are not valid. Which integer types other than `bool`,
- * `int` and the bit-precise ones are allowed is implementation-defined.
+ * `int *p : 3;` are not valid.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
  *

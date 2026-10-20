@@ -20,13 +20,7 @@ final class CastExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The type the operand is converted to
-         */
         public TypeInterface $type,
-        /**
-         * The expression being converted
-         */
         public ExpressionInterface $operand,
         int $offset = 0,
     ) {

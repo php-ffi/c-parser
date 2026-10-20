@@ -18,9 +18,6 @@ final class AlignAsSpecifier extends AlignmentSpecifier
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The constant expression of the alignment
-         */
         public ExpressionInterface $operand,
         int $offset = 0,
     ) {

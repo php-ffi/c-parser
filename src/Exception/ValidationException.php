@@ -8,8 +8,7 @@ use FFI\Parser\Validator\Violation;
 use Phplrt\Contracts\Source\ReadableInterface;
 
 /**
- * Occurs when the syntactically valid source breaks a rule of a validator.
- * Points to the first violation and holds all of them.
+ * Occurs when a validator rejects the tree. Points to the first violation and holds all of them.
  */
 final class ValidationException extends ParseRuntimeException
 {
@@ -17,7 +16,7 @@ final class ValidationException extends ParseRuntimeException
         string $message,
         ReadableInterface $source,
         /**
-         * Every violation found, in the order of their offsets
+         * In the order of their offsets
          *
          * @var non-empty-list<Violation>
          */
@@ -32,8 +31,7 @@ final class ValidationException extends ParseRuntimeException
     }
 
     /**
-     * @param non-empty-list<Violation> $violations violations in the order of
-     *        their offsets
+     * @param non-empty-list<Violation> $violations
      */
     public static function becauseValidationFailed(ReadableInterface $source, array $violations): self
     {

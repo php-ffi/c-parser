@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\TypeNameOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `typeof_unqual` of an expression into `typeof_unqual` of a type
- * name, when the expression starts with a typedef name:
- * `typeof_unqual(T())` is a function type.
+ * Turns `typeof_unqual` of an expression into `typeof_unqual` of a type name
+ * when the expression starts with a typedef name: `typeof_unqual(T())`.
  *
  * @template-extends TypeNameOperandRule<TypeOfUnqualType>
  */

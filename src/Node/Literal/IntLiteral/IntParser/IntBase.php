@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal\IntLiteral\IntParser;
 
 /**
- * Base the digits of an integer constant are written in, told by the
- * prefix.
+ * Base of the digits of an integer constant, told by the prefix.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.2 Integer constants
  *

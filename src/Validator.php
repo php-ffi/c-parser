@@ -31,9 +31,6 @@ use FFI\Parser\Validator\Violation;
 
 /**
  * Runs the validators over the syntax tree.
- *
- * Each validator is given every node of its kinds once, even a node shared
- * by several declarations, in the order the validators are listed.
  */
 final class Validator
 {
@@ -66,8 +63,7 @@ final class Validator
     }
 
     /**
-     * Returns the rules that check the constraints of C23 the grammar does
-     * not express, followed by the given ones.
+     * Returns the default rules followed by the given ones.
      *
      * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>> $append
      * @return array<array-key, ValidatorRuleInterface<covariant NodeInterface>>
@@ -97,22 +93,14 @@ final class Validator
         ];
     }
 
-    /**
-     * Creates the validator with the rules that check the constraints of
-     * C23 the grammar does not express.
-     */
     public static function createDefault(): self
     {
         return new self(self::getDefaultRules());
     }
 
     /**
-     * Validates the declarations, the ones {@see Parser::parse()} returns or
-     * any other list of nodes.
-     *
      * @param list<RootDeclarationInterface> $declarations
-     * @return list<Violation> violations in the order of their offsets, empty
-     *         in case of the declarations break no rule
+     * @return list<Violation> violations in the order of their offsets
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
      */

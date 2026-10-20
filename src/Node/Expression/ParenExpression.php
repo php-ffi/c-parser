@@ -16,9 +16,6 @@ final class ParenExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The expression in the parentheses
-         */
         public ExpressionInterface $expression,
         int $offset = 0,
     ) {

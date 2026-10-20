@@ -16,12 +16,8 @@ use FFI\Parser\Traverser\Context;
 use FFI\Parser\Traverser\VisitorInterface;
 
 /**
- * A single run of the transformers over the syntax tree, which gives each
- * node to them after its children and declares the names of the
- * transformed declarations.
- *
- * A name is declared when its whole declaration is left, a parameter list
- * opens a function prototype scope.
+ * Gives each node to the transformers after its children and declares the
+ * names of the declarations.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser
@@ -36,8 +32,7 @@ final class TransformerVisitor implements VisitorInterface
     private array $transformersByClass = [];
 
     /**
-     * @param array<non-empty-string, true> $typedefNames names declared as
-     *        typedef names in the file scope before the declarations
+     * @param array<non-empty-string, true> $typedefNames
      */
     public function __construct(
         /**

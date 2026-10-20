@@ -13,11 +13,9 @@ use FFI\Parser\Validator\ValidationContext;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks an enumeration specifier with an underlying type: the type is an
- * integer type other than an enumeration and a bit-precise one, and
- * without the enumerators the specifier is the whole of the declaration of
- * its tag, `enum E : int;`. `enum E : float { A }` and `enum E : int x;`
- * are not valid.
+ * Checks the underlying type of an enumeration: it is an integer type other
+ * than an enumeration and a bit-precise one. `enum E : float { A }` and
+ * `enum E : int x;` are not valid.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.3 Enumeration specifiers
  *

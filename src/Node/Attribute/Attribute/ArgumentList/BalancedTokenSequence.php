@@ -7,9 +7,7 @@ namespace FFI\Parser\Node\Attribute\Attribute\ArgumentList;
 use FFI\Parser\Node\Node;
 
 /**
- * Argument of an attribute that is not a constant expression, such as
- * `introduced=10.4` or `10.13.4`: a sequence of tokens with balanced
- * parentheses, brackets and braces.
+ * Argument of an attribute that is not a constant expression, `introduced=10.4`.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.13.2 General
  */
@@ -20,8 +18,7 @@ final class BalancedTokenSequence extends Node
      */
     public function __construct(
         /**
-         * The tokens exactly as written, from the first to the last, with
-         * the whitespace and the comments between them
+         * The tokens exactly as written
          *
          * @var non-empty-string
          */

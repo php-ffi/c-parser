@@ -11,10 +11,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that the arguments of a function call are expressions:
- * `__builtin_offsetof(struct S, a)` and `__builtin_va_arg(ap, int)` are not
- * valid. GCC and Clang accept type names among the arguments of their
- * built-in functions.
+ * Checks that the arguments of a call are expressions:
+ * `__builtin_offsetof(struct S, a)` is not valid. GCC and Clang accept type
+ * names among the arguments of built-in functions.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.3.3 Function calls
  * @link https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html GCC, Other Built-in Functions

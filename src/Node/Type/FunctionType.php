@@ -8,10 +8,8 @@ use FFI\Parser\Node\Attribute\AttributeList;
 use FFI\Parser\Node\Type\FunctionType\ParameterList;
 
 /**
- * Function type, written by the parameter list of a declarator:
- * `int f(char *s, ...)`. An empty list (`f()`) and the single `void`
- * parameter (`f(void)`) are kept apart, though both mean no parameters in
- * C23.
+ * Function type, written by the parameter list of a declarator, `int f(char *s, ...)`.
+ * An empty list `f()` and `f(void)` are kept apart.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.7.4 Function declarators
  */
@@ -22,23 +20,14 @@ final class FunctionType extends Type
      */
     public function __construct(
         /**
-         * The return type, {@see null} in case of the specifiers give no
-         * type, such as in `static (f)(void);`
+         * The return type, {@see null} if the specifiers give no type
          */
         public ?TypeInterface $returnType,
-        /**
-         * The parameters in the order written, empty in case of `f()` and
-         * `f(...)`
-         */
         public ParameterList $parameters = new ParameterList([]),
         /**
          * Whether the parameters end with `...`
          */
         public bool $isVariadic = false,
-        /**
-         * The C23 attributes written after the parameters,
-         * `f(void) [[x]]`, {@see null} in case of none is written
-         */
         public ?AttributeList $attributes = null,
         int $offset = 0,
     ) {

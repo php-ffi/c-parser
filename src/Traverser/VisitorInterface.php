@@ -8,12 +8,10 @@ use FFI\Parser\Node\NodeInterface;
 use FFI\Parser\Traverser;
 
 /**
- * Step of the walk over the syntax tree that reads, changes or replaces
- * its nodes.
+ * Step of the walk of {@see Traverser} over the syntax tree.
  *
- * The visitor does not walk the tree: {@see Traverser} enters every node once,
- * then its children, then leaves the node. Each method returns {@see null} to
- * keep the node, a node to replace it, or an {@see Action}.
+ * Each method returns {@see null} to keep the node, a node to replace it, or
+ * an {@see Action}.
  */
 interface VisitorInterface
 {

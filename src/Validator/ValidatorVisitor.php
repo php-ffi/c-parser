@@ -10,8 +10,7 @@ use FFI\Parser\Traverser\Context;
 use FFI\Parser\Traverser\VisitorInterface;
 
 /**
- * A single run of the validators over the syntax tree, which collects the
- * violations they find.
+ * Gives each node to the validators and collects the violations.
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal FFI\Parser
@@ -19,8 +18,6 @@ use FFI\Parser\Traverser\VisitorInterface;
 final class ValidatorVisitor implements VisitorInterface
 {
     /**
-     * Violations in the order they are found
-     *
      * @var list<Violation>
      *
      * @phpstan-readonly-allow-private-mutation

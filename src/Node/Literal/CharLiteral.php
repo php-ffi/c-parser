@@ -20,16 +20,13 @@ final class CharLiteral extends Literal
      */
     public function __construct(
         /**
-         * Characters between the quotes with the escape sequences expanded:
-         * a universal character name, and any escape in a wide literal,
-         * becomes UTF-8, an octal or a hexadecimal escape in a narrow one
-         * stays a byte, a value that does not fit becomes U+FFFD. A
-         * multicharacter constant (`'ab'`) keeps all of them.
+         * Characters between the quotes with the escape sequences expanded
+         * (UTF-8, an octal or hexadecimal escape of a narrow constant stays a byte,
+         * a value that does not fit becomes U+FFFD). A multicharacter constant keeps all of them.
          */
         public readonly string $value,
         /**
-         * {@see null} in case of there is no prefix, i.e. the constant is
-         * an `int`
+         * {@see null} for no prefix, the constant is an `int` then
          */
         public readonly ?EncodingPrefix $prefix = null,
         ?string $raw = null,
@@ -50,8 +47,6 @@ final class CharLiteral extends Literal
     }
 
     /**
-     * Builds the constant out of its source text.
-     *
      * @param non-empty-string $raw text of a `T_CHAR_LITERAL` token
      * @param int<0, max> $offset
      */

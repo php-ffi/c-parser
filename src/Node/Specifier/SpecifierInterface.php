@@ -7,8 +7,7 @@ namespace FFI\Parser\Node\Specifier;
 use FFI\Parser\Node\NodeInterface;
 
 /**
- * Node that is a declaration specifier outside the type. Every
- * {@see Specifier} is one, and a node of another kind may be one as well.
+ * Node that is a declaration specifier outside the type.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.1 General
  */

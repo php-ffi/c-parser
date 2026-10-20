@@ -12,16 +12,14 @@ use FFI\Parser\Traverser;
 enum Action
 {
     /**
-     * The children of the node are not walked. Allowed on entering the node
-     * only, the other visitors still enter and leave the node itself.
+     * The children of the node are not walked. Allowed on entering only.
      */
     case SkipChildren;
 
     /**
      * The node is removed from the list that holds it or from the result of
-     * {@see Traverser::traverse} in case of a root declaration.
-     *
-     * The visitors that follow are not called for the node.
+     * {@see Traverser::traverse} for a root declaration. The visitors that
+     * follow are not called for the node.
      */
     case Remove;
 }

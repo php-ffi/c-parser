@@ -22,9 +22,6 @@ abstract class MemberExpression extends Expression
          * The structure or the union, or the pointer to it
          */
         public ExpressionInterface $object,
-        /**
-         * The name of the member
-         */
         public Identifier $member,
         int $offset = 0,
     ) {

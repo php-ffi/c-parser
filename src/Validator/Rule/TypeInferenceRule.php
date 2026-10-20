@@ -24,14 +24,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that the declaration specifiers without a type specifier belong to
- * a declaration whose type is inferred: an object declared with `auto`, a
- * plain name and an initializer, `auto x = 1;`. `static x = 1;`,
- * `const *p;`, `static f(void);` and `sizeof(const)` are not valid.
- *
- * A missing type specifier is a type the tree builds of nothing: the
- * declared type itself, or the type a qualifier, a pointer, an array or a
- * function or the attributes of a parenthesized declarator are applied to.
+ * Checks that a missing type specifier belongs to a declaration with an
+ * inferred type, `auto x = 1;`. `static x = 1;`, `const *p;`,
+ * `static f(void);` and `sizeof(const)` are not valid.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.1 General
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.10 Type inference

@@ -8,11 +8,8 @@ use FFI\Parser\Node\Attribute\AttributeInterface;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Specifiers of a declaration or a type name that are not a part of the
- * type, in the order written, repeats included, such as `static inline` in
- * `static inline int`, and the attributes written before them and after
- * the last of them, `[[deprecated]] static int [[gnu::unused]]`. They are not
- * checked: `static extern` gives a list as well.
+ * Specifiers of a declaration or a type name outside the type, and the attributes around them, in the order
+ * written, repeats included.
  *
  * @template-extends NodeList<SpecifierInterface|AttributeInterface>
  *

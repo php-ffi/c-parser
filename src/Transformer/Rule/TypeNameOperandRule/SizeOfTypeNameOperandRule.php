@@ -12,9 +12,8 @@ use FFI\Parser\Transformer\Rule\TypeNameOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `sizeof` of a parenthesized expression into `sizeof` of a type
- * name, when the expression starts with a typedef name: `sizeof(T[3])` is
- * the size of an array, `sizeof(T *(U))` is the size of a function type.
+ * Turns `sizeof` of a parenthesized expression into `sizeof` of a type name
+ * when the expression starts with a typedef name: `sizeof(T[3])`.
  *
  * @template-extends TypeNameOperandRule<SizeOfExpression>
  */

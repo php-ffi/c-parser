@@ -17,9 +17,6 @@ final class BoolLiteral extends Literal
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The value of the constant
-         */
         public readonly bool $value,
         ?string $raw = null,
         int $offset = 0,

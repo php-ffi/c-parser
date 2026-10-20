@@ -20,13 +20,7 @@ final class DesignatedInitializer extends Node
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The designators before `=` in the order written
-         */
         public DesignatorList $designators,
-        /**
-         * The initializer of the named subobject
-         */
         public InitializerInterface $initializer,
         int $offset = 0,
     ) {

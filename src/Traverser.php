@@ -10,15 +10,11 @@ use FFI\Parser\Traverser\TreeWalker;
 use FFI\Parser\Traverser\VisitorInterface;
 
 /**
- * Walks the syntax tree with the visitors, which read, change, or replace
- * its nodes.
+ * Walks the syntax tree with the visitors.
  *
- * Every node is visited once, even a node shared by several declarations:
- * the result of its visit (the node, its replacement, or its removal) takes
- * its place in every parent. The children of a node are walked in the order
- * of its properties, which is not always the order of the source. The
- * visitors are called in the order they are listed, each one is given the
- * node the previous one returned.
+ * Every node is visited once, even a shared one, and the result of its visit
+ * takes its place in every parent. The visitors are called in the order they
+ * are listed, each one is given the node the previous one returned.
  */
 final class Traverser
 {
@@ -64,8 +60,7 @@ final class Traverser
     }
 
     /**
-     * Walks the declarations, the ones {@see Parser::parse()} returns or any
-     * other list of nodes. The nodes are changed in place.
+     * Walks the declarations and changes the nodes in place.
      *
      * @param list<RootDeclarationInterface> $declarations
      * @return list<RootDeclarationInterface> the declarations with the

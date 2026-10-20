@@ -11,8 +11,6 @@ abstract class Node implements NodeInterface
 {
     public function __construct(
         /**
-         * Offset of the first byte of the node in the source
-         *
          * @var int<0, max>
          */
         public readonly int $offset = 0,

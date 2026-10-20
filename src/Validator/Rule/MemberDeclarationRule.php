@@ -19,11 +19,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks a member declaration: without a declarator it declares an
- * anonymous structure or union, `struct { int a; };`, and a member has
- * neither a function type nor `void`. `struct S { int; };` and
- * `struct S { int f(void); };` are not valid. A tag or a typedef name of a
- * member without a declarator, `struct S { struct T; };`, is checked by
+ * Checks that a member without a declarator is an anonymous structure or union
+ * and that a member is neither a function nor `void`: `struct S { int; };` and
+ * `struct S { int f(void); };` are not valid. Tagged members are checked by
  * {@see TaggedAnonymousMemberRule}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
@@ -60,9 +58,6 @@ final class MemberDeclarationRule implements ValidatorRuleInterface
         return [new Violation($message, $node->offset)];
     }
 
-    /**
-     * Whether the type is a structure or union specifier or a typedef name.
-     */
     private function isRecordOrTypedefName(?TypeInterface $type): bool
     {
         return $type instanceof RecordType || $type instanceof NamedType;

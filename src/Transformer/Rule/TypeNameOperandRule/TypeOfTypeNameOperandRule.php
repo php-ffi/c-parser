@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\TypeNameOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `typeof` of an expression into `typeof` of a type name, when the
- * expression starts with a typedef name: `typeof(T())` and `typeof(T *(U))`
- * are function types.
+ * Turns `typeof` of an expression into `typeof` of a type name when the
+ * expression starts with a typedef name: `typeof(T())`.
  *
  * @template-extends TypeNameOperandRule<TypeOfType>
  */

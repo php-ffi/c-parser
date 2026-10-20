@@ -35,12 +35,10 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that the type specifiers of a type with modifiers are one of the
- * multisets of C23: `unsigned long long int`, `long double _Complex`, but
- * not `long float`, `unsigned double` or `long long long`. A complex
- * integer type, `_Complex int`, and a typedef name with a modifier,
- * `T long`, are checked by {@see ComplexIntegerTypeRule} and
- * {@see ModifiedTypedefNameRule}.
+ * Checks that the type specifiers of a type with modifiers form a valid
+ * multiset: `long float`, `unsigned double` and `long long long` are not valid.
+ * `_Complex int` and `T long` are checked by {@see ComplexIntegerTypeRule}
+ * and {@see ModifiedTypedefNameRule}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.1 General
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), Annex G.2 Types

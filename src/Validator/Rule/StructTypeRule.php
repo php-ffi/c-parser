@@ -15,11 +15,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that a member of an incomplete array type (a flexible array
- * member) is only the last member of a structure:
- * `struct S { int n; int a[]; int m; };` is not valid. A flexible array
- * member of a union and the only member of a structure are checked by
- * {@see GnuFlexibleArrayMemberRule}.
+ * Checks that a flexible array member is the last member of a structure:
+ * `struct S { int n; int a[]; int m; };` is not valid. Unions and the only
+ * member of a structure are checked by {@see GnuFlexibleArrayMemberRule}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
  *
@@ -44,10 +42,6 @@ final class StructTypeRule implements ValidatorRuleInterface
         }
     }
 
-    /**
-     * Whether the member has an incomplete array type, with the attributes
-     * of its declarator or without.
-     */
     private function isFlexibleArray(MemberDeclaration $member): bool
     {
         $type = $member->type;
@@ -61,8 +55,7 @@ final class StructTypeRule implements ValidatorRuleInterface
 
     /**
      * @return list<MemberDeclaration> the members without the static
-     *         assertions among them, empty in case of the specifier has no
-     *         body
+     *         assertions, empty without a body
      */
     private function getMemberDeclarations(StructType $node): array
     {

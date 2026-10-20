@@ -15,9 +15,8 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
  * Turns a parameter of modifiers alone, named by a typedef name, into an
- * unnamed parameter of the typedef name with the modifiers: in
- * `void f(unsigned __int64);` with the typedef name `__int64` the parameter
- * is an `unsigned __int64`.
+ * unnamed parameter of the modified typedef name: in
+ * `void f(unsigned __int64);` the parameter is an `unsigned __int64`.
  *
  * @template-implements TransformerRuleInterface<Parameter>
  */
@@ -45,8 +44,7 @@ final class ModifiedTypedefNameParameterRule implements TransformerRuleInterface
 
     /**
      * @return TypeInterface|null the type with the typedef name as the base of
-     *         its modifiers, {@see null} in case of the type is other than
-     *         modifiers without a base, qualified or not
+     *         its modifiers, {@see null} for other types
      */
     private function findType(?TypeInterface $type, NamedType $name): ?TypeInterface
     {

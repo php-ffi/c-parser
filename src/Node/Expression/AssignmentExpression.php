@@ -16,13 +16,7 @@ abstract class AssignmentExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The operand the value is assigned to
-         */
         public ExpressionInterface $left,
-        /**
-         * The assigned value
-         */
         public ExpressionInterface $right,
         int $offset = 0,
     ) {

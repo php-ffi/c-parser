@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Ordinary identifiers declared so far: the typedef names and the other
- * names (objects, functions, enumeration constants, parameters), in the
- * file scope and in the function prototype scopes that enclose the node
- * being transformed.
+ * Ordinary identifiers declared so far, in the file scope and in the function
+ * prototype scopes.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.2.1 Scopes of identifiers
  *
@@ -23,25 +21,18 @@ final class Scope
     private array $scopes;
 
     /**
-     * @param array<string, true> $typedefNames names declared as typedef
-     *        names in the file scope before the declarations
+     * @param array<string, true> $typedefNames
      */
     public function __construct(array $typedefNames = [])
     {
         $this->scopes = [$typedefNames];
     }
 
-    /**
-     * Opens a function prototype scope.
-     */
     public function enter(): void
     {
         $this->scopes[] = [];
     }
 
-    /**
-     * Closes the innermost function prototype scope.
-     */
     public function leave(): void
     {
         if (\count($this->scopes) > 1) {
@@ -49,18 +40,11 @@ final class Scope
         }
     }
 
-    /**
-     * Declares the name as a typedef name in the innermost scope.
-     */
     public function declareTypedefName(string $name): void
     {
         $this->scopes[\array_key_last($this->scopes)][$name] = true;
     }
 
-    /**
-     * Declares the name as an object, a function, an enumeration constant
-     * or a parameter in the innermost scope.
-     */
     public function declareNonTypeName(string $name): void
     {
         $this->scopes[\array_key_last($this->scopes)][$name] = false;

@@ -16,36 +16,24 @@ final class FloatParserResult
 {
     public function __construct(
         /**
-         * The value rounded to a double, {@see \INF} in case of it is too
-         * large for one
+         * {@see \INF} if too large for a double
          */
         public float $value,
         /**
-         * The digits with the point as written, without digit separators
-         *
          * @var non-empty-string
          */
         public string $mantissa,
         /**
-         * The exponent as written, `0` in case of there is none
+         * `0` if none is written
          *
          * @var numeric-string
          */
         public string $exponent,
-        /**
-         * The type suffix or {@see null} in case of there is none
-         */
         public ?FloatTypeSuffix $suffix,
         /**
-         * The width written in the suffix, {@see null} in case of the
-         * suffix has none
-         *
          * @var int<1, max>|null
          */
         public ?int $suffixWidth,
-        /**
-         * Whether the imaginary suffix of GCC is written
-         */
         public bool $isImaginary,
     ) {}
 }

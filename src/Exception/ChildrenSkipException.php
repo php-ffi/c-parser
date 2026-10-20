@@ -7,8 +7,7 @@ namespace FFI\Parser\Exception;
 use FFI\Parser\Node\NodeInterface;
 
 /**
- * Occurs when a visitor asks to skip the children of a node that are
- * already walked.
+ * Occurs when a visitor asks to skip the children of a node it leaves.
  */
 final class ChildrenSkipException extends TraverserException
 {

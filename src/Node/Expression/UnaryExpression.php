@@ -17,9 +17,6 @@ abstract class UnaryExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The expression the operator is applied to
-         */
         public ExpressionInterface $operand,
         int $offset = 0,
     ) {

@@ -14,9 +14,8 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that `_Complex` is applied to a floating type: `_Complex int`,
- * `unsigned _Complex char` and `_Complex` without a type specifier are not
- * valid. GCC and Clang accept them as complex integer types.
+ * Checks that `_Complex` is applied to a floating type: `_Complex int` and
+ * a bare `_Complex` are not valid. GCC and Clang accept them.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.1 General
  * @link https://gcc.gnu.org/onlinedocs/gcc/Complex.html GCC, Complex Numbers

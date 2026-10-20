@@ -21,13 +21,7 @@ final class CompoundLiteralExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The type of the object
-         */
         public TypeInterface $type,
-        /**
-         * The initializer in braces
-         */
         public InitializerList $initializer,
         /**
          * The storage-class specifiers before the type name, {@see null} in

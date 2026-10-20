@@ -8,8 +8,6 @@ use FFI\Parser\Node\Expression\ExpressionInterface;
 
 /**
  * Expression that is a constant or a string literal written in the source.
- * Every {@see Literal} is one, and a node of another kind may be one as
- * well.
  *
  * @property-read non-empty-string $raw the literal exactly as written
  *

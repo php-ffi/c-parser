@@ -15,9 +15,6 @@ final class SizeOfExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The expression whose size is taken
-         */
         public ExpressionInterface $operand,
         int $offset = 0,
     ) {

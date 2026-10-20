@@ -12,26 +12,19 @@ use Phplrt\Source\StringSource;
 use Phplrt\Source\VirtualSource;
 
 /**
- * Base of the failures caused by the parsed source itself, i.e. the ones
- * that point to a particular place in it.
+ * Base of the failures that point to a particular place in the parsed source.
  */
 abstract class ParseRuntimeException extends ParserException
 {
     protected function __construct(
         string $message,
-        /**
-         * The source the failure occurred in
-         */
         public readonly ReadableInterface $source,
         /**
-         * Offset of the first byte of the failed fragment in the source
-         *
          * @var int<0, max>
          */
         public readonly int $offset,
         /**
-         * Size of the failed fragment in bytes or {@see null} in case of it
-         * is not known
+         * Size of the failed fragment in bytes, {@see null} if unknown
          *
          * @var int<0, max>|null
          */
@@ -41,8 +34,8 @@ abstract class ParseRuntimeException extends ParserException
     }
 
     /**
-     * Prints the failure along with the snippet of the source that holds it,
-     * or as any other exception in case of the source cannot be read again.
+     * Prints the failure with the snippet of the source, or as any other
+     * exception if the source cannot be read again.
      */
     public function __toString(): string
     {

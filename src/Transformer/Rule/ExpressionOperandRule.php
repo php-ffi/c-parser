@@ -13,8 +13,7 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
  * Base of the rules that turn an operand parsed as a type name into an
- * expression, when the type is a name declared as an object, a function,
- * an enumeration constant or a parameter.
+ * expression, when the name is declared as other than a type.
  *
  * @template TNode of NodeInterface
  *
@@ -23,9 +22,8 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
 abstract class ExpressionOperandRule implements TransformerRuleInterface
 {
     /**
-     * @return IdentifierExpression|null the name as an expression,
-     *         {@see null} in case of the type is not a name declared as
-     *         other than a type
+     * @return IdentifierExpression|null the name as an expression, {@see null}
+     *         when the type is not a name declared as other than a type
      */
     protected function findExpression(TypeInterface $type, TransformationContext $context): ?IdentifierExpression
     {

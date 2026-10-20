@@ -27,11 +27,9 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
  * Base of the rules that turn an operand parsed as an expression into a
  * type name, when the expression starts with a typedef name.
  *
- * The expression is converted only when the type specifier of the type
- * name and of each of its parameters is a typedef name. The offsets of `*`
- * between a typedef name and the parenthesis, of `[` and of the parenthesis
- * of a function with parameters are not kept in the tree, the type they
- * start is given the offset of the node after them.
+ * The offsets of `*`, `[` and the parenthesis of a function with parameters
+ * are not kept in the tree, the type they start has the offset of the node
+ * after them.
  *
  * @template TNode of NodeInterface
  *
@@ -40,12 +38,11 @@ use FFI\Parser\Transformer\TransformerRuleInterface;
 abstract class TypeNameOperandRule implements TransformerRuleInterface
 {
     /**
-     * Converts the expression a type name is parsed into: the typedef name
-     * with the subscripts and the calls applied to it (`T[3]`, `T(U)`), or
-     * multiplied by the rest of the declarator (`T *(U)`).
+     * Converts the expression a type name is parsed into: `T[3]`, `T(U)` or
+     * `T *(U)`.
      *
-     * @return TypeInterface|null the type, {@see null} in case of the
-     *         expression is not a type name
+     * @return TypeInterface|null the type, {@see null} when the expression is
+     *         not a type name
      */
     protected function findTypeName(ExpressionInterface $expression, TransformationContext $context): ?TypeInterface
     {
@@ -71,10 +68,6 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
         return $this->findSuffixedType($expression, $operand, $type, $context);
     }
 
-    /**
-     * Whether the name an expression starts with is the typedef name a
-     * type name starts with.
-     */
     protected function isTypeName(string $name, TransformationContext $context): bool
     {
         return $context->isTypedefName($name);
@@ -90,12 +83,10 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
     }
 
     /**
-     * Converts the rest of an abstract declarator after `*`: the pointers
-     * and the parenthesized parameters with the subscripts and the calls
-     * applied to them.
+     * Converts the rest of an abstract declarator after `*`.
      *
-     * @return TypeInterface|null the type, {@see null} in case of the
-     *         expression is not an abstract declarator
+     * @return TypeInterface|null the type, {@see null} when the expression is
+     *         not an abstract declarator
      */
     private function findAbstractDeclarator(
         ExpressionInterface $expression,
@@ -133,10 +124,6 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
         );
     }
 
-    /**
-     * Returns the operand the subscripts and the calls the expression
-     * starts with are applied to.
-     */
     private function getSuffixedOperand(ExpressionInterface $expression): ExpressionInterface
     {
         while ($expression instanceof SubscriptExpression || $expression instanceof CallExpression) {
@@ -147,12 +134,11 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
     }
 
     /**
-     * Applies the subscripts and the calls between the expression and its
-     * suffixed operand to the type, as the array and the function
-     * declarators.
+     * Applies the subscripts and the calls of the expression to the type as
+     * array and function declarators.
      *
-     * @return TypeInterface|null the type, {@see null} in case of an
-     *         argument of a call is not a type name
+     * @return TypeInterface|null the type, {@see null} when an argument of a
+     *         call is not a type name
      */
     private function findSuffixedType(
         ExpressionInterface $expression,
@@ -189,8 +175,8 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
 
     /**
      * @param list<ExpressionInterface> $arguments
-     * @return list<Parameter>|null the parameters without names,
-     *         {@see null} in case of an argument is not a type name
+     * @return list<Parameter>|null the unnamed parameters, {@see null} when
+     *         an argument is not a type name
      */
     private function findParameters(array $arguments, TransformationContext $context): ?array
     {
@@ -211,8 +197,7 @@ abstract class TypeNameOperandRule implements TransformerRuleInterface
 
     /**
      * @return non-empty-list<ExpressionInterface> the operands of the comma
-     *         operators of the expression, the expression itself in case of
-     *         it is not a comma operator
+     *         operators, the expression itself if it is not one
      */
     private function getCommaOperands(ExpressionInterface $expression): array
     {

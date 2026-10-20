@@ -17,7 +17,7 @@ use FFI\Parser\Validator\Violation;
 /**
  * Checks that a flexible array member belongs to a structure with another
  * named member: `union U { int a[]; };` and `struct S { int a[]; };` are not
- * valid. GCC and Clang accept both.
+ * valid. GCC and Clang accept them.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
  * @link https://gcc.gnu.org/onlinedocs/gcc/Flexible-Array-Members.html GCC, Flexible Array Members
@@ -48,10 +48,6 @@ final class GnuFlexibleArrayMemberRule implements ValidatorRuleInterface
         }
     }
 
-    /**
-     * Whether the member has an incomplete array type, with the attributes
-     * of its declarator or without.
-     */
     private function isFlexibleArray(MemberDeclaration $member): bool
     {
         $type = $member->type;
@@ -65,8 +61,7 @@ final class GnuFlexibleArrayMemberRule implements ValidatorRuleInterface
 
     /**
      * @return list<MemberDeclaration> the members without the static
-     *         assertions and the bit-fields without a name, empty in case of
-     *         the specifier has no body
+     *         assertions and the unnamed bit-fields, empty without a body
      */
     private function getNamedMembers(RecordType $node): array
     {

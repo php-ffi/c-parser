@@ -7,9 +7,7 @@ namespace FFI\Parser\Node\Declaration\SpecifiedDeclaration\DeclaratorDeclaration
 use FFI\Parser\Node\Node;
 
 /**
- * Body of a function definition, the compound statement in braces. Its
- * statements are not parsed: the body is any sequence of tokens with
- * balanced parentheses, brackets and braces, and keeps its text.
+ * Body of a function definition, the compound statement in braces. Keeps its text.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.8.3 Compound statement
  */

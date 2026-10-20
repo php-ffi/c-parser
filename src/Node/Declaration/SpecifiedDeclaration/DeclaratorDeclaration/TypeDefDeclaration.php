@@ -12,9 +12,7 @@ use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\TypeInterface;
 
 /**
- * Declaration of a typedef name, `typedef void (*callback_t)(int);`: a
- * declaration with `typedef` among its specifiers. The other specifiers
- * stay in the list: `typedef static int x;` is kept as written.
+ * Declaration of a typedef name, `typedef void (*callback_t)(int);`.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.9 Type definitions
  */
@@ -25,10 +23,7 @@ final class TypeDefDeclaration extends DeclaratorDeclaration
      */
     public function __construct(
         /**
-         * The type the name stands for, built of the specifiers and the
-         * declarator, {@see null} in case of the specifiers give no type
-         * and the declarator is a name, such as in `typedef (x);` (without
-         * the parentheses `x` is the typedef name of the type)
+         * The type the name stands for, {@see null} if none is written
          */
         public ?TypeInterface $type,
         Identifier $name,

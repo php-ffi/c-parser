@@ -12,11 +12,11 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `sizeof` of a type name into `sizeof` of an expression, when the
- * type is a name declared as other than a type: `sizeof(x)` is `sizeof (x)`.
+ * Turns `sizeof` of a type name into `sizeof` of an expression when the name
+ * is declared as other than a type: `sizeof(x)` is `sizeof (x)`.
  *
- * The offset of the parenthesis is not kept in the tree, the parenthesized
- * expression is given the offset of the name.
+ * The offset of the parenthesis is not kept, the expression has the offset of
+ * the name.
  *
  * @template-extends ExpressionOperandRule<SizeOfTypeExpression>
  */

@@ -26,9 +26,6 @@ final class ConditionalExpression extends Expression
          * omitted, `a ?: b`, the value of the condition is then the result
          */
         public ?ExpressionInterface $then,
-        /**
-         * The expression after `:`
-         */
         public ExpressionInterface $else,
         int $offset = 0,
     ) {

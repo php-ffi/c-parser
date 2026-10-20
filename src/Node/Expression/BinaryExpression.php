@@ -19,13 +19,7 @@ abstract class BinaryExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The operand on the left of the operator
-         */
         public ExpressionInterface $left,
-        /**
-         * The operand on the right of the operator
-         */
         public ExpressionInterface $right,
         int $offset = 0,
     ) {

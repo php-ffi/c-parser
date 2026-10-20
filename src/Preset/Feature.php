@@ -224,9 +224,8 @@ enum Feature
     case LeadingCallingConventions;
 
     /**
-     * Lists the rules that reject the extension, the ones the feature
-     * removes. Empty in case of the extension is a syntax error without the
-     * feature.
+     * Lists the validator rules the feature removes. Empty when the extension
+     * is a syntax error without the feature.
      *
      * @return list<class-string<ValidatorRuleInterface<covariant NodeInterface>>>
      */

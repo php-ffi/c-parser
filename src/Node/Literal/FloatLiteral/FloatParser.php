@@ -30,43 +30,34 @@ final class FloatParser
     private const HEXADECIMAL_PATTERN = '/^0[xX]([0-9A-Fa-f]*\.?[0-9A-Fa-f]*)[pP]([+-]?[0-9]+)(.*)$/';
 
     /**
-     * Hexadecimal digits that always fit in a 64-bit integer (60 bits). The
-     * mantissa of a double has 53 bits, the rest is enough to round the
-     * value correctly once the dropped digits are folded into the lowest
-     * bit.
+     * Hexadecimal digits of the mantissa that are taken as an integer, 60 bits.
      */
     private const MAX_MANTISSA_DIGITS = 15;
 
     /**
-     * Bound of the written exponent. Beyond it the value is either infinite
-     * or zero whatever the mantissa is, and the bound keeps the arithmetic
-     * on the exponent from overflowing.
+     * Bound of the written exponent, beyond it the value is infinite or zero.
      */
     private const MAX_EXPONENT = 1 << 40;
 
     /**
-     * The binary exponent of the smallest subnormal double, `0x1p-1074`.
+     * Binary exponent of the smallest subnormal double, `0x1p-1074`.
      */
     private const MIN_SUBNORMAL_EXPONENT = -1074;
 
     /**
-     * The binary exponent of the smallest normal double, `0x1p-1022`.
+     * Binary exponent of the smallest normal double, `0x1p-1022`.
      */
     private const MIN_NORMAL_EXPONENT = -1022;
 
     /**
-     * The exponent of the step a small power of two is taken in, `0x1p-1000`
-     * is a normal double
+     * Exponent of the step a small power of two is scaled in.
      */
     private const SCALE_STEP = 1000;
 
-    /**
-     * Bits a hexadecimal digit stands for.
-     */
     private const BITS_PER_HEX_DIGIT = 4;
 
     /**
-     * @param non-empty-string $raw text of a floating constant
+     * @param non-empty-string $raw
      */
     public static function parse(string $raw): FloatParserResult
     {
@@ -115,8 +106,7 @@ final class FloatParser
     }
 
     /**
-     * Evaluates a hexadecimal floating constant: the mantissa scaled by the
-     * binary exponent.
+     * Evaluates the mantissa scaled by the binary exponent.
      */
     private static function evaluateHexadecimal(string $mantissa, string $exponent): float
     {
@@ -140,9 +130,7 @@ final class FloatParser
             $dropped = \substr($digits, self::MAX_MANTISSA_DIGITS);
             $power += self::BITS_PER_HEX_DIGIT * \strlen($dropped);
 
-            // The value is correctly rounded only if the dropped digits are
-            // not lost entirely: whether they are zero decides the rounding
-            // of a value that lies exactly halfway
+            // Non-zero dropped digits are folded into the lowest bit for the rounding
             if (\ltrim($dropped, '0') !== '') {
                 $significand |= 1;
             }
@@ -176,8 +164,7 @@ final class FloatParser
     }
 
     /**
-     * Shifts the integer to the right, rounding the dropped bits half to
-     * even.
+     * Shifts the integer right, rounding the dropped bits half to even.
      */
     private static function shiftRoundingToEven(int $value, int $shift): int
     {
@@ -193,8 +180,7 @@ final class FloatParser
     }
 
     /**
-     * Multiplies the value by the power of two, {@see \INF} in case of the
-     * product overflows.
+     * Multiplies the value by the power of two, {@see \INF} on overflow.
      */
     private static function scale(float $value, int $exponent): float
     {

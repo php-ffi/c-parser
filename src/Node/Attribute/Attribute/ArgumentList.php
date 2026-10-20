@@ -9,12 +9,8 @@ use FFI\Parser\Node\Expression\ExpressionInterface;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Arguments of an attribute, the list between the parentheses of
- * `aligned(8)` or `format(printf, 1, 2)`, split at the commas outside of
- * nested brackets. An argument that is a constant expression gives its
- * node, any other balanced sequence of tokens its text: `introduced=10.4` in
- * `availability(macos, introduced=10.4)`. An empty list starts where the
- * parenthesis does.
+ * Arguments of an attribute, split at the commas outside of nested brackets.
+ * An argument is an expression or a {@see BalancedTokenSequence}.
  *
  * @template-extends NodeList<ExpressionInterface|BalancedTokenSequence>
  *

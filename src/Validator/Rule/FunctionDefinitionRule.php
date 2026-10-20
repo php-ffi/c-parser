@@ -15,10 +15,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks a function definition: its declarator declares a function, the
- * typedef name of a function type does not, and a single parameter of
- * type `void` has no name. `int x {}`, `F f {}` and `int f(void x) {}` are
- * not valid.
+ * Checks that a function definition declares a function and has no named
+ * `void` parameter: `int x {}`, `F f {}` and `int f(void x) {}` are not
+ * valid.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.9.1 Function definitions
  *

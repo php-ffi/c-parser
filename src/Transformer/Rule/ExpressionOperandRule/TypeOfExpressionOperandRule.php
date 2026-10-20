@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `typeof` of a type name into `typeof` of an expression, when the
- * type is a name declared as other than a type: `typeof(x)` is the type of
- * the object `x`.
+ * Turns `typeof` of a type name into `typeof` of an expression when the name
+ * is declared as other than a type: `typeof(x)`.
  *
  * @template-extends ExpressionOperandRule<TypeOfTypeType>
  */

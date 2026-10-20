@@ -28,11 +28,6 @@ use FFI\Parser\Transformer\TransformerVisitor;
 
 /**
  * Runs the transformers over the syntax tree.
- *
- * Each transformer is given every node of its kinds once, even a node
- * shared by several declarations, after the children of the node, in the
- * order the transformers are listed. Each one is given the node the
- * previous one returned.
  */
 final class Transformer
 {
@@ -48,8 +43,8 @@ final class Transformer
 
     /**
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
-     * @param iterable<mixed, non-empty-string> $typedefNames names declared as
-     *        typedef names in the file scope before the declarations
+     * @param iterable<mixed, non-empty-string> $typedefNames names declared in
+     *        the file scope before the declarations
      */
     public function __construct(iterable $rules = [], iterable $typedefNames = [])
     {
@@ -115,12 +110,10 @@ final class Transformer
     }
 
     /**
-     * Creates the transformer with the rules that rebuild the constructs
-     * the grammar parses one way, whichever names are declared before them,
-     * by the typedef names and the other names declared in the tree.
+     * Creates the transformer with the default rules.
      *
-     * @param iterable<mixed, non-empty-string> $typedefNames names declared as
-     *        typedef names in the file scope before the declarations
+     * @param iterable<mixed, non-empty-string> $typedefNames names declared in
+     *        the file scope before the declarations
      */
     public static function createDefault(iterable $typedefNames = []): self
     {
@@ -128,8 +121,7 @@ final class Transformer
     }
 
     /**
-     * Transforms the declarations, the ones {@see Parser::parse()} returns
-     * or any other list of nodes. The nodes are changed in place.
+     * Transforms the nodes in place.
      *
      * @param list<RootDeclarationInterface> $declarations
      * @return list<RootDeclarationInterface> the declarations with the

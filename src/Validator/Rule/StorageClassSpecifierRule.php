@@ -19,9 +19,7 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks the combination of the storage-class specifiers: at most one of
- * them, except `thread_local` with `static` or `extern`, `auto` with any but
- * `typedef` and `constexpr` with `auto`, `register` or `static`.
+ * Checks the combination of the storage-class specifiers:
  * `typedef static int T;` and `static extern int x;` are not valid.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.2 Storage-class specifiers
@@ -31,8 +29,6 @@ use FFI\Parser\Validator\Violation;
 final class StorageClassSpecifierRule implements ValidatorRuleInterface
 {
     /**
-     * Keywords of the specifiers, by the class of the node.
-     *
      * @var array<class-string<StorageClassSpecifier>, non-empty-string>
      */
     private const KEYWORDS = [

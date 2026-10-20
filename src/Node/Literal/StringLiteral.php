@@ -20,15 +20,13 @@ final class StringLiteral extends Literal
      */
     public function __construct(
         /**
-         * Characters between the quotes with the escape sequences expanded:
-         * a universal character name, and any escape in a wide literal,
-         * becomes UTF-8, an octal or a hexadecimal escape in a narrow one
-         * stays a byte, a value that does not fit becomes U+FFFD
+         * Characters between the quotes with the escape sequences expanded
+         * (UTF-8, an octal or hexadecimal escape of a narrow literal stays a byte,
+         * a value that does not fit becomes U+FFFD)
          */
         public readonly string $value,
         /**
-         * {@see null} in case of there is no prefix, i.e. the literal is an
-         * array of `char`
+         * {@see null} for no prefix, the literal is an array of `char` then
          */
         public readonly ?EncodingPrefix $prefix = null,
         ?string $raw = null,
@@ -49,8 +47,6 @@ final class StringLiteral extends Literal
     }
 
     /**
-     * Builds the literal out of its source text.
-     *
      * @param non-empty-string $raw text of a `T_STRING_LITERAL` token
      * @param int<0, max> $offset
      */

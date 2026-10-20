@@ -18,9 +18,6 @@ final class IndexDesignator extends Designator
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The constant expression of the index
-         */
         public ExpressionInterface $index,
         int $offset = 0,
     ) {

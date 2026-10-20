@@ -21,9 +21,6 @@ final class SizeOfTypeExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The type whose size is taken
-         */
         public TypeInterface $type,
         int $offset = 0,
     ) {

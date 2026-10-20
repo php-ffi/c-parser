@@ -13,24 +13,14 @@ use FFI\Parser\Node\Type\AtomicType;
  */
 enum TypeQualifier: string
 {
-    /**
-     * `const`.
-     */
     case Const = 'const';
 
-    /**
-     * `volatile`.
-     */
     case Volatile = 'volatile';
 
-    /**
-     * `restrict`.
-     */
     case Restrict = 'restrict';
 
     /**
-     * `_Atomic` not followed by a parenthesis, `_Atomic(T)` is an
-     * {@see AtomicType} instead.
+     * Without a parenthesis, `_Atomic(T)` is an {@see AtomicType}.
      */
     case Atomic = '_Atomic';
 }

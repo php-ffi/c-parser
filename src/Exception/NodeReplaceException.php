@@ -8,15 +8,10 @@ use FFI\Parser\Node\Declaration\RootDeclarationInterface;
 use FFI\Parser\Node\NodeInterface;
 
 /**
- * Occurs when a visitor replaces a node with a value that cannot take its
- * place.
+ * Occurs when a visitor replaces a node with a value that cannot take its place.
  */
 final class NodeReplaceException extends TraverserException
 {
-    /**
-     * @param \Error $reason the failure reported by PHP, such as a type of
-     *        the property that does not accept the value
-     */
     public static function becauseNodeCannotBeReplaced(NodeInterface $parent, string $property, \Error $reason): self
     {
         $message = \sprintf(

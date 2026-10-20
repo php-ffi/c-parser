@@ -8,8 +8,7 @@ use FFI\Parser\Node\Declaration\StaticAssertDeclaration;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Members of a structure or a union, the body between the braces, at
- * least one.
+ * Members of a structure or a union, the body between the braces.
  *
  * @template-extends NodeList<MemberDeclaration|StaticAssertDeclaration>
  *

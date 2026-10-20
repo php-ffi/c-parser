@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace FFI\Parser\Node;
 
 /**
- * Base of the nodes that hold a list of nodes of one kind, such as the
- * members of a structure. The list starts where its first node does.
+ * Base of the nodes that hold a list of nodes of one kind.
  *
  * @template TNode of NodeInterface
  *
@@ -23,8 +22,6 @@ abstract class NodeList extends Node implements
      */
     public function __construct(
         /**
-         * The nodes in the order written
-         *
          * @var list<TNode>
          */
         public array $items,
@@ -34,11 +31,7 @@ abstract class NodeList extends Node implements
     }
 
     /**
-     * Returns the ordinal number (position) of an element {@see TNode} in
-     * a node list, starting with index 0.
-     *
-     * Returns {@see null} if the element {@see TNode} does not belong
-     * to the node list.
+     * Returns the index of the node in the list or {@see null} if it is not there.
      *
      * @param TNode $node
      * @return int<0, max>|null
@@ -91,8 +84,7 @@ abstract class NodeList extends Node implements
     }
 
     /**
-     * Replaces the node at the given index, or appends the node to the end
-     * of the list in case of the index is {@see null} or equals the count
+     * Replaces the node at the index, appends it if the index is {@see null} or equals the count.
      *
      * @param int<0, max>|null $offset
      * @param TNode $value
@@ -112,8 +104,7 @@ abstract class NodeList extends Node implements
     }
 
     /**
-     * Removes the node at the given index, the following nodes shift
-     * to the left
+     * Removes the node at the index, the following nodes shift left.
      *
      * @param int<0, max> $offset
      */

@@ -25,13 +25,9 @@ use FFI\Parser\Transformer\TransformationContext;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
- * Turns a cast to a parenthesized name declared as other than a type,
- * followed by `+`, `-`, `*` or `&`, into the binary operator: `(x)-y` is
- * the subtraction of `y` from `x`. A `++` or `--` between them is the
- * postfix operator of the name: `(x)++ + y` is the sum of `(x)++` and `y`.
- *
- * The right operand is the operand of the unary operator, the operators
- * around the cast are rearranged by {@see OperatorPrecedenceRule}.
+ * Turns a cast to a parenthesized non-type name, followed by `+`, `-`, `*` or
+ * `&`, into the binary operator: `(x)-y` is the subtraction of `y` from `x`.
+ * Operator precedence is fixed by {@see OperatorPrecedenceRule}.
  *
  * @template-implements TransformerRuleInterface<CastExpression>
  */

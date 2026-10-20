@@ -18,9 +18,6 @@ final class BitIntType extends BuiltinType
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The constant expression of the width in bits
-         */
         public ExpressionInterface $width,
         int $offset = 0,
     ) {

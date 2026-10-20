@@ -15,10 +15,9 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that a member declaration without a declarator declares a
- * structure or union without a tag: `struct S { struct T; };`,
- * `struct S { struct T { int a; }; };` and `struct S { T; };` are not
- * valid. MSVC accepts them as anonymous members of the type.
+ * Checks that a member without a declarator is a structure or union without
+ * a tag: `struct S { struct T; };` and `struct S { T; };` are not valid. MSVC
+ * accepts them.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
  * @link https://learn.microsoft.com/en-us/cpp/c-language/anonymous-structures MSVC, Anonymous structures

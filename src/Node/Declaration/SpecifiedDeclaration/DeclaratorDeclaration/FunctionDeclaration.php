@@ -12,8 +12,7 @@ use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\FunctionType;
 
 /**
- * Declaration of a function, its prototype `int printf(const char *, ...);`.
- * A declaration with a body is a {@see FunctionDefinition}.
+ * Declaration of a function, `int printf(const char *, ...);`. With a body it is a {@see FunctionDefinition}.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.7.4 Function declarators
  */
@@ -23,9 +22,6 @@ final class FunctionDeclaration extends DeclaratorDeclaration
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The type of the function
-         */
         public FunctionType $type,
         Identifier $name,
         ?AttributeList $attributes = null,

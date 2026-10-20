@@ -22,9 +22,6 @@ final class GenericSelectionExpression extends Expression
          * The controlling expression whose type selects the association
          */
         public ExpressionInterface $operand,
-        /**
-         * The associations in the order written
-         */
         public GenericAssociationList $associations,
         int $offset = 0,
     ) {

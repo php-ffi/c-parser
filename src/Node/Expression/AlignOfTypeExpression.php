@@ -17,9 +17,6 @@ final class AlignOfTypeExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The type whose alignment is taken
-         */
         public TypeInterface $type,
         int $offset = 0,
     ) {

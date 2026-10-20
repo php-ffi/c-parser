@@ -8,8 +8,7 @@ use FFI\Parser\Node\Literal\EncodingPrefix;
 use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
 
 /**
- * Parses the source text of a character constant or a string literal: the
- * encoding prefix and the characters between the quotes.
+ * Parses the source text of a character constant or a string literal.
  *
  * Escape sequences are expanded as follows:
  * - Characters written as is are copied byte by byte.
@@ -19,9 +18,8 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
  *   point in a wide one (`L`, `u`, `U`).
  * - A value that does not fit (a code unit above the limit of the
  *   character type, a code point above `0x10FFFF` or a surrogate) becomes
- *   U+FFFD, the exact text is kept by the raw text of the literal. So do
- *   both halves of a surrogate pair written as two escapes in a `u`
- *   literal.
+ *   U+FFFD. So do both halves of a surrogate pair written as two escapes
+ *   in a `u` literal.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.5 String literals
@@ -32,9 +30,7 @@ use FFI\Parser\Node\Literal\StringLiteral\StringParser\StringParserResult;
 final class StringParser
 {
     /**
-     * Matches an escape sequence: a simple escape (with `\e` and `\E` of
-     * GCC), an octal one, a hexadecimal one and a universal character name
-     * of either size.
+     * Matches a simple, octal, hexadecimal escape sequence or a universal character name.
      *
      * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.5 Character constants
      */
@@ -42,8 +38,7 @@ final class StringParser
         . '|u([0-9A-Fa-f]{4})|U([0-9A-Fa-f]{8}))/';
 
     /**
-     * Characters of the simple escape sequences, indexed by the character
-     * written after the backslash.
+     * Simple escape sequences by the character after the backslash.
      *
      * @var array<non-empty-string, non-empty-string>
      */
@@ -63,25 +58,17 @@ final class StringParser
         'v' => "\v",
     ];
 
-    /**
-     * The largest code point of Unicode.
-     */
     private const MAX_CODE_POINT = 0x10_FFFF;
 
     /**
-     * The first of the surrogates, the halves of a UTF-16 pair, which are
-     * not characters and have no UTF-8 encoding.
+     * The surrogates have no UTF-8 encoding.
      */
     private const MIN_SURROGATE = 0xD800;
 
-    /**
-     * The last of the surrogates.
-     */
     private const MAX_SURROGATE = 0xDFFF;
 
     /**
-     * The largest byte, the limit of an escape sequence in an unprefixed
-     * literal.
+     * The limit of an escape sequence in an unprefixed literal.
      */
     private const MAX_BYTE = 0xFF;
 
@@ -91,13 +78,11 @@ final class StringParser
     private const REPLACEMENT = "\xEF\xBF\xBD";
 
     /**
-     * @param non-empty-string $raw text of a `T_CHAR_LITERAL` or a
-     *        `T_STRING_LITERAL` token
+     * @param non-empty-string $raw text of a `T_CHAR_LITERAL` or `T_STRING_LITERAL` token
      */
     public static function parse(string $raw): StringParserResult
     {
-        // The prefix ends at the opening quote of either kind, the closing
-        // one is the last character.
+        // The prefix ends at the opening quote, the closing one is the last character
         $quote = \strcspn($raw, '\'"');
         $prefix = EncodingPrefix::tryFrom(\substr($raw, 0, $quote));
 
@@ -107,9 +92,6 @@ final class StringParser
         );
     }
 
-    /**
-     * Expands the escape sequences of the characters between the quotes.
-     */
     private static function decodeBody(string $body, ?EncodingPrefix $prefix): string
     {
         if (!\str_contains($body, '\\')) {
@@ -150,9 +132,7 @@ final class StringParser
     }
 
     /**
-     * @return int|null {@see null} in case of the value does not fit
-     *         in a native integer, which is out of range of any character
-     *         type anyway
+     * @return int|null {@see null} if the value does not fit in a native integer
      */
     private static function parseHexadecimal(string $digits): ?int
     {
@@ -162,9 +142,8 @@ final class StringParser
     }
 
     /**
-     * Encodes the value of an octal or a hexadecimal escape sequence, which
-     * is a code unit of the character type of the literal: a byte in an
-     * unprefixed or `u8` literal and a code point in a wide one.
+     * Encodes the value of an octal or hexadecimal escape sequence: a byte in an
+     * unprefixed or `u8` literal, a code point in a wide one.
      */
     private static function encodeCodeUnit(?int $value, ?EncodingPrefix $prefix): string
     {
@@ -190,8 +169,6 @@ final class StringParser
             return self::REPLACEMENT;
         }
 
-        // The extension is not a dependency, the encoding below is the
-        // fallback without it
         if (\function_exists('mb_chr')) {
             return \mb_chr($value, 'UTF-8');
         }

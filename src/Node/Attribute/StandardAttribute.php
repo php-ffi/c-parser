@@ -8,8 +8,7 @@ use FFI\Parser\Node\Attribute\Attribute\ArgumentList;
 use FFI\Parser\Node\Identifier;
 
 /**
- * Attribute of the C23 syntax, `[[deprecated("use g")]]` or
- * `[[gnu::aligned(8)]]`, its digraph spelling `<:<:...:>:>` included.
+ * C23 attribute, `[[deprecated("use g")]]` or `[[gnu::aligned(8)]]`, its digraph spelling included.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.13.2 General
  */
@@ -20,8 +19,7 @@ final class StandardAttribute extends Attribute
      */
     public function __construct(
         /**
-         * The attribute prefix before `::`, such as `gnu` in `gnu::packed`,
-         * {@see null} in case of none is written
+         * The prefix before `::`, `gnu` in `gnu::packed`
          */
         public ?Identifier $prefix,
         Identifier $name,

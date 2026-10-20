@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\ExpressionOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `alignas` of a type name into `alignas` of an expression, when the
- * type is a name declared as other than a type: `alignas(x)` is the
- * alignment the constant `x` gives.
+ * Turns `alignas` of a type name into `alignas` of an expression when the
+ * name is declared as other than a type: `alignas(x)`.
  *
  * @template-extends ExpressionOperandRule<AlignAsTypeSpecifier>
  */

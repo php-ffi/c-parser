@@ -15,13 +15,10 @@ use FFI\Parser\Transformer\Rule\TypeNameOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns the arguments of a built-in function, a name that starts with
- * `__builtin_`, into type names, when they start with a typedef name: in
- * `__builtin_types_compatible_p(T, U[2])` both arguments are types, and the
- * call is a {@see BuiltinCallExpression}.
- *
- * The second and the following arguments of `__builtin_offsetof`
- * designate members and are not converted.
+ * Turns the arguments of a `__builtin_` function that start with a typedef
+ * name into type names: in `__builtin_types_compatible_p(T, U[2])` the call
+ * is a {@see BuiltinCallExpression}. The members of `__builtin_offsetof` are
+ * not converted.
  *
  * @template-extends TypeNameOperandRule<CallExpression|BuiltinCallExpression>
  */
@@ -74,9 +71,8 @@ final class BuiltinCallTypeNameOperandRule extends TypeNameOperandRule
     }
 
     /**
-     * @return Identifier|null the name of the built-in function,
-     *         {@see null} in case of the call is not one of a built-in
-     *         function
+     * @return Identifier|null the name of the built-in function, {@see null}
+     *         for other calls
      */
     private function findName(CallExpression|BuiltinCallExpression $node): ?Identifier
     {

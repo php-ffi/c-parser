@@ -12,13 +12,8 @@ use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\TypeInterface;
 
 /**
- * Member of a structure or a union, such as `int *a;` or the bit-field
- * `unsigned b : 3;`. A member declaration with several declarators gives a
- * node for each of them, and all of them start where the specifiers of the
- * member declaration do and share the type of the specifiers: in
- * `int a, *b;` the pointer of `b` points to the type of `a`. C allows no
- * storage-class and no function specifier in a member, but the parser
- * accepts them and keeps them for a validator.
+ * Member of a structure or a union, `int *a;` or the bit-field `unsigned b : 3;`.
+ * Each declarator of a member declaration gives a node sharing the type of the specifiers.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.2 Structure and union specifiers
  */
@@ -29,27 +24,17 @@ final class MemberDeclaration extends SpecifiedDeclaration
      */
     public function __construct(
         /**
-         * The type of the member, built of the specifiers and the
-         * declarator, {@see null} in case of no type specifier, no
-         * qualifier and no pointer, array or function is written, such as
-         * in `static (a);`
+         * The type built of the specifiers and the declarator, {@see null} if none is written
          */
         public ?TypeInterface $type,
         /**
-         * The name, {@see null} in case of the member declaration has no
-         * declarator (an anonymous structure or union, or a declaration of
-         * nothing such as `int;`) or the member is an unnamed bit-field
+         * The name, {@see null} for an anonymous member or an unnamed bit-field
          */
         public ?Identifier $name = null,
         /**
-         * The constant expression of the width of a bit-field, {@see null}
-         * in case of the member is not a bit-field
+         * The constant expression of the bit-field width
          */
         public ?ExpressionInterface $width = null,
-        /**
-         * The attributes written after the declared name, {@see null} in
-         * case of none is written
-         */
         public ?AttributeList $attributes = null,
         ?SpecifierList $specifiers = null,
         int $offset = 0,

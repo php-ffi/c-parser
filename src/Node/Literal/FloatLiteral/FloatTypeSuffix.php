@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace FFI\Parser\Node\Literal\FloatLiteral;
 
 /**
- * Suffix of a floating constant, named by the type it gives the constant.
- * Spellings of the same type (`df` and `d32`) are one case, the exact
- * spelling is kept by the raw text of the constant. The value of a case is
- * the spelling a constant built without the source text gets, `N` stands
+ * Suffix of a floating constant, named by the type it gives. Spellings of the same type
+ * (`df` and `d32`) are one case. The value of a case is the default spelling, `N` stands
  * for the width of the type.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.4.3 Floating constants
@@ -73,9 +71,6 @@ enum FloatTypeSuffix: string
      */
     case GnuFloat80 = 'w';
 
-    /**
-     * Whether the suffix is written with the width of its type.
-     */
     public function hasWidth(): bool
     {
         return match ($this) {
@@ -84,9 +79,6 @@ enum FloatTypeSuffix: string
         };
     }
 
-    /**
-     * Whether the suffix gives a decimal floating type.
-     */
     public function isDecimal(): bool
     {
         return match ($this) {
@@ -96,11 +88,9 @@ enum FloatTypeSuffix: string
     }
 
     /**
-     * Returns the spelling of the suffix with the given width in place of
-     * `N`.
+     * Returns the spelling with the width in place of `N`.
      *
-     * @param int<1, max>|null $width the width of the type, {@see null} for
-     *        a suffix without one
+     * @param int<1, max>|null $width {@see null} for a suffix without one
      * @return non-empty-string
      */
     public function getSpelling(?int $width = null): string

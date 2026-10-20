@@ -13,9 +13,8 @@ use FFI\Parser\Transformer\TransformationContext;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
- * Turns a parameter of a function type, whose only parameter is a name
- * other than a typedef name, into the parameter of that name: in
- * `void f(int (x));` the parameter `x` is an `int`.
+ * Turns a parameter of a function type with a lone non-typedef name into a
+ * parameter of that name: in `void f(int (x));` the parameter `x` is an `int`.
  *
  * @template-implements TransformerRuleInterface<Parameter>
  */
@@ -42,9 +41,8 @@ final class ParameterNameRule implements TransformerRuleInterface
     }
 
     /**
-     * @return Identifier|null the name the only parameter of the function
-     *         consists of, {@see null} in case of the parameter is other
-     *         than a lone name or the name is a typedef name
+     * @return Identifier|null the name of the only parameter, {@see null} when
+     *         it is not a lone name or the name is a typedef name
      */
     private function findName(FunctionType $function, TransformationContext $context): ?Identifier
     {

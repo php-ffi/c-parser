@@ -10,8 +10,7 @@ use FFI\Parser\Node\Identifier;
 use FFI\Parser\Node\Type\EnumType\EnumeratorList;
 
 /**
- * Enumeration type, such as `enum E : unsigned char { A, B = 2 }`. It is a
- * declaration as well: with a body it declares its tag and its constants.
+ * Enumeration type, `enum E : unsigned char { A, B = 2 }`. A declaration as well.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.3.3 Enumeration specifiers
  */
@@ -22,24 +21,19 @@ final class EnumType extends Type implements DeclarationInterface
      */
     public function __construct(
         /**
-         * The tag, {@see null} in case of an anonymous one
+         * The tag, {@see null} if anonymous
          */
         public ?Identifier $name,
         /**
-         * The fixed underlying type written after the colon, {@see null}
-         * in case of there is none
+         * The fixed underlying type after the colon
          */
         public ?TypeInterface $underlyingType = null,
         /**
-         * The enumerators, {@see null} in case of there is no body: a
-         * reference to the tag or its declaration without the enumerators,
-         * such as `enum E : int;`
+         * The enumerators, {@see null} if there is no body, `enum E : int;`
          */
         public ?EnumeratorList $enumerators = null,
         /**
-         * The attributes after `enum`, `enum [[a]] E { A }`. The ones
-         * after a tag without a body, `enum E [[a]];`, are among the
-         * specifiers. {@see null} in case of none is written
+         * Attributes after `enum`, `enum [[a]] E { A }`
          */
         public ?AttributeList $attributes = null,
         int $offset = 0,

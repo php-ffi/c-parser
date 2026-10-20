@@ -11,9 +11,8 @@ use FFI\Parser\Transformer\Rule\TypeNameOperandRule;
 use FFI\Parser\Transformer\TransformationContext;
 
 /**
- * Turns `alignas` of an expression into `alignas` of a type name, when the
- * expression starts with a typedef name: `alignas(T[3])` is the alignment
- * of an array.
+ * Turns `alignas` of an expression into `alignas` of a type name when the
+ * expression starts with a typedef name: `alignas(T[3])`.
  *
  * @template-extends TypeNameOperandRule<AlignAsSpecifier>
  */

@@ -181,32 +181,24 @@ final class Preset
 
     public function __construct(
         /**
-         * Extensions of C23 the compiler accepts
-         *
          * @var list<Feature>
          */
         public readonly array $features = [],
         /**
-         * Typedef names built into the compiler: the identifiers the
-         * compiler reads as typedef names without a declaration in the
-         * header, such as `__builtin_va_list` or `__int64`
+         * Identifiers read as typedef names without a declaration in the header
          *
          * @var list<non-empty-string>
          */
         public readonly array $typedefNames = [],
     ) {}
 
-    /**
-     * Creates an empty (default) preset.
-     */
     public static function empty(): self
     {
         return new self();
     }
 
     /**
-     * Creates the preset of C23 itself, which accepts no extensions and
-     * knows no typedef names.
+     * Creates the preset of C23 itself, without extensions and typedef names.
      */
     public static function c23(): self
     {
@@ -214,9 +206,8 @@ final class Preset
     }
 
     /**
-     * Creates the preset that accepts every extension of C23 the parser
-     * knows and knows the typedef names of every compiler, the default one
-     * of {@see Parser}.
+     * Creates the preset with every extension and the typedef names of every
+     * compiler, the default one of {@see Parser}.
      */
     public static function default(): self
     {
@@ -232,9 +223,7 @@ final class Preset
     }
 
     /**
-     * Creates the preset of GCC: the GNU extensions and the typedef names
-     * common to its targets, the variable argument lists, the 128-bit
-     * integers and the extended floating types.
+     * Creates the preset of GCC.
      *
      * @link https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html GCC, Extensions to the C Language Family
      * @link https://github.com/gcc-mirror/gcc/blob/master/gcc/c-family/c-common.cc GCC, `c_common_nodes_and_builtins()`
@@ -247,10 +236,8 @@ final class Preset
     }
 
     /**
-     * Creates the preset of Clang: the GNU extensions, the calling
-     * conventions, the blocks, the nullability and the signing of pointers
-     * and the typedef names of Clang and of the target architecture. The Microsoft extensions (`-fms-extensions`) add the
-     * extensions and the typedef names of MSVC.
+     * Creates the preset of Clang for the target. The Microsoft extensions
+     * (`-fms-extensions`) add the extensions and the typedef names of MSVC.
      *
      * @link https://clang.llvm.org/docs/LanguageExtensions.html Clang, Language Extensions
      * @link https://github.com/llvm/llvm-project/blob/main/clang/lib/Sema/Sema.cpp Clang, `Sema::Initialize()`
@@ -272,8 +259,7 @@ final class Preset
     }
 
     /**
-     * Creates the preset of MSVC: the Microsoft extensions and the typedef
-     * names of the sized integers and the wide character type.
+     * Creates the preset of MSVC.
      *
      * @link https://learn.microsoft.com/en-us/cpp/cpp/microsoft-specific-modifiers MSVC, Microsoft-specific modifiers
      * @link https://learn.microsoft.com/en-us/cpp/cpp/int8-int16-int32-int64 MSVC, `__int8`, `__int16`, `__int32`, `__int64`
@@ -285,9 +271,7 @@ final class Preset
     }
 
     /**
-     * Creates the preset of PHP FFI, what {@see \FFI::cdef()} accepts: the
-     * extensions of its own grammar and the typedef names of the fixed width
-     * integers, the sizes and the variable argument lists.
+     * Creates the preset of PHP FFI, what {@see \FFI::cdef()} accepts.
      *
      * @link https://github.com/php/php-src/blob/master/ext/ffi/ffi.g PHP FFI, the grammar
      * @link https://github.com/php/php-src/blob/master/ext/ffi/ffi.c PHP FFI, the `zend_ffi_types` table
@@ -298,7 +282,7 @@ final class Preset
     }
 
     /**
-     * Whether the rule rejects an extension one of the features accepts.
+     * Whether a feature of the preset accepts what the rule rejects.
      *
      * @param ValidatorRuleInterface<covariant NodeInterface> $rule
      */

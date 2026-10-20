@@ -33,10 +33,8 @@ use FFI\Parser\Transformer\TransformationContext;
 use FFI\Parser\Transformer\TransformerRuleInterface;
 
 /**
- * Rearranges the operators of an expression by their precedence where the
- * other rules put a binary operator under an operator that binds tighter:
- * `-(x)-y` rebuilt as the negation of `(x)-y` is the subtraction of `y`
- * from `-(x)`.
+ * Rearranges the operators of an expression by their precedence: `-(x)-y`
+ * is the subtraction of `y` from `-(x)`, not the negation of `(x)-y`.
  *
  * @template-implements TransformerRuleInterface<
  *     BinaryExpression|UnaryExpression|CastExpression|SizeOfExpression|AlignOfExpression
@@ -77,10 +75,6 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
             || $node instanceof AlignOfExpression;
     }
 
-    /**
-     * Checks whether a binary operator of the expression is the operand of
-     * an operator that binds tighter.
-     */
     private function isMisplaced(ExpressionInterface $expression): bool
     {
         if ($expression instanceof BinaryExpression) {
@@ -105,9 +99,7 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
     }
 
     /**
-     * Returns the operands and the operators of the binary operators of the
-     * expression in their source order, the prefix operators applied to
-     * the operand they start with.
+     * Returns the operands and the operators in their source order.
      *
      * @return non-empty-list<ExpressionInterface> the operands at the even
      *         positions and the operators at the odd ones
@@ -130,9 +122,6 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
     }
 
     /**
-     * Builds the binary expressions of the sequence by the precedence of
-     * the operators.
-     *
      * @param non-empty-list<ExpressionInterface> $items
      */
     private function build(array $items): ExpressionInterface
@@ -164,8 +153,7 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
     }
 
     /**
-     * @return int<0, 10> the precedence of the binary operator, the comma
-     *         has the lowest one
+     * @return int<0, 10> the precedence of the operator, the comma is the lowest
      */
     private function getPrecedence(BinaryExpression $operator): int
     {

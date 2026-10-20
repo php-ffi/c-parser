@@ -28,8 +28,7 @@ use Phplrt\Parser\Exception\ParserSourceException;
 final class ParserExecutor extends CompiledParserExecutor
 {
     /**
-     * The spellings with two leading underscores MSVC knows, the ones the
-     * MsKeywordSpellings feature accepts.
+     * Spellings of the MsKeywordSpellings feature.
      *
      * @var list<non-empty-string>
      */
@@ -37,8 +36,6 @@ final class ParserExecutor extends CompiledParserExecutor
 
     public function __construct(
         /**
-         * Extensions of C23 the reducers accept
-         *
          * @var list<Feature>
          */
         private readonly array $features = [],
@@ -47,8 +44,7 @@ final class ParserExecutor extends CompiledParserExecutor
     }
 
     /**
-     * Rejects the fragment of an extension of C23 unless the extension is
-     * accepted.
+     * Rejects the fragment of an extension the preset does not accept.
      *
      * @param int<0, max> $offset
      * @param int<0, max> $length
@@ -62,10 +58,9 @@ final class ParserExecutor extends CompiledParserExecutor
     }
 
     /**
-     * Rejects the GCC spelling of a keyword of C23, the one with two leading
-     * underscores (`__const__`, `__thread`), unless the GnuKeywordSpellings
-     * feature is accepted, or the MsKeywordSpellings feature for the
-     * spellings MSVC knows (`__inline`, `__restrict`).
+     * Rejects a spelling of a keyword with two leading underscores (`__const__`,
+     * `__inline`) unless the GnuKeywordSpellings or MsKeywordSpellings feature
+     * accepts it.
      *
      * @throws SyntaxErrorException in case of the spelling is not accepted
      */

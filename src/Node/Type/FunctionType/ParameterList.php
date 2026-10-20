@@ -7,8 +7,7 @@ namespace FFI\Parser\Node\Type\FunctionType;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Parameters of a function type, the list between the parentheses without
- * the trailing `...`. An empty list starts where the parenthesis does.
+ * Parameters of a function type without the trailing `...`.
  *
  * @template-extends NodeList<Parameter>
  *

@@ -7,8 +7,7 @@ namespace FFI\Parser\Node\Type\BuiltinType;
 use FFI\Parser\Node\Type\BuiltinType;
 
 /**
- * The `_FloatN` binary interchange floating type, such as `_Float16` or
- * `_Float128`.
+ * The `_FloatN` binary interchange floating type, such as `_Float16`.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), Annex H.2.2 Interchange floating types
  */
@@ -19,7 +18,7 @@ final class FloatNType extends BuiltinType
      */
     public function __construct(
         /**
-         * The width N in bits as written: `16` in `_Float16`
+         * The width N in bits as written
          *
          * @var int<1, max>
          */

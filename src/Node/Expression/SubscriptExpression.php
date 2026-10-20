@@ -15,13 +15,7 @@ final class SubscriptExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The expression before `[`
-         */
         public ExpressionInterface $array,
-        /**
-         * The expression between `[` and `]`
-         */
         public ExpressionInterface $index,
         int $offset = 0,
     ) {

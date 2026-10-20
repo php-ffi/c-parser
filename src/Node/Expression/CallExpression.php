@@ -20,13 +20,7 @@ final class CallExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The expression before `(` that designates the function
-         */
         public ExpressionInterface $function,
-        /**
-         * The arguments in parentheses
-         */
         public ArgumentList $arguments,
         int $offset = 0,
     ) {

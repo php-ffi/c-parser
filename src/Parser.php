@@ -23,10 +23,6 @@ use Phplrt\Source\SourceFactory;
 
 /**
  * Parses preprocessed C23 headers into the syntax tree.
- *
- * The parser checks the syntax. Whatever is syntactically valid gives a
- * syntax tree, even if a compiler rejects it, unless one of the given
- * validators rejects it.
  */
 final class Parser
 {
@@ -39,20 +35,14 @@ final class Parser
     private readonly Validator $validator;
 
     /**
-     * @param Preset|null $preset what the compiler knows before the header,
-     *        the default one is {@see Preset::default()}, which accepts every
-     *        extension and knows no typedef names
+     * @param Preset|null $preset {@see Preset::default()} when null
      * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $rules
-     *        checks of the syntax tree run by {@see parse()} without the ones
-     *        the features of the preset remove, the default ones are
-     *        {@see Validator::getDefaultRules()}
+     *        {@see Validator::getDefaultRules()} when null, without the rules
+     *        the features of the preset remove
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
-     *        rewrites of the syntax tree run by {@see parse()} before the
-     *        checks, the default ones are
-     *        {@see Transformer::getDefaultTransformers()}
-     * @param SourceFactoryInterface|null $sources creates the sources out of
-     *        the values given to {@see parse()} and {@see validate()}, the
-     *        default one accepts strings, files and streams
+     *        {@see Transformer::getDefaultTransformers()} when null
+     * @param SourceFactoryInterface|null $sources strings, files and streams
+     *        when null
      */
     public function __construct(
         ?Preset $preset = null,
@@ -110,8 +100,8 @@ final class Parser
     }
 
     /**
-     * Parses the header into the syntax tree, runs the transformers over it
-     * and then the validators over the resulting tree.
+     * Parses the header into the syntax tree, then runs the transformers and
+     * the validators over it.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
@@ -141,10 +131,9 @@ final class Parser
     }
 
     /**
-     * Checks whether the header is syntactically valid, without building
-     * the syntax tree. The validators are not run, and the syntax of every
-     * extension of C23 the grammar knows is accepted, whichever features
-     * the preset has.
+     * Checks whether the header is syntactically valid, without building the
+     * tree and running the validators. Accepts every extension the grammar
+     * knows.
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source

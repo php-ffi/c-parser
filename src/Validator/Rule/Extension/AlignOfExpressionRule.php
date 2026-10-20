@@ -11,9 +11,8 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 use FFI\Parser\Validator\Violation;
 
 /**
- * Checks that the operand of `alignof` is a type name: `alignof x` and
- * `alignof(x)` with `x` declared as an object are not valid. GCC and Clang
- * accept an expression.
+ * Checks that the operand of `alignof` is a type name: `alignof x` is not
+ * valid. GCC and Clang accept an expression.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.5.4.4 The sizeof and alignof operators
  * @link https://gcc.gnu.org/onlinedocs/gcc/Alignment.html GCC, Alignment

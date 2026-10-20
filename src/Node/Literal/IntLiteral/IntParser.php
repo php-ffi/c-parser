@@ -18,14 +18,12 @@ use FFI\Parser\Node\Literal\IntLiteral\IntParser\IntParserResult;
 final class IntParser
 {
     /**
-     * Matches the MSVC suffix of a sized integer type at the end of the
-     * literal, `i64` or `ui64`. It ends with digits and is never combined
-     * with another suffix.
+     * Matches the MSVC suffix of a sized integer type, `i64` or `ui64`, at the end of the literal.
      */
     private const MSVC_SUFFIX_PATTERN = '/[uU]?[iI](?:8|16|32|64)$/';
 
     /**
-     * @param non-empty-string $raw text of an integer constant
+     * @param non-empty-string $raw
      */
     public static function parse(string $raw): IntParserResult
     {
@@ -44,8 +42,7 @@ final class IntParser
 
         return new IntParserResult(
             value: $value,
-            // The value saturates at PHP_INT_MAX, only then it differs from
-            // the exact one and the digits have to be converted
+            // The digits are converted only if the value saturated at PHP_INT_MAX
             decimal: $value === \PHP_INT_MAX ? self::toDecimal($digits, $base) : (string) $value,
             suffix: self::parseSuffix($suffix),
             isImaginary: self::isImaginary($suffix),
@@ -53,8 +50,7 @@ final class IntParser
     }
 
     /**
-     * Whether the suffix makes the constant imaginary, the `i` of an MSVC
-     * suffix such as `i64` aside.
+     * Whether the suffix makes the constant imaginary, the `i` of `i64` aside.
      */
     private static function isImaginary(string $suffix): bool
     {
@@ -75,8 +71,7 @@ final class IntParser
     }
 
     /**
-     * Returns the offset the suffix starts at, the length of the literal in
-     * case of there is no suffix.
+     * Returns the offset the suffix starts at, the length of the literal if none.
      *
      * @param string $literal digits followed by the suffix, without a prefix
      */

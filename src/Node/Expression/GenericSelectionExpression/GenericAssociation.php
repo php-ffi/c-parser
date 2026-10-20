@@ -24,9 +24,6 @@ final class GenericAssociation extends Node
          * The type name before `:`, {@see null} for the `default` association
          */
         public ?TypeInterface $type,
-        /**
-         * The expression selected for the type
-         */
         public ExpressionInterface $expression,
         int $offset = 0,
     ) {

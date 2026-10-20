@@ -7,8 +7,7 @@ namespace FFI\Parser\Node\Literal;
 use FFI\Parser\Node\Expression\Expression;
 
 /**
- * Base of the constants and string literals, which keep their source text
- * along with the value.
+ * Base of the constants and string literals, which keep their source text.
  */
 abstract class Literal extends Expression implements
     LiteralInterface
@@ -18,8 +17,6 @@ abstract class Literal extends Expression implements
      */
     public function __construct(
         /**
-         * The literal exactly as written
-         *
          * @var non-empty-string
          */
         public readonly string $raw,

@@ -13,16 +13,14 @@ namespace FFI\Parser\Node\Literal\IntLiteral\BaseConverter;
 final class NativeBaseConverter implements BaseConverterInterface
 {
     /**
-     * Decimal digits in a limb. A limb multiplied by the largest base (36)
-     * plus the largest digit (35) still fits in the native integer.
+     * Decimal digits in a limb, the most that keeps a limb times base 36 plus a digit in a native integer.
      *
      * @var int<1, max>
      */
     private const LIMB_DIGITS = \PHP_INT_SIZE >= 8 ? 17 : 7;
 
     /**
-     * The value a limb wraps at, the limbs are digits of a number in this
-     * base.
+     * The value a limb wraps at.
      *
      * @var int<1, max>
      */

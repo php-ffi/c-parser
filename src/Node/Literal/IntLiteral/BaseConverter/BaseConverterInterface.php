@@ -14,14 +14,12 @@ namespace FFI\Parser\Node\Literal\IntLiteral\BaseConverter;
 interface BaseConverterInterface
 {
     /**
-     * Whether the converter can work in the current environment, i.e. the
-     * extension it relies on is loaded.
+     * Whether the extension the converter relies on is loaded.
      */
     public function isAvailable(): bool;
 
     /**
-     * @param non-empty-string $digits digits of the number (`0-9`, then
-     *        `a-z` in either case), each of them less than the base
+     * @param non-empty-string $digits `0-9`, then `a-z` in either case, each less than the base
      * @param int<2, 36> $base
      * @return numeric-string the decimal number without leading zeros
      */

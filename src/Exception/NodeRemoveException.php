@@ -7,8 +7,7 @@ namespace FFI\Parser\Exception;
 use FFI\Parser\Node\NodeInterface;
 
 /**
- * Occurs when a visitor removes a node from a place that cannot be left
- * empty.
+ * Occurs when a visitor removes a node from a place that cannot be empty.
  */
 final class NodeRemoveException extends TraverserException
 {

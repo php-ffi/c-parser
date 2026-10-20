@@ -7,11 +7,8 @@ namespace FFI\Parser\Node\Attribute;
 use FFI\Parser\Node\NodeList;
 
 /**
- * Attributes of a declaration, a member, a parameter, a tag, an enumerator
- * or a type, in the order written, of all the attribute specifiers
- * written there. A node without attributes has {@see null} instead, only
- * an attribute declaration of empty specifiers (`[[]];`) has an empty
- * list, which starts where the declaration does.
+ * Attributes of a declaration, a member, a parameter, a tag, an enumerator or a type, in the order written.
+ * Empty only for an attribute declaration of empty specifiers, `[[]];`.
  *
  * @template-extends NodeList<AttributeInterface>
  *

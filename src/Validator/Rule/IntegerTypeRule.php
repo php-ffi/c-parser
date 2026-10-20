@@ -24,8 +24,8 @@ use FFI\Parser\Node\Type\TypeOfUnqualTypeType;
 use FFI\Parser\Validator\ValidatorRuleInterface;
 
 /**
- * Base of the rules that require an integer type where the tree shows the
- * type: a type behind a typedef name or `typeof` is accepted.
+ * Base of the rules that require an integer type. A type behind a typedef
+ * name or `typeof` is accepted.
  *
  * @template TNode of NodeInterface
  *
@@ -34,10 +34,8 @@ use FFI\Parser\Validator\ValidatorRuleInterface;
 abstract class IntegerTypeRule implements ValidatorRuleInterface
 {
     /**
-     * Returns the base of the type specifiers: the type without the
-     * qualifiers, the other specifiers, `_Atomic(...)`, the modifiers such
-     * as `unsigned` and the attributes of a declarator, {@see null} in case
-     * of no base is written.
+     * Returns the type without the qualifiers, specifiers, `_Atomic(...)`,
+     * modifiers and attributes, {@see null} when no base is written.
      */
     protected static function findBaseType(?TypeInterface $type): ?TypeInterface
     {
@@ -54,9 +52,8 @@ abstract class IntegerTypeRule implements ValidatorRuleInterface
     }
 
     /**
-     * Whether the base of the type specifiers may be an integer type: a
-     * standard one (`unsigned` alone gives `int`), `bool`, an enumeration,
-     * a bit-precise one or a type the tree does not show.
+     * Whether the base may be an integer type, including the ones the tree
+     * does not show.
      */
     protected static function isIntegerBase(?TypeInterface $base): bool
     {

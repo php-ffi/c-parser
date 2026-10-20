@@ -18,9 +18,6 @@ final class IdentifierExpression extends Expression
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The name the expression refers to
-         */
         public Identifier $name,
         int $offset = 0,
     ) {

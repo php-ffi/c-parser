@@ -11,11 +11,8 @@ use FFI\Parser\Node\Specifier\SpecifierList;
 use FFI\Parser\Node\Type\TypeInterface;
 
 /**
- * Parameter of a function type, such as `const char *s` or the unnamed
- * `int`. A parameter with an array or a function type keeps it as written,
- * the adjustment to a pointer is up to the consumer. C allows only
- * `register` among the other specifiers of a parameter, but the parser
- * accepts any of them and keeps them for a validator.
+ * Parameter of a function type, such as `const char *s` or the unnamed `int`.
+ * Array and function types are kept as written, without the adjustment to a pointer.
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.7.7.4 Function declarators
  */
@@ -26,21 +23,13 @@ final class Parameter extends SpecifiedDeclaration
      */
     public function __construct(
         /**
-         * The type of the parameter, built of the specifiers and the
-         * declarator, {@see null} in case of no type specifier, no
-         * qualifier and no pointer, array or function is written, such as
-         * in `f(register (x))`
+         * The type built of the specifiers and the declarator, {@see null} if none is written
          */
         public ?TypeInterface $type,
         /**
-         * The name, {@see null} in case of the declarator is abstract or
-         * there is none
+         * The name, {@see null} if the declarator is abstract
          */
         public ?Identifier $name = null,
-        /**
-         * The attributes after the name of the declarator and after the
-         * whole of it, {@see null} in case of none is written
-         */
         public ?AttributeList $attributes = null,
         ?SpecifierList $specifiers = null,
         int $offset = 0,

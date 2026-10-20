@@ -19,13 +19,7 @@ final class RangeDesignator extends Designator
      * @param int<0, max> $offset
      */
     public function __construct(
-        /**
-         * The constant expression of the first index
-         */
         public ExpressionInterface $first,
-        /**
-         * The constant expression of the last index
-         */
         public ExpressionInterface $last,
         int $offset = 0,
     ) {
