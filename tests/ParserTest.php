@@ -293,7 +293,7 @@ final class ParserTest extends TestCase
 
     public function testViolationsAreReportedByValidationException(): void
     {
-        $parser = new Parser(rules: [self::createIntTypeValidator()]);
+        $parser = new Parser(validatorRules: [self::createIntTypeValidator()]);
 
         try {
             $parser->parse("int a;\nint b;");
@@ -312,7 +312,7 @@ final class ParserTest extends TestCase
     {
         $code = 'static extern int x;';
 
-        self::assertSame(1, \count((new Parser(rules: []))->parse($code)));
+        self::assertSame(1, \count((new Parser(validatorRules: []))->parse($code)));
 
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('Invalid combination of storage-class specifiers `static extern`');
@@ -324,7 +324,7 @@ final class ParserTest extends TestCase
     {
         $validator = self::createRecordingValidator();
 
-        $declarations = (new Parser(rules: [$validator]))->parse('char a; long b;');
+        $declarations = (new Parser(validatorRules: [$validator]))->parse('char a; long b;');
 
         self::assertNotSame([], $validator->contexts);
         self::assertSame($declarations, $validator->contexts[0]->declarations);
@@ -334,7 +334,7 @@ final class ParserTest extends TestCase
     {
         $validator = self::createRecordingValidator();
 
-        self::assertTrue((new Parser(rules: [$validator]))->validate('int a;'));
+        self::assertTrue((new Parser(validatorRules: [$validator]))->validate('int a;'));
         self::assertSame([], $validator->contexts);
     }
 
@@ -343,7 +343,7 @@ final class ParserTest extends TestCase
         $validator = self::createRecordingValidator();
 
         try {
-            (new Parser(rules: [$validator]))->parse('int a');
+            (new Parser(validatorRules: [$validator]))->parse('int a');
         } catch (SyntaxErrorException) {
             self::assertSame([], $validator->contexts);
 
@@ -355,7 +355,7 @@ final class ParserTest extends TestCase
 
     public function testTransformersRewriteTheParsedTree(): void
     {
-        $declarations = (new Parser(transformers: [self::createIntToCharTransformer()]))->parse('int a;');
+        $declarations = (new Parser(transformerRules: [self::createIntToCharTransformer()]))->parse('int a;');
 
         self::assertCount(1, $declarations);
         self::assertInstanceOf(VariableDeclaration::class, $declarations[0]);
@@ -365,8 +365,8 @@ final class ParserTest extends TestCase
     public function testValidatorsAreGivenTheTransformedTree(): void
     {
         $parser = new Parser(
-            rules: [self::createIntTypeValidator()],
-            transformers: [self::createIntToCharTransformer()],
+            validatorRules: [self::createIntTypeValidator()],
+            transformerRules: [self::createIntToCharTransformer()],
         );
 
         self::assertCount(2, $parser->parse("int a;\nint b;"));
@@ -376,7 +376,7 @@ final class ParserTest extends TestCase
     {
         $transformer = self::createIntToCharTransformer();
 
-        self::assertTrue((new Parser(transformers: [$transformer]))->validate('int a;'));
+        self::assertTrue((new Parser(transformerRules: [$transformer]))->validate('int a;'));
         self::assertSame(0, $transformer->visits);
     }
 
@@ -415,7 +415,7 @@ final class ParserTest extends TestCase
 
     public function testTypedefNamesOfThePresetAreGivenToTheGivenTransformers(): void
     {
-        $parser = new Parser(transformers: [new ParameterNameRule()], preset: new Preset(typedefNames: ['T']));
+        $parser = new Parser(transformerRules: [new ParameterNameRule()], preset: new Preset(typedefNames: ['T']));
 
         self::assertSame(
             '(function (fn int ((fn int (T)))) f)',
@@ -437,7 +437,7 @@ final class ParserTest extends TestCase
     {
         $parser = new Parser(
             preset: new Preset([Feature::ComplexIntegers]),
-            rules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
+            validatorRules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
         );
 
         self::assertSame('(variable (_Complex int) x)', NodePrinter::print($parser->parse('_Complex int x;')[0]));
@@ -447,7 +447,7 @@ final class ParserTest extends TestCase
     {
         $parser = new Parser(
             preset: Preset::c23(),
-            rules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
+            validatorRules: [new TypeSpecifierRule(), new ComplexIntegerTypeRule()],
         );
 
         $this->expectException(ValidationException::class);

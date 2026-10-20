@@ -36,47 +36,47 @@ final class Parser
 
     /**
      * @param Preset|null $preset {@see Preset::default()} when null
-     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $rules
+     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $validatorRules
      *        {@see Validator::getDefaultRules()} when null, without the rules
      *        the features of the preset remove
-     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
-     *        {@see Transformer::getDefaultTransformers()} when null
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformerRules
+     *        {@see Transformer::getDefaultRules()} when null
      * @param SourceFactoryInterface|null $sources strings, files and streams
      *        when null
      */
     public function __construct(
         ?Preset $preset = null,
-        ?iterable $rules = null,
-        ?iterable $transformers = null,
+        ?iterable $validatorRules = null,
+        ?iterable $transformerRules = null,
         ?SourceFactoryInterface $sources = null,
     ) {
         $preset ??= Preset::default();
 
         $this->parser = new ParserExecutor($preset->features);
-        $this->transformer = self::createTransformer($preset, $transformers);
-        $this->validator = self::createValidator($preset, $rules);
+        $this->transformer = self::createTransformer($preset, $transformerRules);
+        $this->validator = self::createValidator($preset, $validatorRules);
         $this->sources = $sources ?? SourceFactory::createDefault();
     }
 
     /**
-     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformers
+     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>>|null $transformerRules
      */
-    private static function createTransformer(Preset $preset, ?iterable $transformers): Transformer
+    private static function createTransformer(Preset $preset, ?iterable $transformerRules): Transformer
     {
         return new Transformer(
-            rules: $transformers ?? Transformer::getDefaultTransformers(),
+            rules: $transformerRules ?? Transformer::getDefaultRules(),
             typedefNames: $preset->typedefNames,
         );
     }
 
     /**
-     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $rules
+     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>>|null $validatorRules
      */
-    private static function createValidator(Preset $preset, ?iterable $rules): Validator
+    private static function createValidator(Preset $preset, ?iterable $validatorRules): Validator
     {
         $result = [];
 
-        foreach ($rules ?? Validator::getDefaultRules() as $rule) {
+        foreach ($validatorRules ?? Validator::getDefaultRules() as $rule) {
             if (!$preset->isRuleRemoved($rule)) {
                 $result[] = $rule;
             }

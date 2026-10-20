@@ -28,7 +28,7 @@ abstract class RuleTestCase extends TestCase
     protected static function assertDeclarationIsKept(string $code): void
     {
         self::assertSame(
-            NodePrinter::print(\array_last((new Parser(rules: [], transformers: []))->parse(self::NAMES . $code))),
+            NodePrinter::print(\array_last((new Parser(validatorRules: [], transformerRules: []))->parse(self::NAMES . $code))),
             self::transform($code),
         );
     }
@@ -49,6 +49,6 @@ abstract class RuleTestCase extends TestCase
      */
     protected static function transformDeclarations(string $code): array
     {
-        return (new Parser(rules: [], transformers: static::createRules()))->parse(self::NAMES . $code);
+        return (new Parser(validatorRules: [], transformerRules: static::createRules()))->parse(self::NAMES . $code);
     }
 }

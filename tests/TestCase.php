@@ -17,7 +17,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected static function parse(string $code): array
     {
-        $parser = new Parser(rules: []);
+        $parser = new Parser(validatorRules: []);
 
         self::assertTrue($parser->validate($code));
 

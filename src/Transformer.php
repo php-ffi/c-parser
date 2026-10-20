@@ -69,10 +69,12 @@ final class Transformer
     }
 
     /**
+     * Returns the default rules followed by the given ones.
+     *
      * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $append
      * @return array<array-key, TransformerRuleInterface<covariant NodeInterface>>
      */
-    public static function getDefaultTransformers(iterable $append = []): array
+    public static function getDefaultRules(iterable $append = []): array
     {
         return [
             new BinaryOperatorRule(),
@@ -104,7 +106,7 @@ final class Transformer
      */
     public static function createDefault(iterable $typedefNames = []): self
     {
-        return new self(self::getDefaultTransformers(), $typedefNames);
+        return new self(self::getDefaultRules(), $typedefNames);
     }
 
     /**

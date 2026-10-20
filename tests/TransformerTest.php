@@ -167,7 +167,7 @@ final class TransformerTest extends TestCase
     {
         $transformer = self::createNameRecordingTransformer();
 
-        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+        (new Transformer([$transformer]))->transform((new Parser(transformerRules: []))->parse(
             'int a = T; typedef int T; int b = T; enum { E }; int c = E + W;',
         ));
 
@@ -178,7 +178,7 @@ final class TransformerTest extends TestCase
     {
         $transformer = self::createNameRecordingTransformer();
 
-        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+        (new Transformer([$transformer]))->transform((new Parser(transformerRules: []))->parse(
             'typedef int T; void f(int T, int a[sizeof(T)]); int b = T;',
         ));
 
@@ -189,7 +189,7 @@ final class TransformerTest extends TestCase
     {
         $transformer = self::createNameRecordingTransformer();
 
-        (new Transformer([$transformer], ['T']))->transform((new Parser(transformers: []))->parse(
+        (new Transformer([$transformer], ['T']))->transform((new Parser(transformerRules: []))->parse(
             'int a = T; void f(int T, int b[sizeof(T)]); int T; int c = T;',
         ));
 
@@ -200,7 +200,7 @@ final class TransformerTest extends TestCase
     {
         $transformer = self::createNameRecordingTransformer();
 
-        (new Transformer([$transformer]))->transform((new Parser(transformers: []))->parse(
+        (new Transformer([$transformer]))->transform((new Parser(transformerRules: []))->parse(
             'typedef int T[sizeof(T)];',
         ));
 

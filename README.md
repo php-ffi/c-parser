@@ -43,13 +43,13 @@ pass it to the constructor:
 
 ```php
 // override transformers
-$parser = new FFI\Parser\Parser(transformers: [
+$parser = new FFI\Parser\Parser(transformerRules: [
     new MyAstTransformer(),
 ]);
 
 // or extend existing ones
 $parser = new FFI\Parser\Parser(
-    transformers: FFI\Parser\Transformer::getDefaultTransformers([
+    transformerRules: FFI\Parser\Transformer::getDefaultRules([
         new MyAstTransformer(),
     ]),
 );
@@ -62,13 +62,13 @@ your own, pass it to the constructor:
 
 ```php
 // override rules
-$parser = new FFI\Parser\Parser(rules: [
+$parser = new FFI\Parser\Parser(validatorRules: [
     new MyValidatorRule(),
 ]);
 
 // or extend existing ones
 $parser = new FFI\Parser\Parser(
-    rules: FFI\Parser\Validator::getDefaultRules([
+    validatorRules: FFI\Parser\Validator::getDefaultRules([
         new MyValidatorRule(),
     ]),
 );
