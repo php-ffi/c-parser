@@ -35,9 +35,9 @@ final class Scope
 
     public function leave(): void
     {
-        if (\count($this->scopes) > 1) {
-            \array_pop($this->scopes);
-        }
+        \assert(\count($this->scopes) > 1, 'The file scope cannot be left');
+
+        \array_pop($this->scopes);
     }
 
     public function declareTypedefName(string $name): void

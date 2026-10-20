@@ -61,7 +61,7 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
             return null;
         }
 
-        return $this->build($this->getSequence($node));
+        return $this->build($this->flattenSequence($node));
     }
 
     /**
@@ -99,19 +99,25 @@ final class OperatorPrecedenceRule implements TransformerRuleInterface
     }
 
     /**
-     * Returns the operands and the operators in their source order.
+     * Returns the operands and the operators in their source order. A prefix
+     * operator takes the first operand of the sequence of its operand as its
+     * own operand and stands in its place.
      *
      * @return non-empty-list<ExpressionInterface> the operands at the even
      *         positions and the operators at the odd ones
      */
-    private function getSequence(ExpressionInterface $expression): array
+    private function flattenSequence(ExpressionInterface $expression): array
     {
         if ($expression instanceof BinaryExpression) {
-            return [...$this->getSequence($expression->left), $expression, ...$this->getSequence($expression->right)];
+            return [
+                ...$this->flattenSequence($expression->left),
+                $expression,
+                ...$this->flattenSequence($expression->right),
+            ];
         }
 
         if ($this->isPrefixOperator($expression)) {
-            $items = $this->getSequence($expression->operand);
+            $items = $this->flattenSequence($expression->operand);
             $expression->operand = $items[0];
             $items[0] = $expression;
 

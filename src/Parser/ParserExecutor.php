@@ -92,13 +92,15 @@ final class ParserExecutor extends CompiledParserExecutor
      */
     protected function assertEscapeSequences(ReadableInterface $source, TokenInterface $literal): void
     {
+        if (\in_array(Feature::UnknownEscapes, $this->features, true)) {
+            return;
+        }
+
         // A backslash and the character after it, an escaped backslash is one pair, a line splice has no character
         \preg_match_all('/\\\\(?:\r?\n|(.))/', $literal->value, $escapes);
 
         foreach ($escapes[1] as $character) {
-            if ($character === ''
-                || \str_contains(self::C23_ESCAPE_CHARACTERS, $character)
-                || \in_array(Feature::UnknownEscapes, $this->features, true)) {
+            if ($character === '' || \str_contains(self::C23_ESCAPE_CHARACTERS, $character)) {
                 continue;
             }
 

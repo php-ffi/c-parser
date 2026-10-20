@@ -52,9 +52,7 @@ abstract class NodeList extends Node implements
      */
     public function first(): ?NodeInterface
     {
-        $first = \array_first($this->items);
-
-        return $first instanceof NodeInterface ? $first : null;
+        return \array_first($this->items);
     }
 
     /**
@@ -62,9 +60,7 @@ abstract class NodeList extends Node implements
      */
     public function last(): ?NodeInterface
     {
-        $last = \array_last($this->items);
-
-        return $last instanceof NodeInterface ? $last : null;
+        return \array_last($this->items);
     }
 
     public function offsetExists(mixed $offset): bool

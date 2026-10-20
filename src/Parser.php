@@ -52,10 +52,10 @@ final class Parser
     ) {
         $preset ??= Preset::default();
 
-        $this->parser = self::createParser($preset);
+        $this->parser = new ParserExecutor($preset->features);
         $this->transformer = self::createTransformer($preset, $transformers);
         $this->validator = self::createValidator($preset, $rules);
-        $this->sources = self::createSourceFactory($sources);
+        $this->sources = $sources ?? SourceFactory::createDefault();
     }
 
     /**
@@ -85,20 +85,6 @@ final class Parser
         return new Validator($result);
     }
 
-    private static function createSourceFactory(?SourceFactoryInterface $sources): SourceFactoryInterface
-    {
-        if ($sources === null) {
-            return SourceFactory::createDefault();
-        }
-
-        return $sources;
-    }
-
-    private static function createParser(Preset $preset): ParserExecutor
-    {
-        return new ParserExecutor($preset->features);
-    }
-
     /**
      * Parses the header into the syntax tree, then runs the transformers and
      * the validators over it.
@@ -108,8 +94,8 @@ final class Parser
      * @return list<RootDeclarationInterface> declarations in the order they are
      *         written, one for each declarator, empty declarations (a lone `;`)
      *         are not listed
-     * @throws InternalException in case of the header cannot be read or the
-     *         lexer fails on it
+     * @throws InternalException in case of the header cannot be read or
+     *         cannot be analyzed for a reason other than its code
      * @throws SyntaxErrorException in case of the header is not syntactically
      *         valid or is written in an extension of C23 the preset does not
      *         accept
@@ -137,8 +123,8 @@ final class Parser
      *
      * @param mixed $source code of the header as a string, a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
-     * @throws InternalException in case of the header cannot be read or the
-     *         lexer fails on it
+     * @throws InternalException in case of the header cannot be read or
+     *         cannot be analyzed for a reason other than its code
      */
     public function validate(mixed $source): bool
     {
@@ -146,17 +132,15 @@ final class Parser
 
         try {
             return $this->parser->validate($source);
-        } catch (ParserSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (ParserException $e) {
-            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
+            throw self::createInternalException($e);
         }
     }
 
     /**
      * @return list<RootDeclarationInterface>
-     * @throws InternalException in case of the header cannot be read or the
-     *         lexer fails on it
+     * @throws InternalException in case of the header cannot be read or
+     *         cannot be analyzed for a reason other than its code
      * @throws SyntaxErrorException in case of the header is not syntactically valid
      */
     private function parseOrFail(ReadableInterface $source): array
@@ -165,11 +149,18 @@ final class Parser
             return $this->parser->parse($source);
         } catch (UnexpectedTokenException $e) {
             throw SyntaxErrorException::becauseUnexpectedToken($e->source, $e->token, $e->getMessage());
-        } catch (ParserSourceException $e) {
-            throw InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
         } catch (ParserException $e) {
-            throw InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
+            throw self::createInternalException($e);
         }
+    }
+
+    private static function createInternalException(ParserException $e): InternalException
+    {
+        if ($e instanceof ParserSourceException) {
+            return InternalException::becauseSourceIsNotReadable($e->getPrevious() ?? $e);
+        }
+
+        return InternalException::becauseSourceCannotBeAnalyzed($e->getPrevious() ?? $e);
     }
 
     /**

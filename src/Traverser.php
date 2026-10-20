@@ -28,7 +28,7 @@ final class Traverser
      */
     public function __construct(iterable $visitors = [])
     {
-        $this->visitors = self::formatVisitors($visitors);
+        $this->visitors = \is_array($visitors) ? \array_values($visitors) : \iterator_to_array($visitors, false);
     }
 
     /**
@@ -42,21 +42,6 @@ final class Traverser
     {
         return (new self($visitors))
             ->traverse($declarations);
-    }
-
-    /**
-     * TODO Since PHP 8.2 should be replaced to `iterator_to_array`
-     *
-     * @param iterable<mixed, VisitorInterface> $visitors
-     * @return list<VisitorInterface>
-     */
-    private static function formatVisitors(iterable $visitors): array
-    {
-        return match (true) {
-            $visitors instanceof \Traversable => \iterator_to_array($visitors, false),
-            \array_is_list($visitors) => $visitors,
-            default => \array_values($visitors),
-        };
     }
 
     /**

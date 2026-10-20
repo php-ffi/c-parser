@@ -19,10 +19,8 @@ final class ValidatorVisitor implements VisitorInterface
 {
     /**
      * @var list<Violation>
-     *
-     * @phpstan-readonly-allow-private-mutation
      */
-    public array $violations = [];
+    private array $violations = [];
 
     /**
      * @var array<class-string<NodeInterface>, list<ValidatorRuleInterface<covariant NodeInterface>>>
@@ -35,6 +33,16 @@ final class ValidatorVisitor implements VisitorInterface
          */
         private readonly array $validators,
     ) {}
+
+    /**
+     * Returns the violations the validators found so far, in the order of the walk.
+     *
+     * @return list<Violation>
+     */
+    public function getViolations(): array
+    {
+        return $this->violations;
+    }
 
     public function enter(NodeInterface $node, Context $context): ?Action
     {

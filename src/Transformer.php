@@ -49,23 +49,8 @@ final class Transformer
      */
     public function __construct(iterable $rules = [], iterable $typedefNames = [])
     {
-        $this->transformers = self::formatTransformerRules($rules);
+        $this->transformers = \is_array($rules) ? \array_values($rules) : \iterator_to_array($rules, false);
         $this->typedefNames = self::formatTypedefNames($typedefNames);
-    }
-
-    /**
-     * TODO Since PHP 8.2 should be replaced to `iterator_to_array`
-     *
-     * @param iterable<mixed, TransformerRuleInterface<covariant NodeInterface>> $rules
-     * @return list<TransformerRuleInterface<covariant NodeInterface>>
-     */
-    private static function formatTransformerRules(iterable $rules): array
-    {
-        return match (true) {
-            $rules instanceof \Traversable => \iterator_to_array($rules, false),
-            \array_is_list($rules) => $rules,
-            default => \array_values($rules),
-        };
     }
 
     /**

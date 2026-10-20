@@ -45,22 +45,7 @@ final class Validator
      */
     public function __construct(iterable $rules = [])
     {
-        $this->validators = self::formatValidatorRules($rules);
-    }
-
-    /**
-     * TODO Since PHP 8.2 should be replaced to `iterator_to_array`
-     *
-     * @param iterable<mixed, ValidatorRuleInterface<covariant NodeInterface>> $rules
-     * @return list<ValidatorRuleInterface<covariant NodeInterface>>
-     */
-    private static function formatValidatorRules(iterable $rules): array
-    {
-        return match (true) {
-            $rules instanceof \Traversable => \iterator_to_array($rules, false),
-            \array_is_list($rules) => $rules,
-            default => \array_values($rules),
-        };
+        $this->validators = \is_array($rules) ? \array_values($rules) : \iterator_to_array($rules, false);
     }
 
     /**
@@ -116,7 +101,7 @@ final class Validator
             $visitor = new ValidatorVisitor($this->validators),
         ]);
 
-        $violations = $visitor->violations;
+        $violations = $visitor->getViolations();
 
         \usort($violations, Violation::sort(...));
 
