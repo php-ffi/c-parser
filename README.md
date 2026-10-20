@@ -1,4 +1,4 @@
-# C23 Parser for PHP FFI
+# C23 Parser for PHP
 
 <p align="center">
     <a href="https://packagist.org/packages/ffi/c-parser"><img src="https://poser.pugx.org/ffi/c-parser/require/php?style=for-the-badge" alt="PHP 8.1+"></a>

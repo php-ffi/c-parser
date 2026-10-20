@@ -201,13 +201,17 @@ final class Preset
         public readonly array $typedefNames = [],
     ) {}
 
+    /**
+     * Creates the preset without features and typedef names.
+     */
     public static function empty(): self
     {
         return new self();
     }
 
     /**
-     * Creates the preset of C23 itself, without extensions and typedef names.
+     * Creates the preset of the C23 standard (ISO/IEC 9899:2024), with the
+     * features C23 has and the typedef names it declares.
      */
     public static function c23(): self
     {
