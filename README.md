@@ -16,6 +16,9 @@ generating wrappers and stubs or checking a header before loading it.
 
 Based on C23 specification: [ISO/IEC 9899:2024 (N3220)](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf)
 
+You can also use a [PHP C preprocessor](https://github.com/php-ffi/preprocessor) 
+to preprocess the source code.
+
 ## Installation
 
 ```sh
