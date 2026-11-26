@@ -41,7 +41,6 @@ abstract class ParseRuntimeException extends ParserException
     {
         try {
             $contents = $this->source->content;
-            // @phpstan-ignore-next-line the contract of the property tells it throws in its text only
         } catch (SourceExceptionInterface) {
             return parent::__toString();
         }
