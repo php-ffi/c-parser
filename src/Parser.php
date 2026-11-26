@@ -194,11 +194,11 @@ final class Parser
         try {
             return $this->sources->create($source);
         } catch (SourceExceptionInterface $e) {
-            if (!$source instanceof \Stringable || $source instanceof \SplFileInfo) {
-                throw InternalException::becauseSourceIsNotReadable($e);
+            if ($source instanceof \Stringable) {
+                return $this->sources->create((string) $source);
             }
-        }
 
-        return $this->createSource((string) $source);
+            throw InternalException::becauseSourceIsNotReadable($e);
+        }
     }
 }
