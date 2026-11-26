@@ -59,8 +59,7 @@ final class EnumTypeRule extends IntegerTypeRule
             && !($parent instanceof TagDeclaration && $parent->type === $node && $parent->specifiers === null)
         ) {
             yield new Violation(
-                'Enumeration with an underlying type and without enumerators is allowed only in the declaration '
-                    . 'of its tag',
+                'Enumeration with an underlying type and without enumerators should only declare its tag',
                 $node->offset,
             );
         }

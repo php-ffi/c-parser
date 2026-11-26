@@ -67,7 +67,7 @@ final class TypeSpecifierRule implements ValidatorRuleInterface
 
         return [
             new Violation(
-                \sprintf('Invalid combination of type specifiers `%s`', \implode(' ', $keywords)),
+                \sprintf('Type specifiers `%s` should not be combined', \implode(' ', $keywords)),
                 $node->offset,
             ),
         ];

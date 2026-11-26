@@ -37,7 +37,7 @@ final class StructTypeRule implements ValidatorRuleInterface
 
         foreach ($members as $index => $member) {
             if ($index !== $last && $this->isFlexibleArray($member)) {
-                yield new Violation('Flexible array member is allowed only as the last member', $member->offset);
+                yield new Violation('Flexible array member should be the last member', $member->offset);
             }
         }
     }

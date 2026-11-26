@@ -44,7 +44,7 @@ final class TypeInferenceRuleTest extends RuleTestCase
     #[DataProvider('missingTypeSpecifiersDataProvider')]
     public function testMissingTypeSpecifierIsReported(string $code, int $offset): void
     {
-        self::assertSame([[$offset, 'Type specifier is missing']], self::validate($code));
+        self::assertSame([[$offset, 'Type specifier should not be omitted']], self::validate($code));
     }
 
     /**

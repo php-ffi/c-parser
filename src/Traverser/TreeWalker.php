@@ -33,6 +33,14 @@ final class TreeWalker
      */
     private array $properties = [];
 
+    /**
+     * Nodes that hold the visited one, from a root declaration to the direct
+     * parent.
+     *
+     * @var list<NodeInterface>
+     */
+    private array $parents = [];
+
     public function __construct(
         /**
          * @var non-empty-list<VisitorInterface>
@@ -60,6 +68,7 @@ final class TreeWalker
             return $this->walkDeclarations();
         } finally {
             $this->results = new \SplObjectStorage();
+            $this->parents = [];
         }
     }
 
@@ -73,7 +82,7 @@ final class TreeWalker
         $result = [];
 
         foreach ($this->declarations as $declaration) {
-            $node = $this->visit($declaration, []);
+            $node = $this->visit($declaration);
 
             if ($node === Action::Remove) {
                 continue;
@@ -90,12 +99,11 @@ final class TreeWalker
     }
 
     /**
-     * @param list<NodeInterface> $parents
      * @return NodeInterface|Action::Remove
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
      */
-    private function visit(NodeInterface $node, array $parents): NodeInterface|Action
+    private function visit(NodeInterface $node): NodeInterface|Action
     {
         if (isset($this->results[$node])) {
             return $this->results[$node];
@@ -103,22 +111,20 @@ final class TreeWalker
 
         $this->results[$node] = $node;
 
-        return $this->results[$node] = $this->walkNode($node, $parents);
+        return $this->results[$node] = $this->walkNode($node);
     }
 
     /**
-     * @param list<NodeInterface> $parents
      * @return NodeInterface|Action::Remove
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
      */
-    private function walkNode(NodeInterface $node, array $parents): NodeInterface|Action
+    private function walkNode(NodeInterface $node): NodeInterface|Action
     {
-        $context = new Context($parents, $this->declarations);
         $isSkippingChildren = false;
 
         foreach ($this->visitors as $visitor) {
-            $result = $visitor->enter($node, $context);
+            $result = $visitor->enter($node, new Context($this->parents, $this->declarations));
 
             if ($result === Action::Remove) {
                 return $result;
@@ -132,10 +138,16 @@ final class TreeWalker
         }
 
         if (!$isSkippingChildren) {
-            $this->walkChildren($node, [...$parents, $node]);
+            $this->parents[] = $node;
+
+            try {
+                $this->walkChildren($node);
+            } finally {
+                \array_pop($this->parents);
+            }
         }
 
-        return $this->leave($node, $context);
+        return $this->leave($node);
     }
 
     /**
@@ -143,10 +155,10 @@ final class TreeWalker
      * @throws ChildrenSkipException in case of a visitor asks to skip the
      *         children of the node it leaves
      */
-    private function leave(NodeInterface $node, Context $context): NodeInterface|Action
+    private function leave(NodeInterface $node): NodeInterface|Action
     {
         foreach ($this->visitors as $visitor) {
-            $result = $visitor->leave($node, $context);
+            $result = $visitor->leave($node, new Context($this->parents, $this->declarations));
 
             if ($result === Action::Remove) {
                 return $result;
@@ -165,18 +177,17 @@ final class TreeWalker
     }
 
     /**
-     * @param non-empty-list<NodeInterface> $parents
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
      */
-    private function walkChildren(NodeInterface $node, array $parents): void
+    private function walkChildren(NodeInterface $node): void
     {
         foreach ($this->getProperties($node) as $property) {
             // @phpstan-ignore-next-line the property name is taken from the public properties of the same node
             $value = $node->{$property};
 
             if ($value instanceof NodeInterface) {
-                $child = $this->visit($value, $parents);
+                $child = $this->visit($value);
 
                 if ($child === Action::Remove) {
                     throw NodeRemoveException::becauseNodeCannotBeRemoved($node, $property);
@@ -186,7 +197,7 @@ final class TreeWalker
                     $this->replace($node, $property, $child);
                 }
             } elseif (\is_array($value)) {
-                $this->walkList($node, $property, $value, $parents);
+                $this->walkList($node, $property, $value);
             }
         }
     }
@@ -222,11 +233,10 @@ final class TreeWalker
 
     /**
      * @param array<mixed> $items
-     * @param non-empty-list<NodeInterface> $parents
      * @throws TraverserException in case of a visitor breaks the syntax
      *         tree
      */
-    private function walkList(NodeInterface $node, string $property, array $items, array $parents): void
+    private function walkList(NodeInterface $node, string $property, array $items): void
     {
         $isChanged = false;
 
@@ -235,7 +245,7 @@ final class TreeWalker
                 continue;
             }
 
-            $child = $this->visit($item, $parents);
+            $child = $this->visit($item);
 
             if ($child === $item) {
                 continue;

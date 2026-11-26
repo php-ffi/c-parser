@@ -35,7 +35,7 @@ final class StorageClassSpecifierRuleTest extends RuleTestCase
     #[DataProvider('invalidCombinationsDataProvider')]
     public function testInvalidCombinationIsReported(string $code, string $specifiers): void
     {
-        self::assertSame([[0, 'Invalid combination of storage-class specifiers ' . $specifiers]], self::validate($code));
+        self::assertSame([[0, 'Storage-class specifiers ' . $specifiers . ' should not be combined']], self::validate($code));
     }
 
     /**

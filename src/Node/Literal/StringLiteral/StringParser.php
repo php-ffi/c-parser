@@ -143,10 +143,16 @@ final class StringParser
     }
 
     /**
-     * @return int|null {@see null} if the value does not fit in a native integer
+     * @return int|null {@see null} if the value is above any code unit, `0xFFFF_FFFF`
      */
     private static function parseHexadecimal(string $digits): ?int
     {
+        $digits = \ltrim($digits, '0');
+
+        if (\strlen($digits) > 8) {
+            return null;
+        }
+
         $value = \hexdec($digits);
 
         return \is_int($value) ? $value : null;

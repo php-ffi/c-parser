@@ -39,7 +39,7 @@ final class InitializerRule implements ValidatorRuleInterface
 
         return [
             new Violation(
-                \sprintf('Initializer is not allowed in the declaration of %s', $kind),
+                \sprintf('Declaration of %s should not have an initializer', $kind),
                 $node->initializer->offset,
             ),
         ];

@@ -28,6 +28,6 @@ final class AlignOfExpressionRule implements ValidatorRuleInterface
 
     public function validate(NodeInterface $node, ValidationContext $context): iterable
     {
-        return [new Violation('Operand of alignof should be a type name', $node->offset)];
+        return [new Violation('Operand of `alignof` should be a type name', $node->offset)];
     }
 }

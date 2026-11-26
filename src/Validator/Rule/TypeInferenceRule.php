@@ -76,7 +76,7 @@ final class TypeInferenceRule implements ValidatorRuleInterface
             return [];
         }
 
-        return [new Violation('Type specifier is missing', $node->offset)];
+        return [new Violation('Type specifier should not be omitted', $node->offset)];
     }
 
     /**

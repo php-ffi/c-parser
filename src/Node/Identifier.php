@@ -9,7 +9,7 @@ namespace FFI\Parser\Node;
  *
  * @link https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3220.pdf C23 (N3220), 6.4.2 Identifiers
  */
-final class Identifier extends Node
+final class Identifier extends Node implements \Stringable
 {
     /**
      * @param int<0, max> $offset
@@ -22,5 +22,15 @@ final class Identifier extends Node
         int $offset = 0,
     ) {
         parent::__construct($offset);
+    }
+
+    /**
+     * Returns the name, the {@see Identifier::$value}
+     *
+     * @return non-empty-string
+     */
+    public function __toString(): string
+    {
+        return $this->value;
     }
 }

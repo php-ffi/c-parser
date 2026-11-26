@@ -68,7 +68,7 @@ final class StorageClassSpecifierRule implements ValidatorRuleInterface
 
         return [
             new Violation(
-                \sprintf('Invalid combination of storage-class specifiers `%s`', $this->spell($classes)),
+                \sprintf('Storage-class specifiers `%s` should not be combined', $this->spell($classes)),
                 $storage[0]->offset,
             ),
         ];

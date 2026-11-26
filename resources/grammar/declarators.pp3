@@ -610,8 +610,16 @@ FunctionDeclarator -> {
   ;
 
 ParameterTypeList
-  : ParameterDeclaration() (::T_COMMA:: ParameterDeclaration())* (::T_COMMA:: <T_ELLIPSIS>)?
+  : ParameterDeclaration() NextParameterDeclaration()* (::T_COMMA:: <T_ELLIPSIS>)?
   | <T_ELLIPSIS>
+  ;
+
+/**
+ * A parameter after the comma, "..." after the comma ends the list
+ */
+NextParameterDeclaration
+  : !(::T_COMMA:: <T_ELLIPSIS>) ::T_COMMA::
+    ParameterDeclaration() @error("Syntax error, unexpected {token} in the parameters, a parameter or \"...\" expected")
   ;
 
 /**

@@ -149,6 +149,43 @@ final class ParserTest extends TestCase
         }
     }
 
+    public function testStringableIsParsedAsCode(): void
+    {
+        $source = new class implements \Stringable {
+            public function __toString(): string
+            {
+                return 'int a;';
+            }
+        };
+
+        $declarations = (new Parser())->parse($source);
+
+        self::assertCount(1, $declarations);
+        self::assertInstanceOf(VariableDeclaration::class, $declarations[0]);
+        self::assertTrue((new Parser())->validate($source));
+    }
+
+    public function testMissingSplFileInfoIsNotParsedAsCode(): void
+    {
+        $this->expectException(InternalException::class);
+
+        (new Parser())->parse(new \SplFileInfo(self::MISSING_FILE));
+    }
+
+    public function testDeeplyNestedHeaderIsParsedInLinearMemory(): void
+    {
+        $limit = \ini_get('memory_limit');
+        \ini_set('memory_limit', (string) (\memory_get_usage() + 128 * 1024 * 1024));
+
+        try {
+            $declarations = (new Parser())->parse('int ' . \str_repeat('*', 10_000) . 'p;');
+        } finally {
+            \ini_set('memory_limit', (string) $limit);
+        }
+
+        self::assertCount(1, $declarations);
+    }
+
     public function testUnsupportedSourceIsReported(): void
     {
         $this->expectException(InternalException::class);
@@ -315,7 +352,7 @@ final class ParserTest extends TestCase
         self::assertSame(1, \count((new Parser(validatorRules: []))->parse($code)));
 
         $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('Invalid combination of storage-class specifiers `static extern`');
+        $this->expectExceptionMessage('Storage-class specifiers `static extern` should not be combined');
 
         (new Parser())->parse($code);
     }

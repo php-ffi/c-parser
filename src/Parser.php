@@ -89,7 +89,8 @@ final class Parser
      * Parses the header into the syntax tree, then runs the transformers and
      * the validators over it.
      *
-     * @param mixed $source code of the header as a string, a file as an
+     * @param mixed $source code of the header as a string or a {@see \Stringable}
+     *        (such as the result of `ffi/preprocessor`), a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
      * @return list<RootDeclarationInterface> declarations in the order they are
      *         written, one for each declarator, empty declarations (a lone `;`)
@@ -119,9 +120,11 @@ final class Parser
     /**
      * Checks whether the header is syntactically valid, without building the
      * tree and running the validators. Accepts every extension the grammar
-     * knows.
+     * knows, whatever the preset is: {@see Parser::parse()} can reject a header
+     * this method accepts.
      *
-     * @param mixed $source code of the header as a string, a file as an
+     * @param mixed $source code of the header as a string or a {@see \Stringable}
+     *        (such as the result of `ffi/preprocessor`), a file as an
      *        {@see \SplFileInfo}, a stream resource or a phplrt source
      * @throws InternalException in case of the header cannot be read or
      *         cannot be analyzed for a reason other than its code
@@ -180,6 +183,9 @@ final class Parser
     }
 
     /**
+     * A {@see \Stringable} the source factory does not accept is the code of
+     * the header, a {@see \SplFileInfo} is always a file.
+     *
      * @throws InternalException in case of no source can be created out of
      *         the given value
      */
@@ -188,7 +194,11 @@ final class Parser
         try {
             return $this->sources->create($source);
         } catch (SourceExceptionInterface $e) {
-            throw InternalException::becauseSourceIsNotReadable($e);
+            if (!$source instanceof \Stringable || $source instanceof \SplFileInfo) {
+                throw InternalException::becauseSourceIsNotReadable($e);
+            }
         }
+
+        return $this->createSource((string) $source);
     }
 }

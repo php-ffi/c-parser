@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(AlignOfExpressionRule::class)]
 final class AlignOfExpressionRuleTest extends RuleTestCase
 {
-    private const MESSAGE = 'Operand of alignof should be a type name';
+    private const MESSAGE = 'Operand of `alignof` should be a type name';
 
     protected static function createRule(): ValidatorRuleInterface
     {

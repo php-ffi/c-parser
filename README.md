@@ -33,35 +33,48 @@ $parser = new FFI\Parser\Parser();
 $declarations = $parser->parse('void move(int dx, int dy);');
 // or $parser->parse(new SplFileInfo('header.h'));
 
-echo $declarations[0]->name->value; // "move"
+echo $declarations[0]->name; // "move"
 ```
+
+The parser reads preprocessed code: directives (`#define`, `#if`) are skipped
+like comments, so run the [preprocessor](https://github.com/php-ffi/preprocessor)
+first. Its result can be passed to `parse()` as is.
 
 An invalid header throws `FFI\Parser\Exception\ParserException`, which points
 to the error in the source.
 
+`$parser->validate($code)` only checks the syntax: it accepts every extension
+whatever the preset is and runs no validators, so `parse()` can still reject a
+header it accepts.
+
 ### AST Transformers
 
-The parser contains a set of built-in AST transformations. To use your own,
-pass it to the constructor:
+The parser contains a set of built-in AST transformations. To add your own
+(`FFI\Parser\Transformer\TransformerRuleInterface`), pass it to the constructor:
 
 ```php
-// override transformers
-$parser = new FFI\Parser\Parser(transformerRules: [
-    new MyAstTransformer(),
-]);
-
-// or extend existing ones
+// extend existing ones
 $parser = new FFI\Parser\Parser(
     transformerRules: FFI\Parser\Transformer::getDefaultRules([
         new MyAstTransformer(),
     ]),
 );
+
+// or override them
+$parser = new FFI\Parser\Parser(transformerRules: [
+    new MyAstTransformer(),
+]);
 ```
+
+The built-in transformations resolve what the grammar cannot tell without the
+typedef names (`sizeof(T[3])`, `(T)(x)`). Without them the tree of such code is
+wrong, so override them only if you know what you are doing.
 
 ### AST Validators
 
 The parser checks the AST with validators after the transformations. To use
-your own, pass it to the constructor:
+your own (`FFI\Parser\Validator\ValidatorRuleInterface`), pass it to the
+constructor:
 
 ```php
 // override rules
@@ -95,11 +108,12 @@ $parser = new FFI\Parser\Parser(preset: new Preset(
 ```
 
 The presets of the compilers are:
-- `FFI\Parser\Preset::gcc()` - only GCC features
-- `FFI\Parser\Preset::clang()` - only Clang features
-- `FFI\Parser\Preset::msvc()` - only MSVC features
-- `FFI\Parser\Preset::php()` - only PHP FFI features
-- `FFI\Parser\Preset::c23()` - only C23 features
+- `FFI\Parser\Preset::gcc()` - GCC features
+- `FFI\Parser\Preset::clang()` - GCC and Clang features
+- `FFI\Parser\Preset::msvc()` - MSVC features
+- `FFI\Parser\Preset::php()` - PHP FFI features, but the constructs of C23
+  that `FFI::cdef()` does not support (attributes, `typeof`) are accepted too
+- `FFI\Parser\Preset::c23()` (or `Preset::empty()`) - plain C23
 - `FFI\Parser\Preset::default()` - default preset, all features
 
 ```php
@@ -119,6 +133,11 @@ $ast = (new FFI\Parser\Parser())
 $ast = (new FFI\Parser\Parser(preset: FFI\Parser\Preset::c23()))
     ->parse('int a = sizeof(uint8_t[4]);');
 ```
+
+## Documentation
+
+The tree, the presets, the errors and the limitations are described in the
+[documentation](https://php-ffi.github.io/parser/).
 
 ## Benchmarks
 
@@ -148,7 +167,8 @@ The small headers for tests are in `tests/resources/headers`.
 
 ## Limitations
 
-Below is a table of features from various compilers that the parser also supports. 
+Below is a table of features from various compilers that the parser also supports
+with `Preset::default()`, a preset without the feature of a construct rejects it. 
 However, other compilers might interpret these differently or fail with an error:
 
 | # | Construct                                       | Example                                     | From                         | Other                                 |

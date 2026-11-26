@@ -24,11 +24,11 @@ final class StructTypeRuleTest extends RuleTestCase
     {
         yield 'flexible array member before another member' => [
             'struct S { int n; int a[]; int b; };',
-            [[18, 'Flexible array member is allowed only as the last member']],
+            [[18, 'Flexible array member should be the last member']],
         ];
         yield 'flexible array member with the attributes of a parenthesized declarator' => [
             'struct S { int n; int (__attribute__((x)) a)[]; int b; };',
-            [[18, 'Flexible array member is allowed only as the last member']],
+            [[18, 'Flexible array member should be the last member']],
         ];
     }
 

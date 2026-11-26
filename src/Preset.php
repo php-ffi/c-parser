@@ -210,8 +210,8 @@ final class Preset
     }
 
     /**
-     * Creates the preset of the C23 standard (ISO/IEC 9899:2024), with the
-     * features C23 has and the typedef names it declares.
+     * Creates the preset of the C23 standard (ISO/IEC 9899:2024): plain C23,
+     * without features and typedef names, the same as {@see Preset::empty()}.
      */
     public static function c23(): self
     {
@@ -284,7 +284,11 @@ final class Preset
     }
 
     /**
-     * Creates the preset of PHP FFI, what {@see \FFI::cdef()} accepts.
+     * Creates the preset of PHP FFI: C23 with the extensions {@see \FFI::cdef()}
+     * accepts. The constructs of C23 PHP FFI does not support (attributes,
+     * `typeof`, function bodies and others) are accepted too, and the names
+     * and the types are not checked, so {@see \FFI::cdef()} can still reject
+     * a header the preset accepts.
      *
      * @link https://github.com/php/php-src/blob/master/ext/ffi/ffi.g PHP FFI, the grammar
      * @link https://github.com/php/php-src/blob/master/ext/ffi/ffi.c PHP FFI, the `zend_ffi_types` table

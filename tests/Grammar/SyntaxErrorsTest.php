@@ -66,6 +66,12 @@ final class SyntaxErrorsTest extends TestCase
             'B',
             'Syntax error, unexpected "B" (T_IDENTIFIER) in the enumerators, "," or "}" expected',
         ];
+        yield 'missing enumerator' => [
+            'enum E { A, , B };',
+            12,
+            ',',
+            'Syntax error, unexpected "," (T_COMMA) in the enumerators, an enumerator or "}" expected',
+        ];
         yield 'unclosed parameters' => [
             'int f(int a, char b;',
             19,
@@ -76,7 +82,7 @@ final class SyntaxErrorsTest extends TestCase
             'int f(int a, );',
             13,
             ')',
-            'Syntax error, unexpected ")" (T_RPAREN) in the parameters, "," or ")" expected',
+            'Syntax error, unexpected ")" (T_RPAREN) in the parameters, a parameter or "..." expected',
         ];
         yield 'missing element of an initializer list' => [
             'int a[] = {1, , 2};',

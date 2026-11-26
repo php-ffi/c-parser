@@ -113,7 +113,7 @@ final class ValidatorTest extends TestCase
     public function testDefaultRulesReportTheConstraintsOfC23(): void
     {
         self::assertSame(
-            ['Invalid combination of type specifiers `long float`'],
+            ['Type specifiers `long float` should not be combined'],
             \array_map(
                 static fn(Violation $violation): string => $violation->message,
                 Validator::createDefault()->validate(self::parse('long float x;')),

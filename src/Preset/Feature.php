@@ -135,7 +135,8 @@ enum Feature
 
     /**
      * Member declaration without a declarator, whose type is a structure
-     * or union with a tag or a typedef name, `struct S { struct T; };`
+     * or union with a tag or a typedef name, `struct S { struct T; };`.
+     * MSVC makes it a member, GCC and Clang accept it and declare nothing
      */
     case TaggedAnonymousMembers;
 

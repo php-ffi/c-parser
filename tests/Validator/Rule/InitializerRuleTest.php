@@ -34,7 +34,7 @@ final class InitializerRuleTest extends RuleTestCase
     public function testInitializerIsReported(string $code, int $offset, string $kind): void
     {
         self::assertSame(
-            [[$offset, 'Initializer is not allowed in the declaration of ' . $kind]],
+            [[$offset, 'Declaration of ' . $kind . ' should not have an initializer']],
             self::validate($code),
         );
     }

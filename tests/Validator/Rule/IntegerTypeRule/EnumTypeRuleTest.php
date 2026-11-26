@@ -18,8 +18,7 @@ final class EnumTypeRuleTest extends RuleTestCase
     private const ENUM_OR_BIT_INT = 'Underlying type of an enumeration should not be an enumeration or a bit-precise '
         . 'integer type';
 
-    private const WITHOUT_ENUMERATORS = 'Enumeration with an underlying type and without enumerators is allowed only '
-        . 'in the declaration of its tag';
+    private const WITHOUT_ENUMERATORS = 'Enumeration with an underlying type and without enumerators should only declare its tag';
 
     protected static function createRule(): ValidatorRuleInterface
     {

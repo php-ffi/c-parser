@@ -872,10 +872,18 @@ EnumeratorList -> {
     return new Type\EnumType\EnumeratorList($enumerators, $enumerators[0]->offset ?? $offset);
 }
   : <T_LBRACE> (
-        Enumerator() (::T_COMMA:: Enumerator())* ::T_COMMA::?
+        Enumerator() NextEnumerator()* ::T_COMMA::?
         ::T_RBRACE:: @error("Syntax error, unexpected {token} in the enumerators, \",\" or \"}\" expected")
       | ::T_RBRACE::
     ) @error("Syntax error, unexpected {token} in the enumerators, an enumerator or \"}\" expected")
+  ;
+
+/**
+ * An enumerator after the comma, "}" after the comma ends the list
+ */
+NextEnumerator
+  : !(::T_COMMA:: ::T_RBRACE::) ::T_COMMA::
+    Enumerator() @error("Syntax error, unexpected {token} in the enumerators, an enumerator or \"}\" expected")
   ;
 
 /**

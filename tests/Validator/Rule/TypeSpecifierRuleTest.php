@@ -53,16 +53,16 @@ final class TypeSpecifierRuleTest extends RuleTestCase
     #[DataProvider('invalidCombinationsDataProvider')]
     public function testInvalidCombinationIsReported(string $code, string $specifiers): void
     {
-        self::assertSame([[0, 'Invalid combination of type specifiers ' . $specifiers]], self::validate($code));
+        self::assertSame([[0, 'Type specifiers ' . $specifiers . ' should not be combined']], self::validate($code));
     }
 
     public function testCombinationIsCheckedWhereverTheTypeIsWritten(): void
     {
         self::assertSame(
             [
-                [11, 'Invalid combination of type specifiers `long float`'],
-                [43, 'Invalid combination of type specifiers `short double`'],
-                [74, 'Invalid combination of type specifiers `signed bool`'],
+                [11, 'Type specifiers `long float` should not be combined'],
+                [43, 'Type specifiers `short double` should not be combined'],
+                [74, 'Type specifiers `signed bool` should not be combined'],
             ],
             self::validate('struct S { long float a; }; void f(int (*)(short double)); int s = sizeof(signed bool);'),
         );
