@@ -1,7 +1,7 @@
 {
     "name": "ffi/c-parser",
     "type": "library",
-    "description": "PHP FFI-compatible ISO/IEC 9899:2024 (С23) parser implementation",
+    "description": "PHP FFI-compatible ISO/IEC 9899:2024 (C23) parser implementation",
     "license": "MIT",
     "keywords": ["php", "ffi", "php-ffi", "parser", "c", "c23", "c23-parser", "c-header-parser", "iso-9899", "ffi-bindings", "ast"],
     "support": {
@@ -22,7 +22,8 @@
         "symfony/polyfill-php85": "^1.43",
         "phplrt/exception": "^4.2",
         "phplrt/parser": "^4.2.3",
-        "phplrt/lexer": "^4.2"
+        "phplrt/lexer": "^4.2",
+        "phplrt/source": "^4.2"
     },
     "autoload": {
         "psr-4": {
@@ -71,8 +72,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0.x-dev",
-            "dev-master": "1.0.x-dev"
+            "dev-main": "1.x-dev",
+            "dev-master": "1.x-dev"
         }
     },
     "minimum-stability": "dev",
