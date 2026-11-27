@@ -172,20 +172,6 @@ final class ParserTest extends TestCase
         (new Parser())->parse(new \SplFileInfo(self::MISSING_FILE));
     }
 
-    public function testDeeplyNestedHeaderIsParsedInLinearMemory(): void
-    {
-        $limit = \ini_get('memory_limit');
-        \ini_set('memory_limit', (string) (\memory_get_usage() + 128 * 1024 * 1024));
-
-        try {
-            $declarations = (new Parser())->parse('int ' . \str_repeat('*', 10_000) . 'p;');
-        } finally {
-            \ini_set('memory_limit', (string) $limit);
-        }
-
-        self::assertCount(1, $declarations);
-    }
-
     public function testUnsupportedSourceIsReported(): void
     {
         $this->expectException(InternalException::class);

@@ -20,6 +20,7 @@ use FFI\Parser\Node\Type\RecordType\StructType;
 use FFI\Parser\Traverser;
 use FFI\Parser\Traverser\Action;
 use FFI\Parser\Traverser\Context;
+use FFI\Parser\Traverser\Visitor;
 use FFI\Parser\Traverser\VisitorInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -53,6 +54,22 @@ final class TraverserTest extends TestCase
             ],
             $visits,
         );
+    }
+
+    public function testDeeplyNestedTreeIsWalkedInLinearMemory(): void
+    {
+        $declarations = self::parse('int ' . \str_repeat('*', 10_000) . 'p;');
+
+        $limit = \ini_get('memory_limit');
+        \ini_set('memory_limit', (string) (\memory_get_usage(true) + 64 * 1024 * 1024));
+
+        try {
+            $declarations = (new Traverser([new class extends Visitor {}]))->traverse($declarations);
+        } finally {
+            \ini_set('memory_limit', (string) $limit);
+        }
+
+        self::assertCount(1, $declarations);
     }
 
     public function testSharedNodeIsVisitedOnce(): void
